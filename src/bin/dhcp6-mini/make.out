@@ -1,0 +1,5 @@
+  CXX    main.o
+  CXX    lease.o
+  CXX    subnet.o
+  CXX    cfg_mgr.o
+  CXXLD  b10-dhcp6-mini
