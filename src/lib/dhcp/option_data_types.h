@@ -345,6 +345,7 @@ public:
         }
     }
 
+#ifndef MINI_KEA
     /// @brief Read FQDN from a buffer as a string value.
     ///
     /// The format of an FQDN within a buffer complies with RFC1035,
@@ -385,6 +386,7 @@ public:
     /// name string is empty.
     /// @throw isc::dhcp::BadDataTypeCast if provided name is malformed.
     static unsigned int getLabelCount(const std::string& text_name);
+#endif
 
     /// @brief Read string value from a buffer.
     ///

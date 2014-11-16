@@ -14,13 +14,15 @@
 
 #include <dhcp/dhcp4.h>
 #include <dhcp/dhcp6.h>
+#ifndef MINI_KEA
 #include <dhcp/option4_addrlst.h>
 #include <dhcp/option4_client_fqdn.h>
 #include <dhcp/option6_addrlst.h>
-#include <dhcp/option6_ia.h>
-#include <dhcp/option6_iaaddr.h>
 #include <dhcp/option6_iaprefix.h>
 #include <dhcp/option6_client_fqdn.h>
+#endif
+#include <dhcp/option6_ia.h>
+#include <dhcp/option6_iaaddr.h>
 #include <dhcp/option_custom.h>
 #include <dhcp/option_definition.h>
 #include <dhcp/option_int.h>
@@ -184,7 +186,9 @@ OptionDefinition::optionFactory(Option::Universe u, uint16_t type,
             // specialized class yet implemented so we drop through
             // to return an instance of OptionCustom.
             if (array_type_) {
+#ifndef MINI_KEA
                 return (factoryAddrList4(type, begin, end));
+#endif
             }
             break;
 
@@ -192,7 +196,9 @@ OptionDefinition::optionFactory(Option::Universe u, uint16_t type,
             // Handle array type only here (see comments for
             // OPT_IPV4_ADDRESS_TYPE case).
             if (array_type_) {
+#ifndef MINI_KEA
                 return (factoryAddrList6(type, begin, end));
+#endif
             }
             break;
 
@@ -532,9 +538,11 @@ OptionDefinition::writeToBuffer(const std::string& value,
     case OPT_STRING_TYPE:
         OptionDataTypeUtil::writeString(value, buf);
         return;
+#ifndef MINI_KEA
     case OPT_FQDN_TYPE:
         OptionDataTypeUtil::writeFqdn(value, buf);
         return;
+#endif
     default:
         // We hit this point because invalid option data type has been specified
         // This may be the case because 'empty' or 'record' data type has been
@@ -547,6 +555,7 @@ OptionDefinition::writeToBuffer(const std::string& value,
 
 }
 
+#ifndef MINI_KEA
 OptionPtr
 OptionDefinition::factoryAddrList4(uint16_t type,
                                   OptionBufferConstIter begin,
@@ -564,7 +573,7 @@ OptionDefinition::factoryAddrList6(uint16_t type,
                                                                 end));
     return (option);
 }
-
+#endif
 
 OptionPtr
 OptionDefinition::factoryEmpty(Option::Universe u, uint16_t type) {
@@ -607,6 +616,7 @@ OptionDefinition::factoryIAAddr6(uint16_t type,
     return (option);
 }
 
+#ifndef MINI_KEA
 OptionPtr
 OptionDefinition::factoryIAPrefix6(uint16_t type,
                                  OptionBufferConstIter begin,
@@ -620,6 +630,7 @@ OptionDefinition::factoryIAPrefix6(uint16_t type,
                                                                   end));
     return (option);
 }
+#endif
 
 OptionPtr
 OptionDefinition::factorySpecialFormatOption(Option::Universe u,
@@ -644,25 +655,28 @@ OptionDefinition::factorySpecialFormatOption(Option::Universe u,
             // option only for the same reasons as described in
             // for IA_NA and IA_PD above.
             return (factoryIAAddr6(getCode(), begin, end));
+#ifndef MINI_KEA
         } else if (getCode() == D6O_IAPREFIX && haveIAPrefix6Format()) {
             return (factoryIAPrefix6(getCode(), begin, end));
         } else if (getCode() == D6O_CLIENT_FQDN && haveClientFqdnFormat()) {
             // FQDN option requires special processing. Thus, there is
             // a specialized class to handle it.
             return (OptionPtr(new Option6ClientFqdn(begin, end)));
+#endif
         } else if (getCode() == D6O_VENDOR_OPTS && haveVendor6Format()) {
             // Vendor-Specific Information.
             return (OptionPtr(new OptionVendor(Option::V6, begin, end)));
         }
     } else {
-        if ((getCode() == DHO_FQDN) && haveFqdn4Format()) {
+    	if (getCode() == DHO_VIVSO_SUBOPTIONS && haveVendor4Format()) {
+    		// Vendor-Specific Information.
+    		return (OptionPtr(new OptionVendor(Option::V4, begin, end)));
+    	}
+#ifndef MINI_KEA
+    	else if ((getCode() == DHO_FQDN) && haveFqdn4Format()) {
             return (OptionPtr(new Option4ClientFqdn(begin, end)));
-
-        } else if (getCode() == DHO_VIVSO_SUBOPTIONS && haveVendor4Format()) {
-            // Vendor-Specific Information.
-            return (OptionPtr(new OptionVendor(Option::V4, begin, end)));
-
-        }
+    	}
+#endif
     }
     return (OptionPtr());
 }
