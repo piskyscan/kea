@@ -1281,6 +1281,12 @@ AC_ARG_ENABLE(logger-checks, [AC_HELP_STRING([--enable-logger-checks],
 AM_CONDITIONAL(ENABLE_LOGGER_CHECKS, test x$enable_logger_checks != xno)
 AM_COND_IF([ENABLE_LOGGER_CHECKS], [AC_DEFINE([ENABLE_LOGGER_CHECKS], [1], [Check logger messages?])])
 
+#Check if the minimal dhcp server version shall be built
+AC_ARG_ENABLE(mini-kea, [AC_HELP_STRING([--enable-mini-kea],
+  [enable building the minimal dhcp server version [default=no]])], mini_kea=$enableval, mini_kea=no)
+AM_CONDITIONAL(MINI_KEA, test x$mini_kea != xno)
+AM_COND_IF([MINI_KEA], [AC_DEFINE([MINI_KEA], [1], [Define to 1 if the minimal dhcp server version is being built.])])
+
 # Check for asciidoc
 AC_PATH_PROG(ASCIIDOC, asciidoc, no)
 AM_CONDITIONAL(HAVE_ASCIIDOC, test "x$ASCIIDOC" != "xno")
@@ -1397,6 +1403,7 @@ AC_CONFIG_FILES([compatcheck/Makefile
                  src/bin/dhcp6/tests/marker_file.h
                  src/bin/dhcp6/tests/test_data_files_config.h
                  src/bin/dhcp6/tests/test_libraries.h
+                 src/bin/dhcp6-mini/Makefile
                  src/bin/loadzone/loadzone.py
                  src/bin/loadzone/Makefile
                  src/bin/loadzone/run_loadzone.sh

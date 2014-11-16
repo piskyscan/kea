@@ -17,13 +17,18 @@ lib_LTLIBRARIES = libb10-asiolink.la
 
 libb10_asiolink_la_LDFLAGS = -no-undefined -version-info 1:0:1
 
-libb10_asiolink_la_SOURCES  = asiolink.h
-libb10_asiolink_la_SOURCES += dummy_io_cb.h
-libb10_asiolink_la_SOURCES += interval_timer.cc interval_timer.h
+libb10_asiolink_la_SOURCES  =
 libb10_asiolink_la_SOURCES += io_address.cc io_address.h
-libb10_asiolink_la_SOURCES += io_asio_socket.h
 libb10_asiolink_la_SOURCES += io_endpoint.cc io_endpoint.h
 libb10_asiolink_la_SOURCES += io_error.h
+libb10_asiolink_la_SOURCES += tcp_endpoint.h
+libb10_asiolink_la_SOURCES += udp_endpoint.h
+
+if !MINI_KEA
+libb10_asiolink_la_SOURCES += asiolink.h
+libb10_asiolink_la_SOURCES += dummy_io_cb.h
+libb10_asiolink_la_SOURCES += interval_timer.cc interval_timer.h
+libb10_asiolink_la_SOURCES += io_asio_socket.h
 libb10_asiolink_la_SOURCES += io_message.h
 libb10_asiolink_la_SOURCES += io_service.h io_service.cc
 libb10_asiolink_la_SOURCES += io_socket.h io_socket.cc
@@ -33,6 +38,7 @@ libb10_asiolink_la_SOURCES += tcp_socket.h
 libb10_asiolink_la_SOURCES += udp_endpoint.h
 libb10_asiolink_la_SOURCES += udp_socket.h
 libb10_asiolink_la_SOURCES += local_socket.h local_socket.cc
+endif
 
 # Note: the ordering matters: -Wno-... must follow -Wextra (defined in
 # B10_CXXFLAGS)

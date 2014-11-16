@@ -2,7 +2,11 @@ ACLOCAL_AMFLAGS = -I m4macros -I examples/m4 ${ACLOCAL_FLAGS}
 # ^^^^^^^^ This has to be the first line and cannot come later in this
 # Makefile.am due to some bork in some versions of autotools.
 
+if !MINI_KEA
 SUBDIRS = compatcheck doc . src tests m4macros ext
+else
+SUBDIRS = compatcheck doc . src m4macros ext
+endif
 USE_LCOV=@USE_LCOV@
 LCOV=@LCOV@
 GENHTML=@GENHTML@

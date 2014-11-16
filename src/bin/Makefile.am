@@ -1,3 +1,5 @@
+if !MINI_KEA
+
 if BUILD_EXPERIMENTAL_RESOLVER
 # Build resolver only with --enable-experimental-resolver
 experimental_resolver = resolver
@@ -11,6 +13,12 @@ if USE_SHARED_MEMORY
 # Build the memory manager only if we have shared memory.
 # It is useless without it.
 SUBDIRS += memmgr
+endif
+
+else
+#Build dhcp6-mini only
+SUBDIRS = dhcp6-mini
+
 endif
 
 check-recursive: all-recursive

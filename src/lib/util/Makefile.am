@@ -1,4 +1,8 @@
+if !MINI_KEA
 SUBDIRS = . io unittests tests pyunittests python threads
+else
+SUBDIRS = . io
+endif
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/lib -I$(top_builddir)/src/lib
 AM_CPPFLAGS += -I$(top_srcdir)/src/lib/util -I$(top_builddir)/src/lib/util
@@ -19,26 +23,30 @@ AM_CXXFLAGS += $(BOOST_MAPPED_FILE_CXXFLAG)
 endif
 
 lib_LTLIBRARIES = libb10-util.la
-libb10_util_la_SOURCES  = filename.h filename.cc
-libb10_util_la_SOURCES += locks.h lru_list.h
-libb10_util_la_SOURCES += strutil.h strutil.cc
+libb10_util_la_SOURCES  =
 libb10_util_la_SOURCES += buffer.h io_utilities.h
-libb10_util_la_SOURCES += time_utilities.h time_utilities.cc
-libb10_util_la_SOURCES += memory_segment.h
-libb10_util_la_SOURCES += memory_segment_local.h memory_segment_local.cc
-if USE_SHARED_MEMORY
-libb10_util_la_SOURCES += memory_segment_mapped.h memory_segment_mapped.cc
-endif
-libb10_util_la_SOURCES += range_utilities.h
-libb10_util_la_SOURCES += hash/sha1.h hash/sha1.cc
 libb10_util_la_SOURCES += encode/base16_from_binary.h
 libb10_util_la_SOURCES += encode/base32hex.h encode/base64.h
 libb10_util_la_SOURCES += encode/base32hex_from_binary.h
 libb10_util_la_SOURCES += encode/base_n.cc encode/hex.h
 libb10_util_la_SOURCES += encode/binary_from_base32hex.h
 libb10_util_la_SOURCES += encode/binary_from_base16.h
+libb10_util_la_SOURCES += range_utilities.h
+libb10_util_la_SOURCES += strutil.h strutil.cc
+
+if !MINI_KEA
+libb10_util_la_SOURCES += filename.h filename.cc
+libb10_util_la_SOURCES += locks.h lru_list.h
+libb10_util_la_SOURCES += time_utilities.h time_utilities.cc
+libb10_util_la_SOURCES += memory_segment.h
+libb10_util_la_SOURCES += memory_segment_local.h memory_segment_local.cc
+if USE_SHARED_MEMORY
+libb10_util_la_SOURCES += memory_segment_mapped.h memory_segment_mapped.cc
+endif
+libb10_util_la_SOURCES += hash/sha1.h hash/sha1.cc
 libb10_util_la_SOURCES += random/qid_gen.h random/qid_gen.cc
 libb10_util_la_SOURCES += random/random_number_generator.h
+endif
 
 EXTRA_DIST = python/pycppwrapper_util.h
 libb10_util_la_LIBADD = $(top_builddir)/src/lib/exceptions/libb10-exceptions.la
