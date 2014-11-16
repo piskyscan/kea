@@ -36,6 +36,9 @@ b10_dhcp6_mini_SOURCES += triplet.h
 
 b10_dhcp6_mini_LDADD  = $(top_builddir)/src/lib/dhcp/libb10-dhcp++.la
 b10_dhcp6_mini_LDADD  += $(top_builddir)/src/lib/asiolink/libb10-asiolink.la
+# Mini Kea DHCP6 server has no explicit dependencies on the exceptions,
+# the dependency is required for linker to resolve symbols from the above
+# two libraries
 b10_dhcp6_mini_LDADD += $(top_builddir)/src/lib/exceptions/libb10-exceptions.la
 
 b10_dhcp6_mini_dir = $(pkgdatadir)
