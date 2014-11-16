@@ -67,11 +67,23 @@ int main(int argc, char* argv[]) {
         usage();
     }
 
-    LOG(INF) << "DHCPv6-mini server is starting..." << endl;
-
-    if (verbose_mode) LOG(INF) <<  "verbose" << endl;
-
+    // Initialize configuration manager
     isc::dhcpMini::CfgMgr::getInstance();
+
+    // Check if verbose output shall be enabled
+    if (verbose_mode) {
+    	LOG(INF) << "Verbose output enabled" << endl;
+    	isc::dhcpMini::CfgMgr::getInstance().enableVerboseOutput();
+    }
+
+    // Parse configuration file and create subnet and pools effectively
+    isc::dhcpMini::CfgMgr::getInstance().parseConfigFile();
+
+    LOG(INF) << "DHCPv6-mini server is starting..." << endl;
+    LOG(INF) << "Port number: " << DHCP6_SERVER_PORT << endl;
+
+    isc::dhcpMini::Dhcpv6Srv server(port_number);
+    server.run();
 
     return (EXIT_SUCCESS);
 }

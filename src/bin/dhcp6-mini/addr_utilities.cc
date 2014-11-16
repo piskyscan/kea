@@ -27,7 +27,7 @@ const uint8_t bitMask6[]= { 0, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff };
 ///
 /// @param prefix IPv6 prefix
 /// @param len prefix length
-isc::dhcpMini::IOAddress firstAddrInPrefix6(const isc::dhcpMini::IOAddress& prefix,
+isc::asiolink::IOAddress firstAddrInPrefix6(const isc::asiolink::IOAddress& prefix,
                                             uint8_t len) {
     if (len > 128) {
         LOG(ERR) << "Too large netmask. 0..128 is allowed in IPv6" << endl;
@@ -37,8 +37,8 @@ isc::dhcpMini::IOAddress firstAddrInPrefix6(const isc::dhcpMini::IOAddress& pref
     // We don't check that it is a valid IPv6 address and thus has
     // the required length because it is already checked by
     // the calling function.
-    uint8_t packed[isc::dhcpMini::V6ADDRESS_LEN];
-    memcpy(packed, &prefix.toBytes()[0], isc::dhcpMini::V6ADDRESS_LEN);
+    uint8_t packed[isc::asiolink::V6ADDRESS_LEN];
+    memcpy(packed, &prefix.toBytes()[0], isc::asiolink::V6ADDRESS_LEN);
 
     // If the length is divisible by 8, it is simple. We just zero out the host
     // part. Otherwise we need to handle the byte that has to be partially
@@ -63,7 +63,7 @@ isc::dhcpMini::IOAddress firstAddrInPrefix6(const isc::dhcpMini::IOAddress& pref
     }
 
     // Finally, let's wrap this into nice and easy IOAddress object.
-    return (isc::dhcpMini::IOAddress::fromBytes(AF_INET6, packed));
+    return (isc::asiolink::IOAddress::fromBytes(AF_INET6, packed));
 }
 
 /// @brief calculates the last IPv6 address in a IPv6 prefix
@@ -73,14 +73,14 @@ isc::dhcpMini::IOAddress firstAddrInPrefix6(const isc::dhcpMini::IOAddress& pref
 ///
 /// @param prefix IPv6 prefix that we calculate first address for
 /// @param len netmask length (0-128)
-isc::dhcpMini::IOAddress lastAddrInPrefix6(const isc::dhcpMini::IOAddress& prefix,
+isc::asiolink::IOAddress lastAddrInPrefix6(const isc::asiolink::IOAddress& prefix,
                                            uint8_t len) {
     if (len > 128) {
         LOG(ERR) << "Too large netmask. 0..128 is allowed in IPv6" << endl;
     }
 
     // First we copy the whole address as 16 bytes.
-    uint8_t packed[isc::dhcpMini::V6ADDRESS_LEN];
+    uint8_t packed[isc::asiolink::V6ADDRESS_LEN];
     memcpy(packed, &prefix.toBytes()[0], 16);
 
     // if the length is divisible by 8, it is simple. We just fill the host part
@@ -108,7 +108,7 @@ isc::dhcpMini::IOAddress lastAddrInPrefix6(const isc::dhcpMini::IOAddress& prefi
     }
 
     // Finally, let's wrap this into nice and easy IOAddress object.
-    return (isc::dhcpMini::IOAddress::fromBytes(AF_INET6, packed));
+    return (isc::asiolink::IOAddress::fromBytes(AF_INET6, packed));
 }
 
 }; // end of anonymous namespace
@@ -116,13 +116,13 @@ isc::dhcpMini::IOAddress lastAddrInPrefix6(const isc::dhcpMini::IOAddress& prefi
 namespace isc {
 namespace dhcpMini {
 
-isc::dhcpMini::IOAddress firstAddrInPrefix(
-		const isc::dhcpMini::IOAddress& prefix, uint8_t len) {
+isc::asiolink::IOAddress firstAddrInPrefix(
+		const isc::asiolink::IOAddress& prefix, uint8_t len) {
 	return (firstAddrInPrefix6(prefix, len));
 }
 
-isc::dhcpMini::IOAddress lastAddrInPrefix(
-		const isc::dhcpMini::IOAddress& prefix, uint8_t len) {
+isc::asiolink::IOAddress lastAddrInPrefix(
+		const isc::asiolink::IOAddress& prefix, uint8_t len) {
 	return (lastAddrInPrefix6(prefix, len));
 }
 

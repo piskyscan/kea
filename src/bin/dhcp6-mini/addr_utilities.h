@@ -15,7 +15,7 @@
 #ifndef DHCP6_MINI_ADDR_UTILITIES_H
 #define DHCP6_MINI_ADDR_UTILITIES_H
 
-#include <io_address.h>
+#include <asiolink/io_address.h>
 
 namespace isc {
 namespace dhcpMini {
@@ -35,8 +35,8 @@ namespace dhcpMini {
 /// @param len prefix length
 ///
 /// @return first address from a prefix
-isc::dhcpMini::IOAddress firstAddrInPrefix(
-		const isc::dhcpMini::IOAddress& prefix, uint8_t len);
+isc::asiolink::IOAddress firstAddrInPrefix(
+		const isc::asiolink::IOAddress& prefix, uint8_t len);
 
 /// @brief returns a last address in a given prefix
 ///
@@ -49,8 +49,8 @@ isc::dhcpMini::IOAddress firstAddrInPrefix(
 /// @param len prefix length
 ///
 /// @return first address from a prefix
-isc::dhcpMini::IOAddress lastAddrInPrefix(
-		const isc::dhcpMini::IOAddress& prefix, uint8_t len);
+isc::asiolink::IOAddress lastAddrInPrefix(
+		const isc::asiolink::IOAddress& prefix, uint8_t len);
 
 };
 };

@@ -14,7 +14,7 @@
 
 #include <addr_utilities.h>
 #include <dhcp6-mini_log.h>
-#include <io_address.h>
+#include <asiolink/io_address.h>
 #include <subnet.h>
 #include <dhcp/option_space.h>
 
@@ -27,7 +27,7 @@ namespace dhcpMini {
 // This is an initial value of subnet-id. See comments in subnet.h for details.
 SubnetID Subnet::static_id_ = 1;
 
-Subnet::Subnet(const isc::dhcpMini::IOAddress& prefix, uint8_t len,
+Subnet::Subnet(const isc::asiolink::IOAddress& prefix, uint8_t len,
                const Triplet<uint32_t>& t1,
                const Triplet<uint32_t>& t2,
                const Triplet<uint32_t>& valid_lifetime)
@@ -42,9 +42,9 @@ Subnet::Subnet(const isc::dhcpMini::IOAddress& prefix, uint8_t len,
     }
 }
 
-bool Subnet::inRange(const isc::dhcpMini::IOAddress& addr) const {
-	isc::dhcpMini::IOAddress first = firstAddrInPrefix(prefix_, prefix_len_);
-	isc::dhcpMini::IOAddress last = lastAddrInPrefix(prefix_, prefix_len_);
+bool Subnet::inRange(const isc::asiolink::IOAddress& addr) const {
+	isc::asiolink::IOAddress first = firstAddrInPrefix(prefix_, prefix_len_);
+	isc::asiolink::IOAddress last = lastAddrInPrefix(prefix_, prefix_len_);
 
 	return ((first <= addr) && (addr <= last));
 }
@@ -85,15 +85,13 @@ Subnet::OptionDescriptor Subnet::getOptionDescriptor(
 	return (*range.first);
 }
 
-isc::dhcpMini::IOAddress Subnet::getLastAllocated(Lease::Type type) const {
-    // check if the type is valid (and throw if it isn't)
+isc::asiolink::IOAddress Subnet::getLastAllocated(Lease::Type type) const {
+    // check if the type is valid
     checkType(type);
 
     switch (type) {
     case Lease::TYPE_NA:
         return last_allocated_ia_;
-    case Lease::TYPE_TA:
-        return last_allocated_ta_;
     default:
         LOG(ERR) << "Pool type " << type << " not supported" << endl;
         exit(EXIT_FAILURE);
@@ -101,9 +99,9 @@ isc::dhcpMini::IOAddress Subnet::getLastAllocated(Lease::Type type) const {
 }
 
 void Subnet::setLastAllocated(Lease::Type type,
-		const isc::dhcpMini::IOAddress& addr) {
+		const isc::asiolink::IOAddress& addr) {
 
-    // check if the type is valid (and throw if it isn't)
+    // check if the type is valid
     checkType(type);
 
     switch (type) {
@@ -123,7 +121,7 @@ std::string Subnet::toText() const {
 }
 
 const PoolCollection& Subnet::getPools(Lease::Type type) const {
-    // check if the type is valid (and throw if it isn't)
+    // check if the type is valid
     checkType(type);
 
     switch (type) {
@@ -136,7 +134,7 @@ const PoolCollection& Subnet::getPools(Lease::Type type) const {
 }
 
 PoolCollection& Subnet::getPoolsWritable(Lease::Type type) {
-    // check if the type is valid (and throw if it isn't)
+    // check if the type is valid
     checkType(type);
 
     switch (type) {
@@ -150,8 +148,8 @@ PoolCollection& Subnet::getPoolsWritable(Lease::Type type) {
 }
 
 const PoolPtr Subnet::getPool(Lease::Type type,
-		const isc::dhcpMini::IOAddress& hint, bool anypool /* true */) const {
-	// check if the type is valid (and throw if it isn't)
+		const isc::asiolink::IOAddress& hint, bool anypool /* true */) const {
+	// check if the type is valid
 	checkType(type);
 
 	const PoolCollection& pools = getPools(type);
@@ -175,8 +173,8 @@ const PoolPtr Subnet::getPool(Lease::Type type,
 }
 
 void Subnet::addPool(const PoolPtr& pool) {
-	IOAddress first_addr = pool->getFirstAddress();
-	IOAddress last_addr = pool->getLastAddress();
+	isc::asiolink::IOAddress first_addr = pool->getFirstAddress();
+	isc::asiolink::IOAddress last_addr = pool->getLastAddress();
 
 	if (!inRange(first_addr) || !inRange(last_addr)) {
 		LOG(ERR) << "Pool (" << first_addr << "-" << last_addr
@@ -184,7 +182,7 @@ void Subnet::addPool(const PoolPtr& pool) {
 		<< static_cast<int>(prefix_len_) << ") subnet" << endl;
 	}
 
-	// check if the type is valid (and throw if it isn't)
+	// check if the type is valid
 	checkType(pool->getType());
 
 	// Add the pool to the appropriate pools collection
@@ -204,7 +202,7 @@ std::string Subnet::getIface() const {
 }
 
 bool Subnet::inPool(Lease::Type type,
-		const isc::dhcpMini::IOAddress& addr) const {
+		const isc::asiolink::IOAddress& addr) const {
 
 	// Let's start with checking if it even belongs to that subnet.
 	if (!inRange(addr)) {
@@ -224,7 +222,7 @@ bool Subnet::inPool(Lease::Type type,
 	return (false);
 }
 
-Subnet6::Subnet6(const isc::dhcpMini::IOAddress& prefix, uint8_t length,
+Subnet6::Subnet6(const isc::asiolink::IOAddress& prefix, uint8_t length,
 		const Triplet<uint32_t>& t1, const Triplet<uint32_t>& t2,
 		const Triplet<uint32_t>& preferred_lifetime,
 		const Triplet<uint32_t>& valid_lifetime) :

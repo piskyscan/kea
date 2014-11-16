@@ -22,7 +22,7 @@ using namespace std;
 namespace isc {
 namespace dhcpMini {
 
-Lease::Lease(const isc::dhcpMini::IOAddress& addr, uint32_t t1, uint32_t t2,
+Lease::Lease(const isc::asiolink::IOAddress& addr, uint32_t t1, uint32_t t2,
 		uint32_t valid_lft, SubnetID subnet_id, time_t cltt) :
 		addr_(addr), t1_(t1), t2_(t2), valid_lft_(valid_lft), cltt_(cltt),
 		subnet_id_(subnet_id), fixed_(false) {
@@ -49,7 +49,7 @@ bool Lease::expired() const {
 	return (expire_time < time(NULL));
 }
 
-Lease6::Lease6(Type type, const isc::dhcpMini::IOAddress& addr,
+Lease6::Lease6(Type type, const isc::asiolink::IOAddress& addr,
 		isc::dhcp::DuidPtr duid, uint32_t iaid, uint32_t preferred,
 		uint32_t valid, uint32_t t1, uint32_t t2, SubnetID subnet_id) :
 		Lease(addr, t1, t2, valid, subnet_id, 0/*cltt*/), type_(type),

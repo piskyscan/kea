@@ -15,7 +15,7 @@
 #ifndef DHCP6_MINI_SUBNET_H
 #define DHCP6_MINI_SUBNET_H
 
-#include <io_address.h>
+#include <asiolink/io_address.h>
 #include <key_from_key.h>
 #include <option_space_container.h>
 #include <pool.h>
@@ -156,7 +156,7 @@ public:
 	typedef OptionContainer::nth_index<2>::type OptionContainerPersistIndex;
 
 	/// @brief Checks if specified address is in range
-	bool inRange(const isc::dhcpMini::IOAddress& addr) const;
+	bool inRange(const isc::asiolink::IOAddress& addr) const;
 
 	/// @brief Add new option instance to the collection.
 	///
@@ -164,8 +164,6 @@ public:
 	/// @param persistent if true, send an option regardless if client
 	/// requested it or not.
 	/// @param option_space name of the option space to add an option to.
-	///
-	/// @throw isc::BadValue if invalid option provided.
 	void addOption(const isc::dhcp::OptionPtr& option, bool persistent,
 			const std::string& option_space);
 
@@ -185,7 +183,7 @@ public:
 	/// @param addr this address will be checked if it belongs to any pools in
 	///        that subnet
 	/// @return true if the address is in any of the pools
-	bool inPool(Lease::Type type, const isc::dhcpMini::IOAddress& addr) const;
+	bool inPool(Lease::Type type, const isc::asiolink::IOAddress& addr) const;
 
 	/// @brief Return valid-lifetime for addresses in that prefix
 	Triplet<uint32_t> getValid() const {
@@ -226,12 +224,12 @@ public:
 	/// from this subnet. This is used as helper information for the next
 	/// iteration of the allocation algorithm.
 	///
-	/// @todo: Define map<SubnetID, isc::dhcpMini::IOAddress> somewhere in the
+	/// @todo: Define map<SubnetID, isc::asiolink::IOAddress> somewhere in the
 	///        AllocEngine::IterativeAllocator and keep the data there
 	///
 	/// @param type lease type to be returned
 	/// @return address/prefix that was last tried from this pool
-	isc::dhcpMini::IOAddress getLastAllocated(Lease::Type type) const;
+	isc::asiolink::IOAddress getLastAllocated(Lease::Type type) const;
 
 	/// @brief sets the last address that was tried from this pool
 	///
@@ -239,11 +237,11 @@ public:
 	/// from this subnet. This is used as helper information for the next
 	/// iteration of the allocation algorithm.
 	///
-	/// @todo: Define map<SubnetID, isc::dhcpMini::IOAddress> somewhere in the
+	/// @todo: Define map<SubnetID, isc::asiolink::IOAddress> somewhere in the
 	///        AllocEngine::IterativeAllocator and keep the data there
 	/// @param addr address/prefix to that was tried last
 	/// @param type lease type to be set
-	void setLastAllocated(Lease::Type type, const isc::dhcpMini::IOAddress& addr);
+	void setLastAllocated(Lease::Type type, const isc::asiolink::IOAddress& addr);
 
 	/// @brief Returns unique ID for that subnet
 	/// @return unique ID for that subnet
@@ -254,7 +252,7 @@ public:
 	/// @brief Returns subnet parameters (prefix and prefix length)
 	///
 	/// @return (prefix, prefix length) pair
-	std::pair<isc::dhcpMini::IOAddress, uint8_t> get() const {
+	std::pair<isc::asiolink::IOAddress, uint8_t> get() const {
 		return (std::make_pair(prefix_, prefix_len_));
 	}
 
@@ -282,7 +280,7 @@ public:
 	/// @param anypool other pool may be returned as well, not only the one
 	///        that addr belongs to
 	/// @return found pool (or NULL)
-	const PoolPtr getPool(Lease::Type type, const isc::dhcpMini::IOAddress& addr,
+	const PoolPtr getPool(Lease::Type type, const isc::asiolink::IOAddress& addr,
 			bool anypool = true) const;
 
 	/// @brief Returns a pool without any address specified
@@ -296,7 +294,7 @@ public:
 	/// @brief Returns the default address that will be used for pool selection
 	///
 	/// It must be implemented in derived classes (should return :: for Subnet6)
-	virtual isc::dhcpMini::IOAddress default_pool() const = 0;
+	virtual isc::asiolink::IOAddress default_pool() const = 0;
 
 	/// @brief Returns all pools (const variant)
 	///
@@ -355,7 +353,7 @@ protected:
 	/// @param t1 T1 (renewal-time) timer, expressed in seconds
 	/// @param t2 T2 (rebind-time) timer, expressed in seconds
 	/// @param valid_lifetime valid lifetime of leases in this subnet (in seconds)
-	Subnet(const isc::dhcpMini::IOAddress& prefix, uint8_t len,
+	Subnet(const isc::asiolink::IOAddress& prefix, uint8_t len,
 			const Triplet<uint32_t>& t1, const Triplet<uint32_t>& t2,
 			const Triplet<uint32_t>& valid_lifetime);
 
@@ -393,7 +391,6 @@ protected:
 	/// This method is implemented in derived classes.
 	///
 	/// @param type type to be checked
-	/// @throw BadValue if invalid value is used
 	virtual void checkType(Lease::Type type) const = 0;
 
 	/// @brief Check if option is valid and can be added to a subnet.
@@ -417,7 +414,7 @@ protected:
 	PoolCollection pools_pd_;
 
 	/// @brief a prefix of the subnet
-	isc::dhcpMini::IOAddress prefix_;
+	isc::asiolink::IOAddress prefix_;
 
 	/// @brief a prefix length of the subnet
 	uint8_t prefix_len_;
@@ -440,17 +437,17 @@ protected:
 	/// removing a pool, restarting or changing allocation algorithms. For
 	/// that purpose it should be only considered a help that should not be
 	/// fully trusted.
-	isc::dhcpMini::IOAddress last_allocated_ia_;
+	isc::asiolink::IOAddress last_allocated_ia_;
 
 	/// @brief last allocated temporary address
 	///
 	/// See @ref last_allocated_ia_ for details.
-	isc::dhcpMini::IOAddress last_allocated_ta_;
+	isc::asiolink::IOAddress last_allocated_ta_;
 
 	/// @brief last allocated IPv6 prefix
 	///
 	/// See @ref last_allocated_ia_ for details.
-	isc::dhcpMini::IOAddress last_allocated_pd_;
+	isc::asiolink::IOAddress last_allocated_pd_;
 
 	/// @brief Name of the network interface (if connected directly)
 	std::string iface_;
@@ -479,7 +476,7 @@ public:
 	/// @param t2 rebind timer (in seconds)
 	/// @param preferred_lifetime preferred lifetime of leases (in seconds)
 	/// @param valid_lifetime preferred lifetime of leases (in seconds)
-	Subnet6(const isc::dhcpMini::IOAddress& prefix, uint8_t length,
+	Subnet6(const isc::asiolink::IOAddress& prefix, uint8_t length,
 			const Triplet<uint32_t>& t1, const Triplet<uint32_t>& t2,
 			const Triplet<uint32_t>& preferred_lifetime,
 			const Triplet<uint32_t>& valid_lifetime);
@@ -508,14 +505,12 @@ protected:
 	/// @brief Check if option is valid and can be added to a subnet.
 	///
 	/// @param option option to be validated.
-	///
-	/// @throw isc::BadValue if provided option is invalid.
 	virtual void validateOption(const isc::dhcp::OptionPtr& option) const;
 
 	/// @brief Returns default address for pool selection
 	/// @return ANY IPv6 address
-	virtual isc::dhcpMini::IOAddress default_pool() const {
-		return (isc::dhcpMini::IOAddress("::"));
+	virtual isc::asiolink::IOAddress default_pool() const {
+		return (isc::asiolink::IOAddress("::"));
 	}
 
 	/// @brief Checks if used pool type is valid
@@ -523,7 +518,6 @@ protected:
 	/// allowed types for Subnet6 are Pool::TYPE_{IA,TA,PD}.
 	///
 	/// @param type type to be checked
-	/// @throw BadValue if invalid value is used
 	virtual void checkType(Lease::Type type) const;
 
 	/// @brief specifies optional interface-id
@@ -534,10 +528,10 @@ protected:
 };
 
 /// @brief A pointer to a Subnet object
-typedef boost::shared_ptr<Subnet> SubnetPtr;
+typedef boost::shared_ptr<Subnet6> Subnet6Ptr;
 
 /// @brief A collection of Subnet objects
-typedef std::vector<SubnetPtr> SubnetCollection;
+typedef std::vector<Subnet6Ptr> Subnet6Collection;
 
 }; // end of isc::dhcpMini namespace
 }; // end of isc namespace

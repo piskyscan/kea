@@ -23,25 +23,39 @@ using namespace std;
 
 /// @brief Log levels used to log information
 typedef enum {
-	ERR, INF, CFG, DBG
+	ERR, WRN, INF, CFG, DBG
 } LogLevel;
 
 namespace isc {
 namespace dhcpMini {
 
+/// @brief Logger
+///
+/// This is an API for the logging functionality.
 class Dhcp6MiniLogger {
+public:
+	/// @brief Constructor
+	Dhcp6MiniLogger();
+
+	/// @brief Destructor
+	~Dhcp6MiniLogger();
+
+	/// @brief Constructs a log entry based on provided information
+	///
+	/// @param ll is the information log level.
+	/// @return returns a modified string stream with information to be logged.
+	ostringstream& log(const LogLevel ll);
 
 protected:
+	/// @brief String stream with information to be logged
 	ostringstream log_;
 
 private:
-	LogLevel log_level_;
+	/// @brief Adds current time to the log entry
 	void logTime();
 
-public:
-	Dhcp6MiniLogger();
-	~Dhcp6MiniLogger();
-	ostringstream& log(const LogLevel ll);
+	/// @brief Log level of a certain log entry
+	LogLevel log_level_;
 };
 
 } // namespace dhcpMini

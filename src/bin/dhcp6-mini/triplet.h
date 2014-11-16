@@ -61,8 +61,6 @@ public:
 	}
 
     /// @brief sets the default value and thresholds
-    ///
-    /// @throw BadValue if min <= def <= max rule is violated
 	Triplet(T min, T def, T max) :
 			min_(min), default_(def), max_(max) {
 		if ((min_ > def) || (def > max_)) {

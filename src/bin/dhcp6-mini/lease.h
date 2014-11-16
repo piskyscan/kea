@@ -15,7 +15,7 @@
 #ifndef DHCP6_MINI_LEASE_H
 #define DHCP6_MINI_LEASE_H
 
-#include <io_address.h>
+#include <asiolink/io_address.h>
 #include <dhcp/duid.h>
 
 #include <boost/shared_ptr.hpp>
@@ -56,7 +56,7 @@ struct Lease {
     /// @param valid_lft Lifetime of the lease
     /// @param subnet_id Subnet identification
     /// @param cltt Client last transmission time
-	Lease(const isc::dhcpMini::IOAddress& addr, uint32_t t1, uint32_t t2,
+	Lease(const isc::asiolink::IOAddress& addr, uint32_t t1, uint32_t t2,
 			uint32_t valid_lft, SubnetID subnet_id, time_t cltt);
 
     /// @brief Destructor
@@ -65,7 +65,7 @@ struct Lease {
     /// @brief IP address
     ///
     /// IPv6 address
-    isc::dhcpMini::IOAddress addr_;
+    isc::asiolink::IOAddress addr_;
 
     /// @brief Renewal timer
     ///
@@ -156,7 +156,7 @@ struct Lease6 : public Lease {
     /// @param t1 A value of the T1 timer.
     /// @param t2 A value of the T2 timer.
     /// @param subnet_id A Subnet identifier.
-	Lease6(Type type, const isc::dhcpMini::IOAddress& addr,
+	Lease6(Type type, const isc::asiolink::IOAddress& addr,
 			isc::dhcp::DuidPtr duid, uint32_t iaid, uint32_t preferred,
 			uint32_t valid, uint32_t t1, uint32_t t2, SubnetID subnet_id);
 
@@ -164,7 +164,7 @@ struct Lease6 : public Lease {
     ///
     /// Initialize fields that don't have a default constructor.
 	Lease6() :
-			Lease(isc::dhcpMini::IOAddress("::"), 0, 0, 0, 0, 0), type_(TYPE_NA) {
+			Lease(isc::asiolink::IOAddress("::"), 0, 0, 0, 0, 0), type_(TYPE_NA) {
 	}
 
     /// @brief Returns a reference to a vector representing a DUID.

@@ -21,12 +21,12 @@
 namespace isc {
 namespace dhcpMini {
 
-Pool::Pool(Lease::Type type, const isc::dhcpMini::IOAddress& first,
-		const isc::dhcpMini::IOAddress& last) :
+Pool::Pool(Lease::Type type, const isc::asiolink::IOAddress& first,
+		const isc::asiolink::IOAddress& last) :
 		id_(getNextID()), first_(first), last_(last), type_(type) {
 }
 
-bool Pool::inRange(const isc::dhcpMini::IOAddress& addr) const {
+bool Pool::inRange(const isc::asiolink::IOAddress& addr) const {
 	return (first_.smallerEqual(addr) && addr.smallerEqual(last_));
 }
 
@@ -37,8 +37,8 @@ std::string Pool::toText() const {
 	return (tmp.str());
 }
 
-Pool6::Pool6(Lease::Type type, const isc::dhcpMini::IOAddress& first,
-		const isc::dhcpMini::IOAddress& last) :
+Pool6::Pool6(Lease::Type type, const isc::asiolink::IOAddress& first,
+		const isc::asiolink::IOAddress& last) :
 		Pool(type, first, last) {
 
 	// check if specified address boundaries are sane
@@ -70,6 +70,24 @@ Pool6::Pool6(Lease::Type type, const isc::dhcpMini::IOAddress& first,
 		LOG(ERR) << "Invalid Pool6 type specified:"
 				<< static_cast<int>(type) << endl;
 	}
+}
+
+Pool6::Pool6(Lease::Type type, const isc::asiolink::IOAddress& prefix,
+		uint8_t prefix_len) :
+		Pool(type, prefix, isc::asiolink::IOAddress("::")) {
+
+    // check if the prefix is sane
+    if (!prefix.isV6()) {
+    	LOG(ERR) << "Invalid Pool6 address boundaries: not IPv6" << endl;
+    }
+
+    // check if the prefix length is sane
+    if (prefix_len == 0 || prefix_len > 128) {
+        LOG(ERR) << "Invalid prefix length: " << prefix_len << endl;
+    }
+
+    // Let's now calculate the last address in defined pool
+    last_ = lastAddrInPrefix(prefix, prefix_len);
 }
 
 std::string Pool6::toText() const {

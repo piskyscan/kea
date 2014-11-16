@@ -15,7 +15,7 @@
 #ifndef DHCP6_MINI_POOL_H
 #define DHCP6_MINI_POOL_H
 
-#include <io_address.h>
+#include <asiolink/io_address.h>
 #include <lease.h>
 
 #include <boost/shared_ptr.hpp>
@@ -44,20 +44,20 @@ public:
 	/// @brief Returns the first address in a pool.
 	///
 	/// @return first address in a pool
-	const isc::dhcpMini::IOAddress& getFirstAddress() const {
+	const isc::asiolink::IOAddress& getFirstAddress() const {
 		return (first_);
 	}
 
 	/// @brief Returns the last address in a pool.
 	/// @return last address in a pool
-	const isc::dhcpMini::IOAddress& getLastAddress() const {
+	const isc::asiolink::IOAddress& getLastAddress() const {
 		return (last_);
 	}
 
 	/// @brief Checks if a given address is in the range.
 	///
 	/// @return true, if the address is in pool
-	bool inRange(const isc::dhcpMini::IOAddress& addr) const;
+	bool inRange(const isc::asiolink::IOAddress& addr) const;
 
 	/// @brief Returns pool type (v4, v6 non-temporary, v6 temp, v6 prefix)
 	/// @return returns pool type
@@ -88,8 +88,8 @@ protected:
 	/// @param type type of lease that will be served from this pool
 	/// @param first first address of a range
 	/// @param last last address of a range
-	Pool(Lease::Type type, const isc::dhcpMini::IOAddress& first,
-			const isc::dhcpMini::IOAddress& last);
+	Pool(Lease::Type type, const isc::asiolink::IOAddress& first,
+			const isc::asiolink::IOAddress& last);
 
 	/// @brief returns the next unique Pool-ID
 	///
@@ -105,10 +105,10 @@ protected:
 	uint32_t id_;
 
 	/// @brief The first address in a pool
-	isc::dhcpMini::IOAddress first_;
+	isc::asiolink::IOAddress first_;
 
 	/// @brief The last address in a pool
-	isc::dhcpMini::IOAddress last_;
+	isc::asiolink::IOAddress last_;
 
 	/// @brief defines a lease type that will be served from this pool
 	Lease::Type type_;
@@ -123,13 +123,11 @@ public:
 
     /// @brief the constructor for Pool6 "min-max" style definition
     ///
-    /// @throw BadValue if PD is define (PD can be only prefix/len)
-    ///
     /// @param type type of the pool (IA or TA)
     /// @param first the first address in a pool
     /// @param last the last address in a pool
-	Pool6(Lease::Type type, const isc::dhcpMini::IOAddress& first,
-			const isc::dhcpMini::IOAddress& last);
+	Pool6(Lease::Type type, const isc::asiolink::IOAddress& first,
+			const isc::asiolink::IOAddress& last);
 
     /// @brief the constructor for Pool6 "prefix/len" style definition
     ///
@@ -143,7 +141,7 @@ public:
     /// @param type type of the pool (IA, TA or PD)
     /// @param prefix specifies prefix of the pool
     /// @param prefix_len specifies prefix length of the pool
-	Pool6(Lease::Type type, const isc::dhcpMini::IOAddress& prefix,
+	Pool6(Lease::Type type, const isc::asiolink::IOAddress& prefix,
 			uint8_t prefix_len);
 
     /// @brief returns pool type
@@ -167,6 +165,7 @@ typedef boost::shared_ptr<Pool> PoolPtr;
 
 /// @brief a container for either IPv4 or IPv6 Pools
 typedef std::vector<PoolPtr> PoolCollection;
+typedef boost::shared_ptr<PoolCollection> PoolCollectionPtr;
 
 }; // end of isc::dhcpMini namespace
 }; // end of isc namespace

@@ -13,6 +13,7 @@
 // PERFORMANCE OF THIS SOFTWARE.
 
 #include <dhcp6-mini_log.h>
+#include <cfg_mgr.h>
 
 #include <stdlib.h> // for exit codes
 #include <time.h>
@@ -35,6 +36,15 @@ Dhcp6MiniLogger::Dhcp6MiniLogger() {
 }
 
 Dhcp6MiniLogger::~Dhcp6MiniLogger() {
+	bool verbose =
+			isc::dhcpMini::CfgMgr::getInstance().isVerboseOutputEnabled();
+
+	// Do not log anything if this is a debug message
+	// and verbose output is not enabled
+	if ((log_level_ == DBG) && !verbose) {
+		return;
+	}
+
 	fprintf(stderr, "%s", log_.str().c_str());
 	fflush (stderr);
 
@@ -70,6 +80,9 @@ ostringstream& Dhcp6MiniLogger::log(const LogLevel ll) {
 		break;
 	case INF:
 		log_ << "(INF) ";
+		break;
+	case WRN:
+		log_ << "(WRN) ";
 		break;
 	case ERR:
 		log_ << "(ERR) ";
