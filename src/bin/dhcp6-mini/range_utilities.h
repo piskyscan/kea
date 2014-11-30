@@ -35,8 +35,7 @@ namespace dhcpMini {
 template <typename Iterator>
 bool
 isRangeZero(Iterator begin, Iterator end) {
-    return (std::find_if(begin, end,
-                         std::bind1st(std::not_equal_to<int>(), 0))
+    return (std::find_if(begin, end, std::bind1st(std::not_equal_to<int>(), 0))
             == end);
 }
 

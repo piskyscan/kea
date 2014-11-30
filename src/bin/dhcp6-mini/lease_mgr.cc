@@ -25,13 +25,13 @@ LeaseMgr::~LeaseMgr() {
 }
 
 LeaseMgr& LeaseMgr::getInstance() {
-	static LeaseMgr instance;
-	return instance;
+    static LeaseMgr instance;
+    return instance;
 }
 
 bool LeaseMgr::addLease(const Lease6Ptr& lease) {
     LOG(DBG)<< "Adding IPv6 lease with address "
-    		<< lease->addr_.toText() << endl;
+            << lease->addr_.toText() << endl;
 
     if (getLease6(lease->type_, lease->addr_)) {
         // there is a lease with specified address already
@@ -42,7 +42,7 @@ bool LeaseMgr::addLease(const Lease6Ptr& lease) {
 }
 
 Lease6Ptr LeaseMgr::getLease6(Lease::Type /* not used yet */,
-		const isc::asiolink::IOAddress& addr) const {
+        const isc::asiolink::IOAddress& addr) const {
     LOG(DBG)<< "Obtaining IPv6 lease for address " << addr.toText() << endl;
 
     Lease6Storage::iterator l = storage6_.find(addr);
@@ -54,10 +54,10 @@ Lease6Ptr LeaseMgr::getLease6(Lease::Type /* not used yet */,
 }
 
 Lease6Collection LeaseMgr::getLeases6(Lease::Type /* not used yet */,
-		const isc::dhcp::DUID& duid, uint32_t iaid, SubnetID subnet_id) const {
+        const isc::dhcp::DUID& duid, uint32_t iaid, SubnetID subnet_id) const {
     LOG(DBG)<< "Obtaining IPv6 leases for IAID " << iaid
-    		<< ", Subnet ID " << subnet_id
-    		<< " and DUID " << duid.toText() << endl;
+            << ", Subnet ID " << subnet_id
+            << " and DUID " << duid.toText() << endl;
 
     // We are going to use index #1 of the multi index container.
     // We define SearchIndex locally in this function because
@@ -67,7 +67,7 @@ Lease6Collection LeaseMgr::getLeases6(Lease::Type /* not used yet */,
     const SearchIndex& idx = storage6_.get<1>();
     // Try to get the lease using the DUID, IAID and Subnet ID.
     SearchIndex::const_iterator lease =
-        idx.find(boost::make_tuple(duid.getDuid(), iaid, subnet_id));
+            idx.find(boost::make_tuple(duid.getDuid(), iaid, subnet_id));
     // Lease was not found. Return empty pointer.
     if (lease == idx.end()) {
         return (Lease6Collection());
@@ -82,7 +82,7 @@ Lease6Collection LeaseMgr::getLeases6(Lease::Type /* not used yet */,
 
 void LeaseMgr::updateLease6(const Lease6Ptr& lease) {
     LOG(DBG)<< "Updating IPv6 lease for address "
-    		<< lease->addr_.toText() << endl;
+            << lease->addr_.toText() << endl;
 
     Lease6Storage::iterator lease_it = storage6_.find(lease->addr_);
     if (lease_it == storage6_.end()) {
@@ -97,7 +97,7 @@ bool LeaseMgr::deleteLease(const isc::asiolink::IOAddress& addr) {
     LOG(DBG)<< "Deleting lease for address " << addr.toText() << endl;
     if (addr.isV4()) {
         // v4 lease
-    	return (false);
+        return (false);
     } else {
         // v6 lease
         Lease6Storage::iterator l = storage6_.find(addr);

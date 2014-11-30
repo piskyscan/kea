@@ -36,12 +36,12 @@ typedef uint32_t SubnetID;
 /// This structure holds all information that is common for IPv6 leases.
 struct Lease {
 
-	/// @brief Type of lease or pool
-	typedef enum {
-		TYPE_NA = 0, /// the lease contains non-temporary IPv6 address
-		TYPE_TA = 1, /// the lease contains temporary IPv6 address
-		TYPE_PD = 2, /// the lease contains IPv6 prefix (for prefix delegation)
-	} Type;
+    /// @brief Type of lease or pool
+    typedef enum {
+        TYPE_NA = 0, /// the lease contains non-temporary IPv6 address
+        TYPE_TA = 1, /// the lease contains temporary IPv6 address
+        TYPE_PD = 2, /// the lease contains IPv6 prefix (for prefix delegation)
+    } Type;
 
     /// @brief returns text representation of a lease type
     /// @param type lease or pool type to be converted
@@ -56,8 +56,8 @@ struct Lease {
     /// @param valid_lft Lifetime of the lease
     /// @param subnet_id Subnet identification
     /// @param cltt Client last transmission time
-	Lease(const isc::asiolink::IOAddress& addr, uint32_t t1, uint32_t t2,
-			uint32_t valid_lft, SubnetID subnet_id, time_t cltt);
+    Lease(const isc::asiolink::IOAddress& addr, uint32_t t1, uint32_t t2,
+            uint32_t valid_lft, SubnetID subnet_id, time_t cltt);
 
     /// @brief Destructor
     virtual ~Lease() {}
@@ -156,16 +156,16 @@ struct Lease6 : public Lease {
     /// @param t1 A value of the T1 timer.
     /// @param t2 A value of the T2 timer.
     /// @param subnet_id A Subnet identifier.
-	Lease6(Type type, const isc::asiolink::IOAddress& addr,
-			isc::dhcp::DuidPtr duid, uint32_t iaid, uint32_t preferred,
-			uint32_t valid, uint32_t t1, uint32_t t2, SubnetID subnet_id);
+    Lease6(Type type, const isc::asiolink::IOAddress& addr,
+            isc::dhcp::DuidPtr duid, uint32_t iaid, uint32_t preferred,
+            uint32_t valid, uint32_t t1, uint32_t t2, SubnetID subnet_id);
 
     /// @brief Constructor
     ///
     /// Initialize fields that don't have a default constructor.
-	Lease6() :
-			Lease(isc::asiolink::IOAddress("::"), 0, 0, 0, 0, 0), type_(TYPE_NA) {
-	}
+    Lease6() :
+        Lease(isc::asiolink::IOAddress("::"), 0, 0, 0, 0, 0), type_(TYPE_NA) {
+    }
 
     /// @brief Returns a reference to a vector representing a DUID.
     ///

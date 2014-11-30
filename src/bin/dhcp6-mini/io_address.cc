@@ -36,79 +36,79 @@ namespace isc {
 namespace dhcpMini {
 
 IOAddress::IOAddress(const std::string& address_str) {
-	asio::error_code err;
-	asio_address_ = ip::address::from_string(address_str, err);
-	if (err) {
-		LOG(ERR)<< "Failed to convert string to address '"
-				<< address_str << "': " << err.message() << endl;
-	}
+    asio::error_code err;
+    asio_address_ = ip::address::from_string(address_str, err);
+    if (err) {
+        LOG(ERR)<< "Failed to convert string to address '"
+                << address_str << "': " << err.message() << endl;
+    }
 }
 
 IOAddress::IOAddress(const asio::ip::address& asio_address) :
-		asio_address_(asio_address) {
+        asio_address_(asio_address) {
 }
 
 IOAddress::IOAddress(uint32_t v4address) :
-		asio_address_(asio::ip::address_v4(v4address)) {
+        asio_address_(asio::ip::address_v4(v4address)) {
 }
 
 string IOAddress::toText() const {
-	return (asio_address_.to_string());
+    return (asio_address_.to_string());
 }
 
 IOAddress IOAddress::fromBytes(short family, const uint8_t* data) {
-	if (data == NULL) {
-		LOG(ERR)<< "NULL pointer received" << endl;
-	} else if ((family != AF_INET) && (family != AF_INET6)) {
-		LOG(ERR)<< "Invalid family type. Only AF_INET and AF_INET6 are supported"
-				<< endl;
-	}
+    if (data == NULL) {
+        LOG(ERR)<< "NULL pointer received" << endl;
+    } else if ((family != AF_INET) && (family != AF_INET6)) {
+        LOG(ERR)<< "Invalid family type. Only AF_INET and AF_INET6 are supported"
+                << endl;
+    }
 
-	BOOST_STATIC_ASSERT(INET6_ADDRSTRLEN >= INET_ADDRSTRLEN);
-	char addr_str[INET6_ADDRSTRLEN];
-	inet_ntop(family, data, addr_str, INET6_ADDRSTRLEN);
-	return IOAddress(string(addr_str));
+    BOOST_STATIC_ASSERT(INET6_ADDRSTRLEN >= INET_ADDRSTRLEN);
+    char addr_str[INET6_ADDRSTRLEN];
+    inet_ntop(family, data, addr_str, INET6_ADDRSTRLEN);
+    return IOAddress(string(addr_str));
 }
 
 std::vector<uint8_t> IOAddress::toBytes() const {
-	if (asio_address_.is_v4()) {
-		const asio::ip::address_v4::bytes_type bytes4 =
-				asio_address_.to_v4().to_bytes();
-		return (std::vector < uint8_t > (bytes4.begin(), bytes4.end()));
-	}
+    if (asio_address_.is_v4()) {
+        const asio::ip::address_v4::bytes_type bytes4 =
+                asio_address_.to_v4().to_bytes();
+        return (std::vector < uint8_t > (bytes4.begin(), bytes4.end()));
+    }
 
-	// Not V4 address, so must be a V6 address (else we could never construct
-	// this object).
-	const asio::ip::address_v6::bytes_type bytes6 =
-			asio_address_.to_v6().to_bytes();
-	return (std::vector < uint8_t > (bytes6.begin(), bytes6.end()));
+    // Not V4 address, so must be a V6 address (else we could never construct
+    // this object).
+    const asio::ip::address_v6::bytes_type bytes6 =
+            asio_address_.to_v6().to_bytes();
+    return (std::vector < uint8_t > (bytes6.begin(), bytes6.end()));
 }
 
 short IOAddress::getFamily() const {
-	if (asio_address_.is_v4()) {
-		return (AF_INET);
-	} else {
-		return (AF_INET6);
-	}
+    if (asio_address_.is_v4()) {
+        return (AF_INET);
+    } else {
+        return (AF_INET6);
+    }
 }
 
 bool IOAddress::isV6LinkLocal() const {
-	if (!asio_address_.is_v6()) {
-		return (false);
-	}
-	return (asio_address_.to_v6().is_link_local());
+    if (!asio_address_.is_v6()) {
+        return (false);
+    }
+    return (asio_address_.to_v6().is_link_local());
 }
 
 bool IOAddress::isV6Multicast() const {
-	if (!asio_address_.is_v6()) {
-		return (false);
-	}
-	return (asio_address_.to_v6().is_multicast());
+    if (!asio_address_.is_v6()) {
+        return (false);
+    }
+    return (asio_address_.to_v6().is_multicast());
 }
 
 std::ostream& operator<<(std::ostream& os, const IOAddress& address) {
-	os << address.toText();
-	return (os);
+    os << address.toText();
+    return (os);
 }
 
 } // namespace dhcpMini

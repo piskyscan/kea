@@ -22,63 +22,63 @@ namespace isc {
 namespace dhcpMini {
 
 Pool::Pool(Lease::Type type, const isc::asiolink::IOAddress& first,
-		const isc::asiolink::IOAddress& last) :
-		id_(getNextID()), first_(first), last_(last), type_(type) {
+        const isc::asiolink::IOAddress& last) :
+                id_(getNextID()), first_(first), last_(last), type_(type) {
 }
 
 bool Pool::inRange(const isc::asiolink::IOAddress& addr) const {
-	return (first_.smallerEqual(addr) && addr.smallerEqual(last_));
+    return (first_.smallerEqual(addr) && addr.smallerEqual(last_));
 }
 
 std::string Pool::toText() const {
-	std::stringstream tmp;
-	tmp << "type=" << Lease::typeToText(type_) << ", " << first_ << "-"
-			<< last_;
-	return (tmp.str());
+    std::stringstream tmp;
+    tmp << "type=" << Lease::typeToText(type_) << ", " << first_ << "-"
+        << last_;
+    return (tmp.str());
 }
 
 Pool6::Pool6(Lease::Type type, const isc::asiolink::IOAddress& first,
-		const isc::asiolink::IOAddress& last) :
-		Pool(type, first, last) {
+        const isc::asiolink::IOAddress& last) :
+                Pool(type, first, last) {
 
-	// check if specified address boundaries are sane
-	if (!first.isV6() || !last.isV6()) {
-		LOG(ERR) << "Invalid Pool6 address boundaries: not IPv6" << endl;
-	}
+    // check if specified address boundaries are sane
+    if (!first.isV6() || !last.isV6()) {
+        LOG(ERR)<< "Invalid Pool6 address boundaries: not IPv6" << endl;
+    }
 
-	if ((type != Lease::TYPE_NA) && (type != Lease::TYPE_TA)
-			&& (type != Lease::TYPE_PD)) {
-		LOG(ERR) << "Invalid Pool6 type: " << static_cast<int>(type)
-				<< ", must be TYPE_IA, TYPE_TA or TYPE_PD" << endl;
-	}
+    if ((type != Lease::TYPE_NA) && (type != Lease::TYPE_TA)
+            && (type != Lease::TYPE_PD)) {
+        LOG(ERR)<< "Invalid Pool6 type: " << static_cast<int>(type)
+                << ", must be TYPE_IA, TYPE_TA or TYPE_PD" << endl;
+    }
 
-	if (last < first) {
-		LOG(ERR) << "Upper boundary is smaller than lower boundary." << endl;
-		// This check is a bit strict. If we decide that it is too strict,
-		// we need to comment it and uncomment lines below.
-		// On one hand, letting the user specify 2001::f - 2001::1 is nice, but
-		// on the other hand, 2001::1 may be a typo and the user really meant
-		// 2001::1:0 (or 1 followed by some hex digit), so a at least a warning
-		// would be useful.
+    if (last < first) {
+        LOG(ERR)<< "Upper boundary is smaller than lower boundary." << endl;
+        // This check is a bit strict. If we decide that it is too strict,
+        // we need to comment it and uncomment lines below.
+        // On one hand, letting the user specify 2001::f - 2001::1 is nice, but
+        // on the other hand, 2001::1 may be a typo and the user really meant
+        // 2001::1:0 (or 1 followed by some hex digit), so a at least a warning
+        // would be useful.
 
-		// first_  = last;
-		// last_ = first;
-	}
+        // first_  = last;
+        // last_ = first;
+    }
 
-	// TYPE_TA and TYPE_PD are not supported currently
-	if (type != Lease::TYPE_NA) {
-		LOG(ERR) << "Invalid Pool6 type specified:"
-				<< static_cast<int>(type) << endl;
-	}
+    // TYPE_TA and TYPE_PD are not supported currently
+    if (type != Lease::TYPE_NA) {
+        LOG(ERR)<< "Invalid Pool6 type specified:"
+                << static_cast<int>(type) << endl;
+    }
 }
 
 Pool6::Pool6(Lease::Type type, const isc::asiolink::IOAddress& prefix,
-		uint8_t prefix_len) :
-		Pool(type, prefix, isc::asiolink::IOAddress("::")) {
+        uint8_t prefix_len) :
+                Pool(type, prefix, isc::asiolink::IOAddress("::")) {
 
     // check if the prefix is sane
     if (!prefix.isV6()) {
-    	LOG(ERR) << "Invalid Pool6 address boundaries: not IPv6" << endl;
+        LOG(ERR) << "Invalid Pool6 address boundaries: not IPv6" << endl;
     }
 
     // check if the prefix length is sane
@@ -91,10 +91,10 @@ Pool6::Pool6(Lease::Type type, const isc::asiolink::IOAddress& prefix,
 }
 
 std::string Pool6::toText() const {
-	std::stringstream tmp;
-	tmp << "type=" << Lease::typeToText(type_) << ", " << first_
-			<< "-" << last_;
-	return (tmp.str());
+    std::stringstream tmp;
+    tmp << "type=" << Lease::typeToText(type_) << ", " << first_
+        << "-" << last_;
+    return (tmp.str());
 }
 
 }; // end of isc::dhcpMini namespace

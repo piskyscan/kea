@@ -26,41 +26,41 @@ namespace {
 const char* const DHCP6_MINI_NAME = "b10-dhcp6-mini";
 
 void usage() {
-	cerr << "Usage: " << DHCP6_MINI_NAME << " [-h] [-v] [-p number]" << endl;
-	cerr << "  -h: print this message" << endl;
-	cerr << "  -v: verbose output" << endl;
-	cerr << "  -p number: specify non-standard port number 1-65535 "
-			<< "(useful for testing only)" << endl;
-	exit(EXIT_FAILURE);
+    cerr << "Usage: " << DHCP6_MINI_NAME << " [-h] [-v] [-p number]" << endl;
+    cerr << "  -h: print this message" << endl;
+    cerr << "  -v: verbose output" << endl;
+    cerr << "  -p number: specify non-standard port number 1-65535 "
+            << "(useful for testing only)" << endl;
+    exit(EXIT_FAILURE);
 }
 } // end of anonymous namespace
 
 int main(int argc, char* argv[]) {
     int ch;
     int port_number = DHCP6_SERVER_PORT; // The default. Any other values are
-                                         // useful for testing only.
+    // useful for testing only.
     bool verbose_mode = false; // Should server be verbose?
 
-	while ((ch = getopt(argc, argv, "hvp:")) != -1) {
-		switch (ch) {
-		case 'v':
-			verbose_mode = true;
-			break;
+    while ((ch = getopt(argc, argv, "hvp:")) != -1) {
+        switch (ch) {
+        case 'v':
+            verbose_mode = true;
+            break;
 
-		case 'p':
-			port_number = strtol(optarg, NULL, 10);
-			if (port_number <= 0 || port_number > 65535) {
-				cerr << "Failed to parse port number: [" << optarg
-						<< "], 1-65535 allowed." << endl;
-				usage();
-			}
-			break;
+        case 'p':
+            port_number = strtol(optarg, NULL, 10);
+            if (port_number <= 0 || port_number > 65535) {
+                cerr << "Failed to parse port number: [" << optarg
+                        << "], 1-65535 allowed." << endl;
+                usage();
+            }
+            break;
 
-		case 'h':
-		default:
-			usage();
-		}
-	}
+        case 'h':
+        default:
+            usage();
+        }
+    }
 
     // Check for extraneous parameters.
     if (argc > optind) {
@@ -72,8 +72,8 @@ int main(int argc, char* argv[]) {
 
     // Check if verbose output shall be enabled
     if (verbose_mode) {
-    	LOG(INF) << "Verbose output enabled" << endl;
-    	isc::dhcpMini::CfgMgr::getInstance().enableVerboseOutput();
+        LOG(INF) << "Verbose output enabled" << endl;
+        isc::dhcpMini::CfgMgr::getInstance().enableVerboseOutput();
     }
 
     // Parse configuration file and create subnet and pools effectively

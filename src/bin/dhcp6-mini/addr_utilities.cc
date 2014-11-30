@@ -117,13 +117,13 @@ namespace isc {
 namespace dhcpMini {
 
 isc::asiolink::IOAddress firstAddrInPrefix(
-		const isc::asiolink::IOAddress& prefix, uint8_t len) {
-	return (firstAddrInPrefix6(prefix, len));
+        const isc::asiolink::IOAddress& prefix, uint8_t len) {
+    return (firstAddrInPrefix6(prefix, len));
 }
 
 isc::asiolink::IOAddress lastAddrInPrefix(
-		const isc::asiolink::IOAddress& prefix, uint8_t len) {
-	return (lastAddrInPrefix6(prefix, len));
+        const isc::asiolink::IOAddress& prefix, uint8_t len) {
+    return (lastAddrInPrefix6(prefix, len));
 }
 
 };

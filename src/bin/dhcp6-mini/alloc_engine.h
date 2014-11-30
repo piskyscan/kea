@@ -65,9 +65,9 @@ protected:
         /// @param hint client's hint
         ///
         /// @return the next address
-		virtual isc::asiolink::IOAddress pickAddress(const Subnet6Ptr& subnet,
-				const isc::dhcp::DuidPtr& duid,
-				const isc::asiolink::IOAddress& hint) = 0;
+        virtual isc::asiolink::IOAddress pickAddress(const Subnet6Ptr& subnet,
+                const isc::dhcp::DuidPtr& duid,
+                const isc::asiolink::IOAddress& hint) = 0;
 
         /// @brief Default constructor.
         ///
@@ -110,9 +110,9 @@ protected:
         /// @param duid Client's DUID (ignored)
         /// @param hint client's hint (ignored)
         /// @return the next address
-		virtual isc::asiolink::IOAddress pickAddress(const Subnet6Ptr& subnet,
-				const isc::dhcp::DuidPtr& duid,
-				const isc::asiolink::IOAddress& hint);
+        virtual isc::asiolink::IOAddress pickAddress(const Subnet6Ptr& subnet,
+                const isc::dhcp::DuidPtr& duid,
+                const isc::asiolink::IOAddress& hint);
     protected:
 
         /// @brief Returns an address increased by one
@@ -122,8 +122,8 @@ protected:
         ///
         /// @param addr address to be increased
         /// @return address increased by one
-		static isc::asiolink::IOAddress increaseAddress(
-				const isc::asiolink::IOAddress& addr);
+        static isc::asiolink::IOAddress increaseAddress(
+                const isc::asiolink::IOAddress& addr);
     };
 
 public:
@@ -159,10 +159,10 @@ public:
     ///        collection as old leases.
     ///
     /// @return Allocated IPv6 leases (may be empty if allocation failed)
-	Lease6Collection allocateLeases6(const Subnet6Ptr& subnet,
-			const isc::dhcp::DuidPtr& duid, const uint32_t iaid,
-			const isc::asiolink::IOAddress& hint, Lease::Type type,
-			bool fake_allocation, Lease6Collection& old_leases);
+    Lease6Collection allocateLeases6(const Subnet6Ptr& subnet,
+            const isc::dhcp::DuidPtr& duid, const uint32_t iaid,
+            const isc::asiolink::IOAddress& hint, Lease::Type type,
+            bool fake_allocation, Lease6Collection& old_leases);
 
     /// @brief returns allocator for a given pool type
     /// @param type type of pool (V4, IA, TA or PD)
@@ -192,10 +192,10 @@ private:
     ///        an address for SOLICIT that is not really allocated (true)
     /// @return allocated lease (or NULL in the unlikely case of the lease just
     ///         became unavailable)
-	Lease6Ptr createLease6(const Subnet6Ptr& subnet,
-			const isc::dhcp::DuidPtr& duid, const uint32_t iaid,
-			const isc::asiolink::IOAddress& addr, const Lease::Type type,
-			bool fake_allocation = false);
+    Lease6Ptr createLease6(const Subnet6Ptr& subnet,
+            const isc::dhcp::DuidPtr& duid, const uint32_t iaid,
+            const isc::asiolink::IOAddress& addr, const Lease::Type type,
+            bool fake_allocation = false);
 
     /// @brief Reuses expired IPv6 lease
     ///
@@ -210,9 +210,9 @@ private:
     /// @param fake_allocation is this real i.e. REQUEST (false) or just picking
     ///        an address for SOLICIT that is not really allocated (true)
     /// @return refreshed lease
-	Lease6Ptr reuseExpiredLease(Lease6Ptr& expired, const Subnet6Ptr& subnet,
-			const isc::dhcp::DuidPtr& duid, const uint32_t iaid,
-			bool fake_allocation = false);
+    Lease6Ptr reuseExpiredLease(Lease6Ptr& expired, const Subnet6Ptr& subnet,
+            const isc::dhcp::DuidPtr& duid, const uint32_t iaid,
+            bool fake_allocation = false);
 
     /// @brief a pointer to currently used allocator
     ///

@@ -30,88 +30,88 @@ namespace dhcpMini {
 /// That is a basic component of a configuration.
 class Pool {
 public:
-	/// @note:
-	/// PoolType enum was removed. Please use Lease::Type instead
+    /// @note:
+    /// PoolType enum was removed. Please use Lease::Type instead
 
-	/// @brief returns Pool-id
-	///
-	/// @return pool-id value
-	/// Pool-id is an unique value that can be used to identify a pool.
-	uint32_t getId() const {
-		return (id_);
-	}
+    /// @brief returns Pool-id
+    ///
+    /// @return pool-id value
+    /// Pool-id is an unique value that can be used to identify a pool.
+    uint32_t getId() const {
+        return (id_);
+    }
 
-	/// @brief Returns the first address in a pool.
-	///
-	/// @return first address in a pool
-	const isc::asiolink::IOAddress& getFirstAddress() const {
-		return (first_);
-	}
+    /// @brief Returns the first address in a pool.
+    ///
+    /// @return first address in a pool
+    const isc::asiolink::IOAddress& getFirstAddress() const {
+        return (first_);
+    }
 
-	/// @brief Returns the last address in a pool.
-	/// @return last address in a pool
-	const isc::asiolink::IOAddress& getLastAddress() const {
-		return (last_);
-	}
+    /// @brief Returns the last address in a pool.
+    /// @return last address in a pool
+    const isc::asiolink::IOAddress& getLastAddress() const {
+        return (last_);
+    }
 
-	/// @brief Checks if a given address is in the range.
-	///
-	/// @return true, if the address is in pool
-	bool inRange(const isc::asiolink::IOAddress& addr) const;
+    /// @brief Checks if a given address is in the range.
+    ///
+    /// @return true, if the address is in pool
+    bool inRange(const isc::asiolink::IOAddress& addr) const;
 
-	/// @brief Returns pool type (v4, v6 non-temporary, v6 temp, v6 prefix)
-	/// @return returns pool type
-	Lease::Type getType() const {
-		return (type_);
-	}
+    /// @brief Returns pool type (v4, v6 non-temporary, v6 temp, v6 prefix)
+    /// @return returns pool type
+    Lease::Type getType() const {
+        return (type_);
+    }
 
-	/// @brief returns textual representation of the pool
-	///
-	/// @return textual representation
-	virtual std::string toText() const;
+    /// @brief returns textual representation of the pool
+    ///
+    /// @return textual representation
+    virtual std::string toText() const;
 
-	/// @brief virtual destructor
-	///
-	/// We need Pool to be a polymorphic class, so we could dynamic cast
-	/// from PoolPtr to Pool6Ptr if we need to. A class becomes polymorphic,
-	/// when there is at least one virtual method.
-	virtual ~Pool() {
-	}
+    /// @brief virtual destructor
+    ///
+    /// We need Pool to be a polymorphic class, so we could dynamic cast
+    /// from PoolPtr to Pool6Ptr if we need to. A class becomes polymorphic,
+    /// when there is at least one virtual method.
+    virtual ~Pool() {
+    }
 
 protected:
-	/// @brief protected constructor
-	///
-	/// This constructor is protected to prevent anyone from instantiating
-	/// Pool class directly. Instances of Pool4 and Pool6 should be created
-	/// instead.
-	///
-	/// @param type type of lease that will be served from this pool
-	/// @param first first address of a range
-	/// @param last last address of a range
-	Pool(Lease::Type type, const isc::asiolink::IOAddress& first,
-			const isc::asiolink::IOAddress& last);
+    /// @brief protected constructor
+    ///
+    /// This constructor is protected to prevent anyone from instantiating
+    /// Pool class directly. Instances of Pool4 and Pool6 should be created
+    /// instead.
+    ///
+    /// @param type type of lease that will be served from this pool
+    /// @param first first address of a range
+    /// @param last last address of a range
+    Pool(Lease::Type type, const isc::asiolink::IOAddress& first,
+            const isc::asiolink::IOAddress& last);
 
-	/// @brief returns the next unique Pool-ID
-	///
-	/// @return the next unique Pool-ID
-	static uint32_t getNextID() {
-		static uint32_t id = 0;
-		return (id++);
-	}
+    /// @brief returns the next unique Pool-ID
+    ///
+    /// @return the next unique Pool-ID
+    static uint32_t getNextID() {
+        static uint32_t id = 0;
+        return (id++);
+    }
 
-	/// @brief pool-id
-	///
-	/// This ID is used to identify this specific pool.
-	uint32_t id_;
+    /// @brief pool-id
+    ///
+    /// This ID is used to identify this specific pool.
+    uint32_t id_;
 
-	/// @brief The first address in a pool
-	isc::asiolink::IOAddress first_;
+    /// @brief The first address in a pool
+    isc::asiolink::IOAddress first_;
 
-	/// @brief The last address in a pool
-	isc::asiolink::IOAddress last_;
+    /// @brief The last address in a pool
+    isc::asiolink::IOAddress last_;
 
-	/// @brief defines a lease type that will be served from this pool
-	Lease::Type type_;
+    /// @brief defines a lease type that will be served from this pool
+    Lease::Type type_;
 };
 
 /// @brief Pool information for IPv6 addresses and prefixes
@@ -126,8 +126,8 @@ public:
     /// @param type type of the pool (IA or TA)
     /// @param first the first address in a pool
     /// @param last the last address in a pool
-	Pool6(Lease::Type type, const isc::asiolink::IOAddress& first,
-			const isc::asiolink::IOAddress& last);
+    Pool6(Lease::Type type, const isc::asiolink::IOAddress& first,
+            const isc::asiolink::IOAddress& last);
 
     /// @brief the constructor for Pool6 "prefix/len" style definition
     ///
@@ -141,8 +141,8 @@ public:
     /// @param type type of the pool (IA, TA or PD)
     /// @param prefix specifies prefix of the pool
     /// @param prefix_len specifies prefix length of the pool
-	Pool6(Lease::Type type, const isc::asiolink::IOAddress& prefix,
-			uint8_t prefix_len);
+    Pool6(Lease::Type type, const isc::asiolink::IOAddress& prefix,
+            uint8_t prefix_len);
 
     /// @brief returns pool type
     ///

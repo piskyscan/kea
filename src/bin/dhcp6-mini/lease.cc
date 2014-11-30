@@ -23,51 +23,51 @@ namespace isc {
 namespace dhcpMini {
 
 Lease::Lease(const isc::asiolink::IOAddress& addr, uint32_t t1, uint32_t t2,
-		uint32_t valid_lft, SubnetID subnet_id, time_t cltt) :
-		addr_(addr), t1_(t1), t2_(t2), valid_lft_(valid_lft), cltt_(cltt),
-		subnet_id_(subnet_id), fixed_(false) {
+        uint32_t valid_lft, SubnetID subnet_id, time_t cltt) :
+                addr_(addr), t1_(t1), t2_(t2), valid_lft_(valid_lft),
+                cltt_(cltt), subnet_id_(subnet_id), fixed_(false) {
 }
 
 std::string Lease::typeToText(Lease::Type type) {
-   switch (type) {
-   case Lease::TYPE_NA:
-       return string("IA_NA");
-   case Lease::TYPE_TA:
-       return string("IA_TA");
-   case Lease::TYPE_PD:
-       return string("IA_PD");
-   default:
-       stringstream tmp;
-       tmp << "unknown (" << type << ")";
-       return (tmp.str());
-   }
+    switch (type) {
+    case Lease::TYPE_NA:
+        return string("IA_NA");
+    case Lease::TYPE_TA:
+        return string("IA_TA");
+    case Lease::TYPE_PD:
+        return string("IA_PD");
+    default:
+        stringstream tmp;
+        tmp << "unknown (" << type << ")";
+        return (tmp.str());
+    }
 }
 
 bool Lease::expired() const {
-	// Let's use int64 to avoid problems with negative/large uint32 values
-	int64_t expire_time = cltt_ + valid_lft_;
-	return (expire_time < time(NULL));
+    // Let's use int64 to avoid problems with negative/large uint32 values
+    int64_t expire_time = cltt_ + valid_lft_;
+    return (expire_time < time(NULL));
 }
 
 Lease6::Lease6(Type type, const isc::asiolink::IOAddress& addr,
-		isc::dhcp::DuidPtr duid, uint32_t iaid, uint32_t preferred,
-		uint32_t valid, uint32_t t1, uint32_t t2, SubnetID subnet_id) :
-		Lease(addr, t1, t2, valid, subnet_id, 0/*cltt*/), type_(type),
-		iaid_(iaid), duid_(duid), preferred_lft_(preferred) {
-	if (!duid) {
-		LOG(ERR)<< "DUID must be specified for a lease" << endl;
-	}
+        isc::dhcp::DuidPtr duid, uint32_t iaid, uint32_t preferred,
+        uint32_t valid, uint32_t t1, uint32_t t2, SubnetID subnet_id) :
+                Lease(addr, t1, t2, valid, subnet_id, 0/*cltt*/), type_(type),
+                    iaid_(iaid), duid_(duid), preferred_lft_(preferred) {
+    if (!duid) {
+        LOG(ERR)<< "DUID must be specified for a lease" << endl;
+    }
 
-	cltt_ = time(NULL);
+    cltt_ = time(NULL);
 }
 
 const std::vector<uint8_t>& Lease6::getDuidVector() const {
-	if (!duid_) {
-		static std::vector<uint8_t> empty_vec;
-		return (empty_vec);
-	}
+    if (!duid_) {
+        static std::vector<uint8_t> empty_vec;
+        return (empty_vec);
+    }
 
-	return (duid_->getDuid());
+    return (duid_->getDuid());
 }
 
 std::string Lease6::toText() const {
@@ -86,21 +86,21 @@ std::string Lease6::toText() const {
 }
 
 bool Lease6::matches(const Lease6& other) const {
-	return (addr_ == other.addr_
-			&& type_ == other.type_
-			&& iaid_ == other.iaid_
-			&& *duid_ == *other.duid_);
+    return (addr_ == other.addr_
+            && type_ == other.type_
+            && iaid_ == other.iaid_
+            && *duid_ == *other.duid_);
 }
 
 bool Lease6::operator==(const Lease6& other) const {
-	return (matches(other)
-			&& preferred_lft_ == other.preferred_lft_
-			&& valid_lft_ == other.valid_lft_
-			&& t1_ == other.t1_
-			&& t2_ == other.t2_
-			&& cltt_ == other.cltt_
-			&& subnet_id_ == other.subnet_id_
-			&& fixed_ == other.fixed_);
+    return (matches(other)
+            && preferred_lft_ == other.preferred_lft_
+            && valid_lft_ == other.valid_lft_
+            && t1_ == other.t1_
+            && t2_ == other.t2_
+            && cltt_ == other.cltt_
+            && subnet_id_ == other.subnet_id_
+            && fixed_ == other.fixed_);
 }
 
 }; // end of isc::dhcpMini namespace

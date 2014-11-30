@@ -33,15 +33,15 @@ namespace dhcpMini {
 ///
 /// \return Value of 16-bit integer
 inline uint16_t readUint16(const void* buffer, size_t length) {
-	if (length < sizeof(uint16_t)) {
-		LOG(ERR) <<  "Length (" << length << ") of buffer is insufficient "
-				<< "to read a uint16_t" << endl;
-	}
+    if (length < sizeof(uint16_t)) {
+        LOG(ERR) <<  "Length (" << length << ") of buffer is insufficient "
+                << "to read a uint16_t" << endl;
+    }
 
-	const uint8_t* byte_buffer = static_cast<const uint8_t*>(buffer);
+    const uint8_t* byte_buffer = static_cast<const uint8_t*>(buffer);
 
-	uint16_t result = (static_cast<uint16_t>(byte_buffer[0])) << 8;
-	result |= static_cast<uint16_t>(byte_buffer[1]);
+    uint16_t result = (static_cast<uint16_t>(byte_buffer[0])) << 8;
+    result |= static_cast<uint16_t>(byte_buffer[1]);
 
     return (result);
 }
@@ -60,7 +60,7 @@ inline uint16_t readUint16(const void* buffer, size_t length) {
 inline uint8_t* writeUint16(uint16_t value, void* buffer, size_t length) {
     if (length < sizeof(uint16_t)) {
         LOG(ERR) <<  "Length (" << length << ") of buffer is insufficient "
-        		<< "to write a uint16_t" << endl;
+                << "to write a uint16_t" << endl;
     }
 
     uint8_t* byte_buffer = static_cast<uint8_t*>(buffer);
@@ -81,8 +81,8 @@ inline uint8_t* writeUint16(uint16_t value, void* buffer, size_t length) {
 /// \return pointer to the next byte after stored value
 inline uint8_t* writeUint32(uint32_t value, uint8_t* buffer, size_t length) {
     if (length < sizeof(uint32_t)) {
-		LOG(ERR) << "Length (" << length << ") of buffer is insufficient "
-				<< "to write a uint32_t" << endl;
+        LOG(ERR) << "Length (" << length << ") of buffer is insufficient "
+                << "to write a uint32_t" << endl;
     }
 
     uint8_t* byte_buffer = static_cast<uint8_t*>(buffer);

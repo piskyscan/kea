@@ -36,7 +36,7 @@ namespace dhcpMini {
 ///
 /// @return first address from a prefix
 isc::asiolink::IOAddress firstAddrInPrefix(
-		const isc::asiolink::IOAddress& prefix, uint8_t len);
+        const isc::asiolink::IOAddress& prefix, uint8_t len);
 
 /// @brief returns a last address in a given prefix
 ///
@@ -50,7 +50,7 @@ isc::asiolink::IOAddress firstAddrInPrefix(
 ///
 /// @return first address from a prefix
 isc::asiolink::IOAddress lastAddrInPrefix(
-		const isc::asiolink::IOAddress& prefix, uint8_t len);
+        const isc::asiolink::IOAddress& prefix, uint8_t len);
 
 };
 };

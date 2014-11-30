@@ -37,36 +37,36 @@ public:
     ///
     /// Typically: uint32_t to Triplet assignment. It is very convenient
     /// to be able to simply write Triplet<uint32_t> x = 7;
-	Triplet<T>& operator=(T other) {
-		min_ = other;
-		default_ = other;
-		max_ = other;
-		return *this;
-	}
+    Triplet<T>& operator=(T other) {
+        min_ = other;
+        default_ = other;
+        max_ = other;
+        return *this;
+    }
 
     /// @brief triplet to base type conversion
     ///
     /// Typically: Triplet to uint32_t assignment. It is very convenient
     /// to be able to simply write uint32_t z = x; (where x is a Triplet)
-	operator T() const {
-		return (default_);
-	}
+    operator T() const {
+        return (default_);
+    }
 
     /// @brief sets a fixed value
     ///
     /// This constructor assigns a fixed (i.e. no range, just a single value)
     /// value.
-	Triplet(T value) :
-			min_(value), default_(value), max_(value) {
-	}
+    Triplet(T value) :
+        min_(value), default_(value), max_(value) {
+    }
 
     /// @brief sets the default value and thresholds
-	Triplet(T min, T def, T max) :
-			min_(min), default_(def), max_(max) {
-		if ((min_ > def) || (def > max_)) {
-			LOG(ERR) << "Invalid triplet values" << endl;
-		}
-	}
+    Triplet(T min, T def, T max) :
+        min_(min), default_(def), max_(max) {
+        if ((min_ > def) || (def > max_)) {
+            LOG(ERR) << "Invalid triplet values" << endl;
+        }
+    }
 
     /// @brief returns a minimum allowed value
     T getMin() const { return min_;}
@@ -79,17 +79,17 @@ public:
     /// DHCP protocol treats any values sent by a client as hints.
     /// This is a method that implements that. We can assign any value
     /// from configured range that client asks.
-	T get(T hint) const {
-		if (hint <= min_) {
-			return (min_);
-		}
+    T get(T hint) const {
+        if (hint <= min_) {
+            return (min_);
+        }
 
-		if (hint >= max_) {
-			return (max_);
-		}
+        if (hint >= max_) {
+            return (max_);
+        }
 
-		return (hint);
-	}
+        return (hint);
+    }
 
     /// @brief returns a maximum allowed value
     T getMax() const { return max_; }

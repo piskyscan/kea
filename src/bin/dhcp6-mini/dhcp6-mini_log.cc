@@ -36,64 +36,64 @@ Dhcp6MiniLogger::Dhcp6MiniLogger() {
 }
 
 Dhcp6MiniLogger::~Dhcp6MiniLogger() {
-	bool verbose =
-			isc::dhcpMini::CfgMgr::getInstance().isVerboseOutputEnabled();
+    bool verbose =
+            isc::dhcpMini::CfgMgr::getInstance().isVerboseOutputEnabled();
 
-	// Do not log anything if this is a debug message
-	// and verbose output is not enabled
-	if ((log_level_ == DBG) && !verbose) {
-		return;
-	}
+    // Do not log anything if this is a debug message
+    // and verbose output is not enabled
+    if ((log_level_ == DBG) && !verbose) {
+        return;
+    }
 
-	fprintf(stderr, "%s", log_.str().c_str());
-	fflush (stderr);
+    fprintf(stderr, "%s", log_.str().c_str());
+    fflush (stderr);
 
-	if(log_level_ == ERR) {
-		exit(EXIT_FAILURE);
-	}
+    if(log_level_ == ERR) {
+        exit(EXIT_FAILURE);
+    }
 }
 
 void Dhcp6MiniLogger::logTime() {
-	time_t rawtime;
-	struct tm * timeinfo;
+    time_t rawtime;
+    struct tm * timeinfo;
 
-	time(&rawtime);
-	timeinfo = localtime(&rawtime);
-	string timestamp = string(asctime(timeinfo));
-	// Need to remove trailing newline character that is being added
-	// by asctime
-	timestamp.erase(timestamp.length() - 1);
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    string timestamp = string(asctime(timeinfo));
+    // Need to remove trailing newline character that is being added
+    // by asctime
+    timestamp.erase(timestamp.length() - 1);
 
-	log_ << "[" << timestamp << "] ";
+    log_ << "[" << timestamp << "] ";
 }
 
 ostringstream& Dhcp6MiniLogger::log(const LogLevel ll) {
-	log_level_ = ll;
-	log_ << DHCP6_MINI_LOG_ID;
+    log_level_ = ll;
+    log_ << DHCP6_MINI_LOG_ID;
 
-	switch (ll) {
-	case DBG:
-		log_ << "(DBG) ";
-		break;
-	case CFG:
-		log_ << "(CFG) ";
-		break;
-	case INF:
-		log_ << "(INF) ";
-		break;
-	case WRN:
-		log_ << "(WRN) ";
-		break;
-	case ERR:
-		log_ << "(ERR) ";
-		break;
-	default:
-		break;
-	}
+    switch (ll) {
+    case DBG:
+        log_ << "(DBG) ";
+        break;
+    case CFG:
+        log_ << "(CFG) ";
+        break;
+    case INF:
+        log_ << "(INF) ";
+        break;
+    case WRN:
+        log_ << "(WRN) ";
+        break;
+    case ERR:
+        log_ << "(ERR) ";
+        break;
+    default:
+        break;
+    }
 
-	logTime();
+    logTime();
 
-	return log_;
+    return log_;
 }
 
 } // namespace dhcpMini

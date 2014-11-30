@@ -155,9 +155,9 @@ public:
     /// \param other Address to compare against.
     ///
     /// \return false if addresses are equal, true if not.
-	bool nequals(const IOAddress& other) const {
-		return (!equals(other));
-	}
+    bool nequals(const IOAddress& other) const {
+        return (!equals(other));
+    }
 
     /// \brief Checks if one address is smaller than the other
     ///
@@ -169,30 +169,30 @@ public:
     /// Operations within one protocol family are obvious.
     /// Comparisons between v4 and v6 will allways return v4
     /// being smaller. This follows boost::asio::ip implementation
-	bool lessThan(const IOAddress& other) const {
-		if (this->getFamily() == other.getFamily()) {
-			if (this->getFamily() == AF_INET6) {
-				return (this->asio_address_.to_v6()
-						< other.asio_address_.to_v6());
-			} else {
-				return (this->asio_address_.to_v4()
-						< other.asio_address_.to_v4());
-			}
-		}
-		return (this->getFamily() < other.getFamily());
-	}
+    bool lessThan(const IOAddress& other) const {
+        if (this->getFamily() == other.getFamily()) {
+            if (this->getFamily() == AF_INET6) {
+                return (this->asio_address_.to_v6()
+                        < other.asio_address_.to_v6());
+            } else {
+                return (this->asio_address_.to_v4()
+                        < other.asio_address_.to_v4());
+            }
+        }
+        return (this->getFamily() < other.getFamily());
+    }
 
     /// \brief Checks if one address is smaller or equal than the other
     ///
     /// \param other Address to compare against.
     ///
     /// \return true if this address is smaller than the other address.
-	bool smallerEqual(const IOAddress& other) const {
-		if (equals(other)) {
-			return (true);
-		}
-		return (lessThan(other));
-	}
+    bool smallerEqual(const IOAddress& other) const {
+        if (equals(other)) {
+            return (true);
+        }
+        return (lessThan(other));
+    }
 
     /// \brief Checks if one address is smaller than the other
     ///

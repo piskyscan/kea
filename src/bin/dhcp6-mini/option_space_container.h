@@ -61,7 +61,7 @@ public:
     /// @return pointer to the container holding items.
     ItemsContainerPtr getItems(const Selector& option_space) const {
         const typename OptionSpaceMap::const_iterator& items =
-            option_space_map_.find(option_space);
+                option_space_map_.find(option_space);
         if (items == option_space_map_.end()) {
             return (ItemsContainerPtr(new ContainerType()));
         }
@@ -78,8 +78,8 @@ public:
     std::list<Selector> getOptionSpaceNames() {
         std::list<Selector> names;
         for (typename OptionSpaceMap::const_iterator space =
-                 option_space_map_.begin();
-             space != option_space_map_.end(); ++space) {
+                option_space_map_.begin();
+                space != option_space_map_.end(); ++space) {
             names.push_back(space->first);
         }
         return (names);

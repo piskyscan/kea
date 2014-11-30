@@ -28,36 +28,36 @@ AllocEngine::IterativeAllocator::IterativeAllocator(Lease::Type lease_type)
 }
 
 isc::asiolink::IOAddress AllocEngine::IterativeAllocator::increaseAddress(
-		const isc::asiolink::IOAddress& addr) {
-	// Get a buffer holding an address.
-	const std::vector<uint8_t>& vec = addr.toBytes();
-	// Get the address length.
-	const int len = vec.size();
+        const isc::asiolink::IOAddress& addr) {
+    // Get a buffer holding an address.
+    const std::vector<uint8_t>& vec = addr.toBytes();
+    // Get the address length.
+    const int len = vec.size();
 
-	uint8_t packed[isc::asiolink::V6ADDRESS_LEN];
+    uint8_t packed[isc::asiolink::V6ADDRESS_LEN];
 
-	// Copy the address. It can be either V4 or V6.
-	std::memcpy(packed, &vec[0], len);
+    // Copy the address. It can be either V4 or V6.
+    std::memcpy(packed, &vec[0], len);
 
-	// Start increasing the least significant byte
-	for (int i = len - 1; i >= 0; --i) {
-		++packed[i];
-		// if we haven't overflowed (0xff -> 0x0), than we are done
-		if (packed[i] != 0) {
-			break;
-		}
-	}
+    // Start increasing the least significant byte
+    for (int i = len - 1; i >= 0; --i) {
+        ++packed[i];
+        // if we haven't overflowed (0xff -> 0x0), than we are done
+        if (packed[i] != 0) {
+            break;
+        }
+    }
 
-	return (isc::asiolink::IOAddress::fromBytes(addr.getFamily(), packed));
+    return (isc::asiolink::IOAddress::fromBytes(addr.getFamily(), packed));
 }
 
 isc::asiolink::IOAddress AllocEngine::IterativeAllocator::pickAddress(
-		const Subnet6Ptr& subnet, const isc::dhcp::DuidPtr&,
-		const isc::asiolink::IOAddress&) {
+        const Subnet6Ptr& subnet, const isc::dhcp::DuidPtr&,
+        const isc::asiolink::IOAddress&) {
     // Let's get the last allocated address. It is usually set correctly,
     // but there are times when it won't be (like after removing a pool or
     // perhaps restarting the server).
-	isc::asiolink::IOAddress last = subnet->getLastAllocated(pool_type_);
+    isc::asiolink::IOAddress last = subnet->getLastAllocated(pool_type_);
 
     const PoolCollection& pools = subnet->getPools(pool_type_);
 
@@ -79,7 +79,7 @@ isc::asiolink::IOAddress AllocEngine::IterativeAllocator::pickAddress(
     // - perhaps allocation algorithm was changed
     if (it == pools.end()) {
         // ok to access first element directly. We checked that pools is non-empty
-    	isc::asiolink::IOAddress next = pools[0]->getFirstAddress();
+        isc::asiolink::IOAddress next = pools[0]->getFirstAddress();
         subnet->setLastAllocated(pool_type_, next);
         return (next);
     }
@@ -118,160 +118,160 @@ AllocEngine::AllocEngine(unsigned int attempts)
     Lease::Type basic_type = Lease::TYPE_NA;
 
     // Initalize normal address allocators
-	allocators_[basic_type] = AllocEngine::AllocatorPtr(
-			new IterativeAllocator(basic_type));
+    allocators_[basic_type] = AllocEngine::AllocatorPtr(
+            new IterativeAllocator(basic_type));
 }
 
 Lease6Collection AllocEngine::allocateLeases6(const Subnet6Ptr& subnet,
-		const isc::dhcp::DuidPtr& duid, const uint32_t iaid,
-		const isc::asiolink::IOAddress& hint, Lease::Type type,
-		bool fake_allocation, Lease6Collection& old_leases) {
+        const isc::dhcp::DuidPtr& duid, const uint32_t iaid,
+        const isc::asiolink::IOAddress& hint, Lease::Type type,
+        bool fake_allocation, Lease6Collection& old_leases) {
 
-	AllocEngine::AllocatorPtr allocator = getAllocator(type);
+    AllocEngine::AllocatorPtr allocator = getAllocator(type);
 
-	if (!allocator) {
-		LOG(ERR)<< "No allocator specified for "
-				<< Lease6::typeToText(type) << endl;
-	}
+    if (!allocator) {
+        LOG(ERR)<< "No allocator specified for "
+                << Lease6::typeToText(type) << endl;
+    }
 
-	if (!subnet) {
-		LOG(ERR)<< "Subnet is required for allocation" << endl;
-	}
+    if (!subnet) {
+        LOG(ERR)<< "Subnet is required for allocation" << endl;
+    }
 
-	if (!duid) {
-		LOG(ERR)<< "DUID is mandatory for allocation" << endl;
-	}
+    if (!duid) {
+        LOG(ERR)<< "DUID is mandatory for allocation" << endl;
+    }
 
-	// Check if there's existing lease for that subnet/duid/iaid
-	// combination.
-	Lease6Collection existing = LeaseMgr::getInstance().getLeases6(type, *duid,
-			iaid, subnet->getID());
+    // Check if there's existing lease for that subnet/duid/iaid
+    // combination.
+    Lease6Collection existing = LeaseMgr::getInstance().getLeases6(type, *duid,
+            iaid, subnet->getID());
 
-	// There is at least one lease for this client. We will return these
-	// leases for the client.
-	if (!existing.empty()) {
-		// Return old leases so the server can see what has changed.
-		old_leases = existing;
-		return(existing);
-	}
+    // There is at least one lease for this client. We will return these
+    // leases for the client.
+    if (!existing.empty()) {
+        // Return old leases so the server can see what has changed.
+        old_leases = existing;
+        return(existing);
+    }
 
-	// check if the hint is in pool and is available
-	// This is equivalent of subnet->inPool(hint), but returns the pool
-	Pool6Ptr pool = boost::dynamic_pointer_cast < Pool6
-			> (subnet->getPool(type, hint, false));
+    // check if the hint is in pool and is available
+    // This is equivalent of subnet->inPool(hint), but returns the pool
+    Pool6Ptr pool = boost::dynamic_pointer_cast < Pool6
+            > (subnet->getPool(type, hint, false));
 
-	if (pool) {
-		Lease6Ptr lease = LeaseMgr::getInstance().getLease6(type, hint);
-		if (!lease) {
-			// The hint is valid and not currently used, let's create a
-			// lease for it
-			lease = createLease6(subnet, duid, iaid, hint, type,
-					fake_allocation);
+    if (pool) {
+        Lease6Ptr lease = LeaseMgr::getInstance().getLease6(type, hint);
+        if (!lease) {
+            // The hint is valid and not currently used, let's create a
+            // lease for it
+            lease = createLease6(subnet, duid, iaid, hint, type,
+                    fake_allocation);
 
-			// It can happen that the lease allocation failed (we could
-			// have lost the race condition. That means that the hint is
-			// lo longer usable and we need to continue the regular
-			// allocation path.
-			if (lease) {
-				// We are allocating a new lease (not renewing). So, the
-				// old lease should be NULL.
-				old_leases.push_back(Lease6Ptr());
+            // It can happen that the lease allocation failed (we could
+            // have lost the race condition. That means that the hint is
+            // lo longer usable and we need to continue the regular
+            // allocation path.
+            if (lease) {
+                // We are allocating a new lease (not renewing). So, the
+                // old lease should be NULL.
+                old_leases.push_back(Lease6Ptr());
 
-				Lease6Collection collection;
-				collection.push_back(lease);
-				return (collection);
-			}
-		} else {
-			if (lease->expired()) {
-				// Copy an existing, expired lease so as it can be returned
-				// to the caller.
-				Lease6Ptr old_lease(new Lease6(*lease));
-				old_leases.push_back(old_lease);
+                Lease6Collection collection;
+                collection.push_back(lease);
+                return (collection);
+            }
+        } else {
+            if (lease->expired()) {
+                // Copy an existing, expired lease so as it can be returned
+                // to the caller.
+                Lease6Ptr old_lease(new Lease6(*lease));
+                old_leases.push_back(old_lease);
 
-				/// We found a lease and it is expired, so we can reuse it
-				lease = reuseExpiredLease(lease, subnet, duid, iaid,
-						fake_allocation);
+                /// We found a lease and it is expired, so we can reuse it
+                lease = reuseExpiredLease(lease, subnet, duid, iaid,
+                        fake_allocation);
 
-				/// @todo: We support only one lease per ia for now
-				Lease6Collection collection;
-				collection.push_back(lease);
-				return (collection);
-			}
+                /// @todo: We support only one lease per ia for now
+                Lease6Collection collection;
+                collection.push_back(lease);
+                return (collection);
+            }
 
-		}
-	}
+        }
+    }
 
-	// Hint is in the pool but is not available. Search the pool until first of
-	// the following occurs:
-	// - we find a free address
-	// - we find an address for which the lease has expired
-	// - we exhaust number of tries
-	//
-	// @todo: Current code does not handle pool exhaustion well. It will be
-	// improved. Current problems:
-	// 1. with attempts set to too large value (e.g. 1000) and a small pool (e.g.
-	// 10 addresses), we will iterate over it 100 times before giving up
-	// 2. attempts 0 mean unlimited (this is really UINT_MAX, not infinite)
-	// 3. the whole concept of infinite attempts is just asking for infinite loop
-	// We may consider some form or reference counting (this pool has X addresses
-	// left), but this has one major problem. We exactly control allocation
-	// moment, but we currently do not control expiration time at all
+    // Hint is in the pool but is not available. Search the pool until first of
+    // the following occurs:
+    // - we find a free address
+    // - we find an address for which the lease has expired
+    // - we exhaust number of tries
+    //
+    // @todo: Current code does not handle pool exhaustion well. It will be
+    // improved. Current problems:
+    // 1. with attempts set to too large value (e.g. 1000) and a small pool (e.g.
+    // 10 addresses), we will iterate over it 100 times before giving up
+    // 2. attempts 0 mean unlimited (this is really UINT_MAX, not infinite)
+    // 3. the whole concept of infinite attempts is just asking for infinite loop
+    // We may consider some form or reference counting (this pool has X addresses
+    // left), but this has one major problem. We exactly control allocation
+    // moment, but we currently do not control expiration time at all
 
-	unsigned int i = attempts_;
-	do {
-		isc::asiolink::IOAddress candidate = allocator->pickAddress(subnet,
-				duid, hint);
+    unsigned int i = attempts_;
+    do {
+        isc::asiolink::IOAddress candidate = allocator->pickAddress(subnet,
+                duid, hint);
 
-		Lease6Ptr existing = LeaseMgr::getInstance().getLease6(type, candidate);
-		if (!existing) {
-			// there's no existing lease for selected candidate, so it is
-			// free. Let's allocate it.
+        Lease6Ptr existing = LeaseMgr::getInstance().getLease6(type, candidate);
+        if (!existing) {
+            // there's no existing lease for selected candidate, so it is
+            // free. Let's allocate it.
 
-			Lease6Ptr lease = createLease6(subnet, duid, iaid, candidate, type,
-					fake_allocation);
-			if (lease) {
-				// We are allocating a new lease (not renewing). So, the
-				// old lease should be NULL.
-				old_leases.push_back(Lease6Ptr());
+            Lease6Ptr lease = createLease6(subnet, duid, iaid, candidate, type,
+                    fake_allocation);
+            if (lease) {
+                // We are allocating a new lease (not renewing). So, the
+                // old lease should be NULL.
+                old_leases.push_back(Lease6Ptr());
 
-				Lease6Collection collection;
-				collection.push_back(lease);
-				return (collection);
-			}
+                Lease6Collection collection;
+                collection.push_back(lease);
+                return (collection);
+            }
 
-			// Although the address was free just microseconds ago, it may have
-			// been taken just now. If the lease insertion fails, we continue
-			// allocation attempts.
-		} else {
-			if (existing->expired()) {
-				// Copy an existing, expired lease so as it can be returned
-				// to the caller.
-				Lease6Ptr old_lease(new Lease6(*existing));
-				old_leases.push_back(old_lease);
+            // Although the address was free just microseconds ago, it may have
+            // been taken just now. If the lease insertion fails, we continue
+            // allocation attempts.
+        } else {
+            if (existing->expired()) {
+                // Copy an existing, expired lease so as it can be returned
+                // to the caller.
+                Lease6Ptr old_lease(new Lease6(*existing));
+                old_leases.push_back(old_lease);
 
-				existing = reuseExpiredLease(existing, subnet, duid, iaid,
-						fake_allocation);
-				Lease6Collection collection;
-				collection.push_back(existing);
-				return (collection);
-			}
-		}
+                existing = reuseExpiredLease(existing, subnet, duid, iaid,
+                        fake_allocation);
+                Lease6Collection collection;
+                collection.push_back(existing);
+                return (collection);
+            }
+        }
 
-		// Continue trying allocation until we run out of attempts
-		// (or attempts are set to 0, which means infinite)
-		--i;
-	} while ((i > 0) || !attempts_);
+        // Continue trying allocation until we run out of attempts
+        // (or attempts are set to 0, which means infinite)
+        --i;
+    } while ((i > 0) || !attempts_);
 
-	// Unable to allocate an address, return an empty lease.
-	LOG(WRN)<< "Failed to allocate an IPv6 address after "
-			<< attempts_ << " attempt(s)" << endl;
+    // Unable to allocate an address, return an empty lease.
+    LOG(WRN)<< "Failed to allocate an IPv6 address after "
+            << attempts_ << " attempt(s)" << endl;
 
     return (Lease6Collection());
 }
 
 Lease6Ptr AllocEngine::reuseExpiredLease(Lease6Ptr& expired,
-		const Subnet6Ptr& subnet, const isc::dhcp::DuidPtr& duid,
-		const uint32_t iaid, bool fake_allocation /*= false */) {
+        const Subnet6Ptr& subnet, const isc::dhcp::DuidPtr& duid,
+        const uint32_t iaid, bool fake_allocation /*= false */) {
 
     if (!expired->expired()) {
         LOG(WRN)<< "Attempt to recycle lease that is still valid" << endl;
@@ -290,11 +290,11 @@ Lease6Ptr AllocEngine::reuseExpiredLease(Lease6Ptr& expired,
     expired->fixed_ = false;
 
     LOG(DBG)<< "Reusing expired IPv6 lease for address "
-    		<< expired->addr_.toText() << endl;
+            << expired->addr_.toText() << endl;
 
     if (!fake_allocation) {
         // for REQUEST we do update the lease
-    	LeaseMgr::getInstance().updateLease6(expired);
+        LeaseMgr::getInstance().updateLease6(expired);
     }
 
     // We do nothing for SOLICIT. We'll just update database when
@@ -306,14 +306,14 @@ Lease6Ptr AllocEngine::reuseExpiredLease(Lease6Ptr& expired,
 }
 
 Lease6Ptr AllocEngine::createLease6(const Subnet6Ptr& subnet,
-		const isc::dhcp::DuidPtr& duid, const uint32_t iaid,
-		const isc::asiolink::IOAddress& addr, const Lease::Type type,
-		bool fake_allocation /*= false */) {
+        const isc::dhcp::DuidPtr& duid, const uint32_t iaid,
+        const isc::asiolink::IOAddress& addr, const Lease::Type type,
+        bool fake_allocation /*= false */) {
 
-	Lease6Ptr lease(
-			new Lease6(type, addr, duid, iaid, subnet->getPreferred(),
-					subnet->getValid(), subnet->getT1(), subnet->getT2(),
-					subnet->getID()));
+    Lease6Ptr lease(
+            new Lease6(type, addr, duid, iaid, subnet->getPreferred(),
+                    subnet->getValid(), subnet->getT1(), subnet->getT2(),
+                    subnet->getID()));
 
     if (!fake_allocation) {
         // That is a real (REQUEST) allocation
@@ -332,8 +332,8 @@ Lease6Ptr AllocEngine::createLease6(const Subnet6Ptr& subnet,
 
         // It is for advertise only. We should not insert the lease into LeaseMgr,
         // but rather check that we could have inserted it.
-		Lease6Ptr existing = LeaseMgr::getInstance().getLease6(Lease::TYPE_NA,
-				addr);
+        Lease6Ptr existing = LeaseMgr::getInstance().getLease6(Lease::TYPE_NA,
+                addr);
         if (!existing) {
             return (lease);
         } else {
@@ -343,12 +343,12 @@ Lease6Ptr AllocEngine::createLease6(const Subnet6Ptr& subnet,
 }
 
 AllocEngine::AllocatorPtr AllocEngine::getAllocator(Lease::Type type) {
-	std::map<Lease::Type, AllocEngine::AllocatorPtr>::const_iterator alloc =
-			allocators_.find(type);
+    std::map<Lease::Type, AllocEngine::AllocatorPtr>::const_iterator alloc =
+            allocators_.find(type);
 
     if (alloc == allocators_.end()) {
         LOG(ERR)<< "No allocator initialized for pool type "
-        		<< Lease::typeToText(type) << endl;
+                << Lease::typeToText(type) << endl;
     }
     return (alloc->second);
 }
