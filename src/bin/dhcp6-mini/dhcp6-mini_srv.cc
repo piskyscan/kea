@@ -770,7 +770,6 @@ isc::dhcp::Pkt6Ptr Dhcpv6Srv::processSolicit(
 
 //    sanityCheck(solicit, MANDATORY, FORBIDDEN);
 
-    LOG(DBG)<< "Entering the processSolicit method" << endl;
     isc::dhcp::Pkt6Ptr advertise(new isc::dhcp::Pkt6(
             DHCPV6_ADVERTISE, solicit->getTransid()));
 
@@ -788,7 +787,6 @@ isc::dhcp::Pkt6Ptr Dhcpv6Srv::processRequest(
 
 //    sanityCheck(request, MANDATORY, MANDATORY);
 
-    LOG(DBG)<< "Entering the processRequest method" << endl;
     isc::dhcp::Pkt6Ptr reply(new isc::dhcp::Pkt6(
             DHCPV6_REPLY, request->getTransid()));
 
