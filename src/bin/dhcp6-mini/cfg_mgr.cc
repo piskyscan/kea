@@ -77,31 +77,34 @@ bool CfgMgr::isVerboseOutputEnabled() {
     return verbose_;
 }
 
-CfgMgr::GetParam::GetParam(const CfgMgr& c, const string paramName)
-{
+CfgMgr::GetParam::GetParam(const CfgMgr& c, const string paramName) {
     param_value_ = (c.cfg_params_).find(paramName)->second;
 }
 
-CfgMgr::GetParam::operator Triplet<uint32_t> ()
-        {
+CfgMgr::GetParam::operator Triplet<uint32_t> () {
     Triplet<uint32_t> t = boost::lexical_cast<uint32_t>(param_value_);
     return t;
-        }
+}
 
-CfgMgr::GetParam::operator string ()
-        {
+CfgMgr::GetParam::operator string () {
     return param_value_;
-        }
+}
 
 void CfgMgr::parseConfigFile() {
     string config_file = datadir_ + "/" + string(SERVER_CONFIG_FILE);
-    LOG(CFG) << "Reading config from file " << config_file << endl;
+    LOG(CFG) << "Reading configuration from file " << config_file << endl;
 
     ifstream cfg_file(config_file.c_str());
-    cfg_file >> cfg_params_;
-    cfg_file.close();
+    if (cfg_file) {
+        cfg_file >> cfg_params_;
+        cfg_file.close();
 
-    createConfig();
+        createConfig();
+    }
+    else {
+        LOG(ERR)<< "Configuration file not found" << endl;
+        exit(EXIT_FAILURE);
+    }
 }
 
 void CfgMgr::createConfig() {
@@ -251,7 +254,7 @@ istream& operator>>(istream& is, CfgParams& params) {
         // Split line by a first whitespace
         size_t delim_position = line.find_first_of(" \t");
         if (delim_position == string::npos) {
-            LOG(ERR)<< "Config file is corrupted. No value assigned in line: "
+            LOG(ERR)<< "Configuration file is corrupted. No value assigned in line: "
                     << line << endl;
             exit(EXIT_FAILURE);
         }
