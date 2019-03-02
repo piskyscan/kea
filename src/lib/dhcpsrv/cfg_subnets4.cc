@@ -82,6 +82,10 @@ CfgSubnets4::merge(CfgSharedNetworks4Ptr networks,
                 continue;
             }
 
+            // Updating the prefix can lead to problems... e.g. pools
+            // and reservations going outside range.
+            // @todo: check prefix change.
+
             // We're going to replace the existing subnet with the other
             // version. If it belongs to a shared network, we need
             // remove it from that network.
@@ -102,11 +106,9 @@ CfgSubnets4::merge(CfgSharedNetworks4Ptr networks,
             // Subnet found.
             auto existing_subnet = *subnet_prefix_it;
 
-            // If the existing subnet and other subnet
-            // are the same instance skip it.
-            if (existing_subnet == *other_subnet) {
-                continue;
-            }
+            // Updating the id can lead to problems... e.g. reservation
+            // for the previous subnet ID.
+            // @todo: check reservations
 
             // We're going to replace the existing subnet with the other
             // version. If it belongs to a shared network, we need
