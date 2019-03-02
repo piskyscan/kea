@@ -192,14 +192,15 @@ TEST(CfgSubnets4Test, mergeSubnets) {
                                               "192.0.4.0/26", 100, shared_network2));
 
     // Fill cfg_from configuration with subnets.
-    // subnet 1b updates subnet 1 but leaves it in network 1
-    Subnet4Ptr subnet1b(new Subnet4(IOAddress("192.0.1.0"),
+    // subnet 1b updates subnet 1 but leaves it in network 1 with the same ID.
+    Subnet4Ptr subnet1b(new Subnet4(IOAddress("192.0.10.0"),
                                    26, 2, 3, 400, SubnetID(1)));
     subnet1b->setSharedNetworkName("shared-network1");
 
-    // subnet 3b updates subnet 3 and removes it from network 2
+    // subnet 3b updates subnet 3 with different ID
+    // and removes it from network 2
     Subnet4Ptr subnet3b(new Subnet4(IOAddress("192.0.3.0"),
-                                   26, 3, 4, 500, SubnetID(3)));
+                                   26, 3, 4, 500, SubnetID(30)));
 
     // subnet 4b updates subnet 4 and moves it from network2 to network 1
     Subnet4Ptr subnet4b(new Subnet4(IOAddress("192.0.4.0"),
@@ -223,14 +224,14 @@ TEST(CfgSubnets4Test, mergeSubnets) {
 
     // The subnet1 should be replaced by subnet1b.
     ASSERT_NO_FATAL_FAILURE(checkMergedSubnet(cfg_to, SubnetID(1),
-                                              "192.0.1.0/26", 400, shared_network1));
+                                              "192.0.10.0/26", 400, shared_network1));
 
     // The subnet2 should not be affected because it was not present.
     ASSERT_NO_FATAL_FAILURE(checkMergedSubnet(cfg_to, SubnetID(2),
                                               "192.0.2.0/26", 100, shared_network2));
 
     // subnet3 should be replaced by subnet3b and no longer assigned to a network.
-    ASSERT_NO_FATAL_FAILURE(checkMergedSubnet(cfg_to, SubnetID(3),
+    ASSERT_NO_FATAL_FAILURE(checkMergedSubnet(cfg_to, SubnetID(30),
                                               "192.0.3.0/26", 500, no_network));
 
     // subnet4 should be replaced by subnet4b and moved to network1.
