@@ -1974,6 +1974,7 @@ Developer:
   Generate Documentation: $enable_generate_docs
   Parser Generation:      $enable_generate_parser
   Perfdhcp:               $enable_perfdhcp
+  Google Benchmark:       $enable_benchmark
   Kea-shell:              $enable_shell
 
 END
