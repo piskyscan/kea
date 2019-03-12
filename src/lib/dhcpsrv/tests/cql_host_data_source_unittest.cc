@@ -18,17 +18,16 @@
 #include <config.h>
 
 #include <asiolink/io_address.h>
+#include <dhcpsrv/tests/test_utils.h>
 #include <exceptions/exceptions.h>
-#include <cql/cql_connection.h>
-#include <cql/testutils/cql_schema.h>
 #include <dhcpsrv/host.h>
-#include <dhcpsrv/host_mgr.h>
-#include <dhcpsrv/host_data_source_factory.h>
-#include <dhcpsrv/cql_lease_mgr.h>
 #include <dhcpsrv/cql_host_data_source.h>
 #include <dhcpsrv/testutils/generic_host_data_source_unittest.h>
 #include <dhcpsrv/testutils/host_data_source_utils.h>
-#include <dhcpsrv/tests/test_utils.h>
+#include <dhcpsrv/host_mgr.h>
+#include <dhcpsrv/host_data_source_factory.h>
+#include <cql/cql_connection.h>
+#include <cql/testutils/cql_schema.h>
 
 #include <gtest/gtest.h>
 
@@ -292,6 +291,36 @@ TEST_F(CqlHostDataSourceTest, DISABLED_testReadOnlyDatabase) {
     testReadOnlyDatabase(CQL_VALID_TYPE);
 }
 
+// Test verifies if a host reservation can be added and later retrieved by IPv4
+// address. Host uses hw address as identifier.
+TEST_F(CqlHostDataSourceTest, basic4HWAddr) {
+    testBasic4(Host::IDENT_HWADDR);
+}
+
+// Verifies that IPv4 host reservation with options can have a the global
+// subnet id value
+TEST_F(CqlHostDataSourceTest, globalSubnetId4) {
+    testGlobalSubnetId4();
+}
+
+// Verifies that IPv6 host reservation with options can have a the global
+// subnet id value
+TEST_F(CqlHostDataSourceTest, globalSubnetId6) {
+    testGlobalSubnetId6();
+}
+
+// Verifies that IPv4 host reservation with options can have a max value
+// for  dhcp4_subnet id
+TEST_F(CqlHostDataSourceTest, maxSubnetId4) {
+    testMaxSubnetId4();
+}
+
+// Verifies that IPv6 host reservation with options can have a max value
+// for  dhcp6_subnet id
+TEST_F(CqlHostDataSourceTest, maxSubnetId6) {
+    testMaxSubnetId6();
+}
+
 // Verifies that IPv4 host reservations in the same subnet can be retrieved
 TEST_F(CqlHostDataSourceTest, getAll4BySubnet) {
     testGetAll4();
@@ -304,21 +333,38 @@ TEST_F(CqlHostDataSourceTest, getAll6BySubnet) {
 
 // Verifies that IPv4 host reservations in the same subnet can be retrieved
 // by pages.
-// Does not work because TOKEN(id) order is not the same than id...
-TEST_F(CqlHostDataSourceTest, DISABLED_getPage4) {
+TEST_F(CqlHostDataSourceTest, getPage4) {
     testGetPage4();
 }
 
 // Verifies that IPv6 host reservations in the same subnet can be retrieved
 // by pages.
-TEST_F(CqlHostDataSourceTest, DISABLED_getPage6) {
+TEST_F(CqlHostDataSourceTest, getPage6) {
     testGetPage6();
 }
 
-// Test verifies if a host reservation can be added and later retrieved by IPv4
-// address. Host uses hw address as identifier.
-TEST_F(CqlHostDataSourceTest, basic4HWAddr) {
-    testBasic4(Host::IDENT_HWADDR);
+// Verifies that IPv4 host reservations in the same subnet can be retrieved
+// by pages without truncation from the limit.
+TEST_F(CqlHostDataSourceTest, getPageLimit4) {
+    testGetPageLimit4(Host::IDENT_DUID);
+}
+
+// Verifies that IPv6 host reservations in the same subnet can be retrieved
+// by pages without truncation from the limit.
+TEST_F(CqlHostDataSourceTest, getPageLimit6) {
+    testGetPageLimit6(Host::IDENT_HWADDR);
+}
+
+// Verifies that IPv4 host reservations in the same subnet can be retrieved
+// by pages even with multiple subnets.
+TEST_F(CqlHostDataSourceTest, getPage4Subnets) {
+    testGetPage4Subnets();
+}
+
+// Verifies that IPv6 host reservations in the same subnet can be retrieved
+// by pages even with multiple subnets.
+TEST_F(CqlHostDataSourceTest, getPage6Subnets) {
+    testGetPage6Subnets();
 }
 
 // Test verifies if a host reservation can be added and later retrieved by IPv4
@@ -686,31 +732,5 @@ TEST_F(CqlHostDataSourceTest, testMultipleHostsNoAddress4) {
 TEST_F(CqlHostDataSourceTest, testMultipleHosts6) {
     testMultipleHosts6();
 }
-
-// Verifies that IPv4 host reservation with options can have a the global
-// subnet id value
-TEST_F(CqlHostDataSourceTest, globalSubnetId4) {
-    testGlobalSubnetId4();
-}
-
-// Verifies that IPv6 host reservation with options can have a the global
-// subnet id value
-TEST_F(CqlHostDataSourceTest, globalSubnetId6) {
-    testGlobalSubnetId6();
-}
-
-// Verifies that IPv4 host reservation with options can have a max value
-// for  dhcp4_subnet id
-TEST_F(CqlHostDataSourceTest, maxSubnetId4) {
-    testMaxSubnetId4();
-}
-
-// Verifies that IPv6 host reservation with options can have a max value
-// for  dhcp6_subnet id
-TEST_F(CqlHostDataSourceTest, maxSubnetId6) {
-    testMaxSubnetId6();
-}
-
-
 
 }  // namespace
