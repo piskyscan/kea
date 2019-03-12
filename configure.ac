@@ -1386,11 +1386,12 @@ AC_PROG_LEX
 
 # Check if bison is available. Bison is not needed for building Kea sources,
 # unless you want to regenerate grammars
-AC_PROG_YACC
+AC_PATH_PROG(YACC, bison)
+AC_SUBST(YACC)
 
 if test "x$enable_generate_parser" != "xno"; then
 
-    if test "x$LEX" == "x"; then
+    if test "x$LEX" != "xflex"; then
        AC_MSG_ERROR([Flex is required for enable-generate-parser, but was not found])
     fi
 
@@ -1523,7 +1524,6 @@ AC_DEFINE([CONFIG_H_WAS_INCLUDED], [1], [config.h inclusion marker])
 
 AC_CONFIG_FILES([Makefile
                  compatcheck/Makefile
-                 dns++.pc
                  doc/Makefile
                  doc/guide/Makefile
                  doc/version.ent
