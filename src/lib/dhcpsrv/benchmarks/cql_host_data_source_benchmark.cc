@@ -43,7 +43,7 @@ public:
         destroyCqlSchema(false, true);
         createCqlSchema(false, true);
         try {
-            HostMgr::delBackend("cql");
+            HostMgr::create();
             HostMgr::addBackend(validCqlConnectionString());
         } catch (...) {
             cerr << "ERROR: unable to open database" << endl;

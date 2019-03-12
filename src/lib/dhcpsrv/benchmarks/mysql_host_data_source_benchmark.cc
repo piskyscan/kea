@@ -43,7 +43,7 @@ public:
         destroyMySQLSchema();
         createMySQLSchema();
         try {
-            HostMgr::delBackend("mysql");
+            HostMgr::create();
             HostMgr::addBackend(validMySQLConnectionString());
         } catch (...) {
             cerr << "ERROR: unable to open database" << endl;

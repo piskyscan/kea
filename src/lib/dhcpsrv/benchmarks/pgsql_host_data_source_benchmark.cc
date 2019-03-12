@@ -43,7 +43,7 @@ public:
         destroyPgSQLSchema();
         createPgSQLSchema();
         try {
-            HostMgr::delBackend("postgresql");
+            HostMgr::create();
             HostMgr::addBackend(validPgSQLConnectionString());
         } catch (...) {
             cerr << "ERROR: unable to open database" << endl;
