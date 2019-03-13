@@ -72,12 +72,12 @@ GenericHostDataSourceTest::compareHostsForSort6(const ConstHostPtr& host1,
 bool
 GenericHostDataSourceTest::compareHostsIdentifier(const ConstHostPtr& host1,
                                                   const ConstHostPtr& host2) {
-    auto a_ident = a->getIdentifier();
-    auto b_ident = b->getIdentifier();
-    auto count = a_ident.size();
+    auto host1_i = host1->getIdentifier();
+    auto host2_i = host2->getIdentifier();
+    auto count = host1_i.size();
     for (uint8_t i = 0; i < count; ++i) {
-        if (a_ident[i] != b_ident[i]) {
-            return (a_ident[i] < b_ident[i]);
+        if (host1_i[i] != host2_i[i]) {
+            return (host1_i[i] < host2_i[i]);
         }
     }
     return false;
