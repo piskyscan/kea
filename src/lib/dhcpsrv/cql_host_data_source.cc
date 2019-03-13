@@ -1990,7 +1990,7 @@ CqlHostDataSourceImpl::getPage4(const SubnetID& subnet_id,
                                 const HostPageSize& page_size) const {
     ConstHostCollection hosts = getAll4(subnet_id);
     std::sort(hosts.begin(), hosts.end(), [](ConstHostPtr a, ConstHostPtr b) {
-        return a->getHostId() > b->getHostId();
+        return (a->getHostId() < b->getHostId());
     });
     ConstHostCollection result;
     size_t count = 0;
@@ -2012,7 +2012,7 @@ CqlHostDataSourceImpl::getPage6(const SubnetID& subnet_id,
                                 const HostPageSize& page_size) const {
     ConstHostCollection hosts = getAll6(subnet_id);
     std::sort(hosts.begin(), hosts.end(), [](ConstHostPtr a, ConstHostPtr b) {
-        return a->getHostId() > b->getHostId();
+        return (a->getHostId() < b->getHostId());
     });
     ConstHostCollection result;
     size_t count = 0;

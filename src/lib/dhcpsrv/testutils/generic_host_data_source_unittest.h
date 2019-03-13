@@ -64,6 +64,12 @@ public:
     static bool compareHostsForSort6(const ConstHostPtr& host1,
                                      const ConstHostPtr& host2);
 
+    /// @brief Used to sort a host collection by host identifier.
+    /// @param host1 first host to be compared
+    /// @param host2 second host to be compared
+    static bool compareHostsIdentifier(const ConstHostPtr& host1,
+                                       const ConstHostPtr& host2);
+
     /// @brief Returns number of entries in the v4 options table.
     ///
     /// This utility method is expected to be implemented by specific backends.
