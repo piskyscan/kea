@@ -197,6 +197,7 @@ INSERT INTO schema_version (version, minor) VALUES (1, 0);
 -- Table `host_reservations`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS host_reservations (
+    key bigint,
     id bigint,
     host_identifier blob,
     host_identifier_type int,
@@ -226,7 +227,7 @@ CREATE TABLE IF NOT EXISTS host_reservations (
     option_subnet_id int,
     option_user_context text,
     option_scope_id int,
-    PRIMARY KEY ((id))
+    PRIMARY KEY ((key), id)
 );
 
 CREATE INDEX IF NOT EXISTS host_reservationsindex1 ON host_reservations (host_identifier);
