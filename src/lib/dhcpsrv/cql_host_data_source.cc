@@ -2640,7 +2640,7 @@ CqlHostDataSourceImpl::getHostCollection(StatementTag statement_tag,
     AnyArray collection = host_exchange->executeSelect(dbconn_, where_values,
                                                        statement_tag, false);
 
-    // From HostPtr objects.
+    // Create HostPtr objects.
     HostCollection host_collection;
     for (boost::any& host : collection) {
         host_collection.push_back(HostPtr(boost::any_cast<Host*>(host)));
@@ -2795,7 +2795,7 @@ CqlHostDataSourceImpl::getHostKey4(const SubnetID& subnet_id,
                 CqlHostExchange::GET_HOST_BY_IPV4_SUBNET_ID_LIMIT, false);
     }
 
-    // From HostPtr objects.
+    // Create HostPtr objects.
     HostCollection host_collection;
     for (boost::any& host : collection) {
         host_collection.push_back(HostPtr(boost::any_cast<Host*>(host)));
@@ -2845,7 +2845,7 @@ CqlHostDataSourceImpl::getHostKey6(const SubnetID& subnet_id,
                 CqlHostExchange::GET_HOST_BY_IPV6_SUBNET_ID_LIMIT, false);
     }
 
-    // From HostPtr objects.
+    // Create HostPtr objects.
     HostCollection host_collection;
     for (boost::any& host : collection) {
         host_collection.push_back(HostPtr(boost::any_cast<Host*>(host)));
@@ -2882,7 +2882,7 @@ CqlHostDataSourceImpl::getNextHostKey4(const SubnetID& subnet_id,
     AnyArray collection = host_exchange->executeSelect(dbconn_, where_values,
             CqlHostExchange::GET_HOST_BY_IPV4_SUBNET_ID_NEXT_KEY, false);
 
-    // From HostPtr objects.
+    // Create HostPtr objects.
     HostCollection host_collection;
     for (boost::any& host : collection) {
         host_collection.push_back(HostPtr(boost::any_cast<Host*>(host)));
@@ -2913,7 +2913,7 @@ CqlHostDataSourceImpl::getNextHostKey6(const SubnetID& subnet_id,
     AnyArray collection = host_exchange->executeSelect(dbconn_, where_values,
             CqlHostExchange::GET_HOST_BY_IPV6_SUBNET_ID_NEXT_KEY, false);
 
-    // From HostPtr objects.
+    // Create HostPtr objects.
     HostCollection host_collection;
     for (boost::any& host : collection) {
         host_collection.push_back(HostPtr(boost::any_cast<Host*>(host)));
