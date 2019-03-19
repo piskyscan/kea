@@ -331,7 +331,7 @@ cql_unused_subnet_id_test() {
     test_dir="@abs_top_srcdir@/src/bin/admin/tests"
     ref_file="$test_dir/data/cql.subnet_id_test.reference.csv"
 
-    output_dir="@abs_top_builddir@/src/bin/admin/tests"
+    output_dir="@abs_top_srcdir@/src/bin/admin/tests"
     export_file="$output_dir/data/cql.subnet_id_test.csv"
 
     # Fetch host_reservation data for comparison
