@@ -1229,7 +1229,7 @@ StatementMap CqlHostExchange::tagged_statements_ = {
       "AND id = ? "
       "LIMIT 1 "
       "ALLOW FILTERING "
-     }},
+     }}
 };
 
 CqlHostExchange::CqlHostExchange()
