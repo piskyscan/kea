@@ -140,7 +140,7 @@ namespace isc {
 namespace dhcp {
 
 /// @brief Provides mechanisms for sending and retrieving data from the
-///     host_reservations table.
+///     hosts table.
 class CqlHostExchange : public virtual CqlExchange {
 public:
     /// @brief Constructor
@@ -500,7 +500,7 @@ constexpr StatementTag CqlHostExchange::GET_HOST_BY_IPV6_SUBNET_ID_PAGE;
 StatementMap CqlHostExchange::tagged_statements_ = {
     {INSERT_HOST,
      {INSERT_HOST,
-      "INSERT INTO host_reservations ( "
+      "INSERT INTO hosts ( "
       "key, "
       "id, "
       "host_identifier, "
@@ -575,7 +575,7 @@ StatementMap CqlHostExchange::tagged_statements_ = {
       "option_subnet_id, "
       "option_user_context, "
       "option_scope_id "
-      "FROM host_reservations "
+      "FROM hosts "
      }},
 
     {GET_HOST_BY_HOST_ID,
@@ -610,7 +610,7 @@ StatementMap CqlHostExchange::tagged_statements_ = {
       "option_subnet_id, "
       "option_user_context, "
       "option_scope_id "
-      "FROM host_reservations "
+      "FROM hosts "
       "WHERE host_identifier = ? "
       "AND host_identifier_type = ? "
       "ALLOW FILTERING "
@@ -648,7 +648,7 @@ StatementMap CqlHostExchange::tagged_statements_ = {
       "option_subnet_id, "
       "option_user_context, "
       "option_scope_id "
-      "FROM host_reservations "
+      "FROM hosts "
       "WHERE host_ipv4_address = ? "
       "ALLOW FILTERING "
      }},
@@ -685,7 +685,7 @@ StatementMap CqlHostExchange::tagged_statements_ = {
       "option_subnet_id, "
       "option_user_context, "
       "option_scope_id "
-      "FROM host_reservations "
+      "FROM hosts "
       "WHERE host_ipv4_subnet_id = ? "
       "AND host_identifier = ? "
       "AND host_identifier_type = ? "
@@ -724,7 +724,7 @@ StatementMap CqlHostExchange::tagged_statements_ = {
       "option_subnet_id, "
       "option_user_context, "
       "option_scope_id "
-      "FROM host_reservations "
+      "FROM hosts "
       "WHERE host_ipv6_subnet_id = ? "
       "AND host_identifier = ? "
       "AND host_identifier_type = ? "
@@ -763,7 +763,7 @@ StatementMap CqlHostExchange::tagged_statements_ = {
       "option_subnet_id, "
       "option_user_context, "
       "option_scope_id "
-      "FROM host_reservations "
+      "FROM hosts "
       "WHERE host_ipv4_subnet_id = ? "
       "AND host_ipv4_address = ? "
       "ALLOW FILTERING "
@@ -801,7 +801,7 @@ StatementMap CqlHostExchange::tagged_statements_ = {
       "option_subnet_id, "
       "option_user_context, "
       "option_scope_id "
-      "FROM host_reservations "
+      "FROM hosts "
       "WHERE reserved_ipv6_prefix_address = ? "
       "AND reserved_ipv6_prefix_length = ? "
       "ALLOW FILTERING "
@@ -839,7 +839,7 @@ StatementMap CqlHostExchange::tagged_statements_ = {
       "option_subnet_id, "
       "option_user_context, "
       "option_scope_id "
-      "FROM host_reservations "
+      "FROM hosts "
       "WHERE host_ipv6_subnet_id = ? "
       "AND reserved_ipv6_prefix_address = ? "
       "ALLOW FILTERING "
@@ -847,7 +847,7 @@ StatementMap CqlHostExchange::tagged_statements_ = {
 
     {DELETE_HOST,
      {DELETE_HOST,
-      "DELETE FROM host_reservations WHERE key = ? AND id = ? "
+      "DELETE FROM hosts WHERE key = ? AND id = ? "
       "IF EXISTS "
      }},
 
@@ -883,7 +883,7 @@ StatementMap CqlHostExchange::tagged_statements_ = {
       "option_subnet_id, "
       "option_user_context, "
       "option_scope_id "
-      "FROM host_reservations "
+      "FROM hosts "
       "WHERE host_ipv4_subnet_id = ? "
       "ALLOW FILTERING "
      }},
@@ -920,7 +920,7 @@ StatementMap CqlHostExchange::tagged_statements_ = {
       "option_subnet_id, "
       "option_user_context, "
       "option_scope_id "
-      "FROM host_reservations "
+      "FROM hosts "
       "WHERE host_ipv6_subnet_id = ? "
       "ALLOW FILTERING "
      }},
@@ -957,7 +957,7 @@ StatementMap CqlHostExchange::tagged_statements_ = {
       "option_subnet_id, "
       "option_user_context, "
       "option_scope_id "
-      "FROM host_reservations "
+      "FROM hosts "
       "WHERE host_ipv4_subnet_id = ? "
       "LIMIT 1 "
       "ALLOW FILTERING "
@@ -995,7 +995,7 @@ StatementMap CqlHostExchange::tagged_statements_ = {
       "option_subnet_id, "
       "option_user_context, "
       "option_scope_id "
-      "FROM host_reservations "
+      "FROM hosts "
       "WHERE host_ipv4_subnet_id = ? "
       "AND TOKEN(key) > TOKEN(?) "
       "LIMIT 1 "
@@ -1034,7 +1034,7 @@ StatementMap CqlHostExchange::tagged_statements_ = {
       "option_subnet_id, "
       "option_user_context, "
       "option_scope_id "
-      "FROM host_reservations "
+      "FROM hosts "
       "WHERE key = ? "
       "ALLOW FILTERING "
      }},
@@ -1071,7 +1071,7 @@ StatementMap CqlHostExchange::tagged_statements_ = {
       "option_subnet_id, "
       "option_user_context, "
       "option_scope_id "
-      "FROM host_reservations "
+      "FROM hosts "
       "WHERE host_ipv4_subnet_id = ? "
       "AND id = ? "
       "LIMIT 1 "
@@ -1110,7 +1110,7 @@ StatementMap CqlHostExchange::tagged_statements_ = {
       "option_subnet_id, "
       "option_user_context, "
       "option_scope_id "
-      "FROM host_reservations "
+      "FROM hosts "
       "WHERE host_ipv6_subnet_id = ? "
       "LIMIT 1 "
       "ALLOW FILTERING "
@@ -1148,7 +1148,7 @@ StatementMap CqlHostExchange::tagged_statements_ = {
       "option_subnet_id, "
       "option_user_context, "
       "option_scope_id "
-      "FROM host_reservations "
+      "FROM hosts "
       "WHERE host_ipv6_subnet_id = ? "
       "AND TOKEN(key) > TOKEN(?) "
       "LIMIT 1 "
@@ -1187,7 +1187,7 @@ StatementMap CqlHostExchange::tagged_statements_ = {
       "option_subnet_id, "
       "option_user_context, "
       "option_scope_id "
-      "FROM host_reservations "
+      "FROM hosts "
       "WHERE key = ? "
       "ALLOW FILTERING "
      }},
@@ -1224,7 +1224,7 @@ StatementMap CqlHostExchange::tagged_statements_ = {
       "option_subnet_id, "
       "option_user_context, "
       "option_scope_id "
-      "FROM host_reservations "
+      "FROM hosts "
       "WHERE host_ipv6_subnet_id = ? "
       "AND id = ? "
       "LIMIT 1 "

@@ -652,7 +652,7 @@ TEST_F(CqlHostDataSourceTest, testAddRollback) {
     CqlConnection conn(params);
     ASSERT_NO_THROW(conn.openDatabase());
 
-    // Drop every table so we make sure host_reservations doesn't exist anymore.
+    // Drop every table so we make sure hosts doesn't exist anymore.
     destroyCqlSchema(false, true);
 
     // Create a host with a reservation.

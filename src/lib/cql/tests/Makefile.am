@@ -31,7 +31,7 @@ libcql_unittests_LDADD += $(top_builddir)/src/lib/log/libkea-log.la
 libcql_unittests_LDADD += $(top_builddir)/src/lib/util/threads/libkea-threads.la
 libcql_unittests_LDADD += $(top_builddir)/src/lib/util/libkea-util.la
 libcql_unittests_LDADD += $(top_builddir)/src/lib/exceptions/libkea-exceptions.la
-libcql_unittests_LDADD += $(LOG4CPLUS_LIBS) $(BOOST_LIBS) $(GTEST_LDADD)
+libcql_unittests_LDADD += $(LOG4CPLUS_LIBS) $(CRYPTO_LIBS) $(CQL_LIBS) $(BOOST_LIBS) $(GTEST_LDADD)
 
 endif
 
