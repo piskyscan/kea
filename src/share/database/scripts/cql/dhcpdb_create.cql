@@ -304,16 +304,6 @@ INSERT INTO schema_version (version, minor) VALUES(3, 0);
 
 -- This line starts database upgrade to version 4.0
 
-DROP TABLE IF EXISTS host_reservations;
-
-DROP INDEX IF EXISTS host_reservationsindex1;
-DROP INDEX IF EXISTS host_reservationsindex2;
-DROP INDEX IF EXISTS host_reservationsindex3;
-DROP INDEX IF EXISTS host_reservationsindex4;
-DROP INDEX IF EXISTS host_reservationsindex5;
-DROP INDEX IF EXISTS host_reservationsindex6;
-DROP INDEX IF EXISTS host_reservationsindex7;
-
 -- -----------------------------------------------------
 -- Table `hosts`
 -- -----------------------------------------------------
@@ -360,9 +350,18 @@ CREATE INDEX IF NOT EXISTS hostsindex5 ON hosts (host_ipv4_address);
 CREATE INDEX IF NOT EXISTS hostsindex6 ON hosts (reserved_ipv6_prefix_address);
 CREATE INDEX IF NOT EXISTS hostsindex7 ON hosts (reserved_ipv6_prefix_length);
 
+DROP TABLE IF EXISTS host_reservations;
+
+DROP INDEX IF EXISTS host_reservationsindex1;
+DROP INDEX IF EXISTS host_reservationsindex2;
+DROP INDEX IF EXISTS host_reservationsindex3;
+DROP INDEX IF EXISTS host_reservationsindex4;
+DROP INDEX IF EXISTS host_reservationsindex5;
+DROP INDEX IF EXISTS host_reservationsindex6;
+DROP INDEX IF EXISTS host_reservationsindex7;
+
 -- Cql requires primary keys in the WHERE here.
 DELETE FROM schema_version WHERE version=3;
 INSERT INTO schema_version (version, minor) VALUES(4, 0);
 
 -- This line concludes database upgrade to version 4.0
-
