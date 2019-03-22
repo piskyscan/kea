@@ -120,16 +120,16 @@ exit_now() {
 # col - column name of the column in question
 #
 check_column() {
-   local val="$1";shift
-   local col="$1"
-   local old_id="0"
-   local new_id="-1"
-   local comma=""
+    local val="$1";shift
+    local col="$1"
+    local old_id="0"
+    local new_id="-1"
+    local comma=""
 
-   # If the current value equals the value to be replaced
-   # add it to the accumulator
-   if [ "$val" = "$old_id" ]
-   then
+    # If the current value equals the value to be replaced
+    # add it to the accumulator
+    if [ "$val" = "$old_id" ]
+    then
         # If the accumulator isn't empty, we need a comma
         if [ ! -z "$update_cols" ]
         then
@@ -137,7 +137,7 @@ check_column() {
         fi
 
         update_cols="$update_cols$comma $col = $new_id"
-   fi
+    fi
 }
 
 # This function converts subnet ID columns in of existing host_reservations
@@ -172,7 +172,7 @@ migrate_host_data() {
     echo "Exporting host_reservation data to $export_file ..."
     query="COPY host_reservations \
         (id, host_ipv4_subnet_id, host_ipv6_subnet_id, option_subnet_id)\
-        TO '$export_file' WITH DELIMITATOR '#'"
+        TO '$export_file'"
 
     cqlsh $cqlargs -e "$query"
     if [ "$?" -ne 0 ]
@@ -201,7 +201,7 @@ migrate_host_data() {
         line_cnt=$((line_cnt + 1));
         update_cols=""
         xIFS="$IFS"
-        IFS=$'#'
+        IFS=$','
 
         i=1
         # Parse the column values

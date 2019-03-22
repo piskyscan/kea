@@ -144,6 +144,7 @@ exit_now() {
     clean_up
     if [ "$status" -eq 0 ]
     then
+        clean_up_schema
         echo "Data Migration SUCCESS! $explanation"
     else
         echo "Data Migration FAILURE! $explanation"
@@ -227,7 +228,7 @@ generate_key() {
     key=""
     identifier_text "$host_identifier"
     local_host_identifier=$identifier
-    if [ $host_ipv4_address -eq 0 ]; then
+    if [ ! -z $host_ipv4_address ] && [ $host_ipv4_address -eq 0 ]; then
         fill "$local_host_identifier" 383 "-"
         key="$key$value"
         fill "$host_identifier_type" 10 "-"
@@ -276,7 +277,7 @@ migrate_host_data() {
          option_formatted_value, option_space, option_is_persistent, \
          option_client_class, option_subnet_id, option_user_context, \
          option_scope_id) \
-        TO '$export_file' WITH DELIMITER = '#'"
+        TO '$export_file'"
 
     cqlsh $cqlargs -e "$query"
     if [ "$?" -ne 0 ]
@@ -303,9 +304,8 @@ migrate_host_data() {
     while read -r line
     do
         line_cnt=$((line_cnt + 1));
-        cols=""
         xIFS="$IFS"
-        IFS='#'
+        IFS=','
         i=1
         # Parse the column values
         for val in $line
@@ -316,47 +316,31 @@ migrate_host_data() {
                 ;;
             2)
                 host_identifier=$val
-                cols=$cols,$val
                 ;;
             3)
                 host_identifier_type=$val
-                cols=$cols,$val
                 ;;
             4)
                 host_ipv4_subnet_id=$val
-                cols=$cols,$val
                 ;;
             5)
                 host_ipv6_subnet_id=$val
-                cols=$cols,$val
                 ;;
             6)
                 host_ipv4_address=$val
-                cols=$cols,$val
                 ;;
             *)
-                cols=$cols,$val
                 ;;
             esac
             i=$((i + 1))
         done
 
-        if [ "$i" -ne 29 ]
-        then
-            # We're going to assume that since any error is fatal
-            exit_now 1 "Line# $line_cnt, too few values, wrong or corrupt file"
-        fi
-
         generate_key "$host_id" "$host_identifier" "$host_identifier_type" "$host_ipv4_subnet_id" "$host_ipv6_subnet_id" "$host_ipv4_address"
         key_data="$key"
-        # If any of the current host's columns need to be replace, append an update for it
-        if [ ! -z "$cols" ]
-        then
-            echo "$host_id,$key_data$cols" >> $update_file
-            update_cnt=$((update_cnt + 1))
-        fi
+        update_cnt=$((update_cnt + 1))
 
         IFS="$xIFS"
+        echo $line | sed -e "s/$host_id/$host_id,$key_data/" >> $update_file
     done <  $export_file
 
     # If we didn't record any updates, then hey, we're good to go!
@@ -393,4 +377,3 @@ migrate_host_data() {
 check_version
 update_schema
 migrate_host_data
-clean_up_schema
