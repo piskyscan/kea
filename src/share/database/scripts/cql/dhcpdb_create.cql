@@ -46,7 +46,7 @@
 -- Table `lease4`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS lease4 (
-    address BIGINT,
+    address INT,
     hwaddr BLOB,
     client_id BLOB,
     valid_lifetime BIGINT,
