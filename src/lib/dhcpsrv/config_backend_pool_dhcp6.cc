@@ -202,12 +202,12 @@ getModifiedGlobalParameters6(const db::BackendSelector& backend_selector,
 
 AuditEntryCollection
 ConfigBackendPoolDHCPv6::
-getRecentAuditEntries6(const db::BackendSelector& backend_selector,
-                       const db::ServerSelector& server_selector,
-                       const boost::posix_time::ptime& modification_time) const {
+getRecentAuditEntries(const db::BackendSelector& backend_selector,
+                      const db::ServerSelector& server_selector,
+                      const boost::posix_time::ptime& modification_time) const {
     AuditEntryCollection audit_entries;
     getMultiplePropertiesConst<AuditEntryCollection, const boost::posix_time::ptime&>
-        (&ConfigBackendDHCPv6::getRecentAuditEntries6, backend_selector,
+        (&ConfigBackendDHCPv6::getRecentAuditEntries, backend_selector,
          server_selector, audit_entries, modification_time);
     return (audit_entries);
 }
@@ -325,6 +325,15 @@ ConfigBackendPoolDHCPv6::deleteAllSubnets6(const BackendSelector& backend_select
                                           const ServerSelector& server_selector) {
     return (createUpdateDeleteProperty<uint64_t>
             (&ConfigBackendDHCPv6::deleteAllSubnets6, backend_selector, server_selector));
+}
+
+uint64_t
+ConfigBackendPoolDHCPv6::deleteSharedNetworkSubnets6(const db::BackendSelector& backend_selector,
+                                                     const db::ServerSelector& server_selector,
+                                                     const std::string& shared_network_name) {
+    return (createUpdateDeleteProperty<uint64_t, const std::string&>
+            (&ConfigBackendDHCPv6::deleteSharedNetworkSubnets6, backend_selector, server_selector,
+             shared_network_name));
 }
 
 uint64_t

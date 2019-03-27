@@ -16,6 +16,7 @@
 #include <dhcp/option_custom.h>
 #include <dhcp_ddns/ncr_msg.h>
 #include <dhcpsrv/alloc_engine.h>
+#include <dhcpsrv/cb_ctl_dhcp4.h>
 #include <dhcpsrv/cfg_option.h>
 #include <dhcpsrv/callout_handle_store.h>
 #include <dhcpsrv/d2_client_mgr.h>
@@ -233,6 +234,14 @@ public:
     /// @brief Destructor. Used during DHCPv4 service shutdown.
     virtual ~Dhcpv4Srv();
 
+    /// @brief Checks if the server is running in a test mode.
+    ///
+    /// @return true if the server is running in the test mode,
+    /// false otherwise.
+    bool inTestMode() const {
+        return (server_port_ == 0);
+    }
+
     /// @brief Returns pointer to the IO service used by the server.
     asiolink::IOServicePtr& getIOService() {
         return (io_service_);
@@ -241,6 +250,15 @@ public:
     /// @brief Returns pointer to the network state used by the server.
     NetworkStatePtr& getNetworkState() {
         return (network_state_);
+    }
+
+    /// @brief Returns an object which controls access to the configuration
+    /// backends.
+    ///
+    /// @return Pointer to the instance of the object which controls
+    /// access to the configuration backends.
+    CBControlDHCPv4Ptr getCBControl() const {
+        return (cb_control_);
     }
 
     /// @brief returns Kea version on stdout and exit.
@@ -972,6 +990,9 @@ protected:
     /// @brief Holds information about disabled DHCP service and/or
     /// disabled subnet/network scopes.
     NetworkStatePtr network_state_;
+
+    /// @brief Controls access to the configuration backends.
+    CBControlDHCPv4Ptr cb_control_;
 
 public:
     /// Class methods for DHCPv4-over-DHCPv6 handler

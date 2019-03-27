@@ -147,9 +147,11 @@ public:
     /// values specified in parentheses):
     /// - keyspace: name of the database to which to connect (keatest)
     /// - contact-points: IP addresses of the nodes to connect to (127.0.0.1)
+    /// - consistency: consistency level (quorum)
+    /// - serial-consistency: serial consistency level (serial)
     /// - port: The TCP port to use (9042)
     /// - user - credentials to use when connecting (no username)
-    /// - password - credentails to use when connecting (no password)
+    /// - password - credentials to use when connecting (no password)
     /// - reconnect-wait-time 2000
     /// - connect-timeout 5000
     /// - request-timeout 12000
@@ -160,7 +162,9 @@ public:
     void openDatabase();
 
     /// @brief Set consistency
-    void setConsistency(bool force, CassConsistency consistency);
+    void setConsistency(bool force,
+                        CassConsistency consistency,
+                        CassConsistency serial_consistency);
 
     /// @brief Start transaction
     void startTransaction();
@@ -170,6 +174,9 @@ public:
 
     /// @brief Rollback Transactions
     virtual void rollback();
+
+    /// @brief parse Consistency value
+    static CassConsistency parseConsistency(std::string value);
 
     /// @brief Check for errors
     ///
@@ -198,6 +205,9 @@ public:
 
     /// @brief CQL consistency
     CassConsistency consistency_;
+
+    /// @brief CQL serial consistency
+    CassConsistency serial_consistency_;
 
     // @brief Schema meta information, used for UDTs
     const CassSchemaMeta* schema_meta_;

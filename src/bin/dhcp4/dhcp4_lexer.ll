@@ -341,6 +341,15 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
     }
 }
 
+\"config-fetch-wait-time\" {
+    switch(driver.ctx_) {
+    case isc::dhcp::Parser4Context::CONFIG_CONTROL:
+        return isc::dhcp::Dhcp4Parser::make_CONFIG_FETCH_WAIT_TIME(driver.loc_);
+    default:
+        return isc::dhcp::Dhcp4Parser::make_STRING("config-fetch-wait-time", driver.loc_);
+    }
+}
+
 \"readonly\" {
     switch(driver.ctx_) {
     case isc::dhcp::Parser4Context::HOSTS_DATABASE:
@@ -481,6 +490,28 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
         return isc::dhcp::Dhcp4Parser::make_KEYSPACE(driver.loc_);
     default:
         return isc::dhcp::Dhcp4Parser::make_STRING("keyspace", driver.loc_);
+    }
+}
+
+\"consistency\" {
+    switch(driver.ctx_) {
+    case isc::dhcp::Parser4Context::LEASE_DATABASE:
+    case isc::dhcp::Parser4Context::HOSTS_DATABASE:
+    case isc::dhcp::Parser4Context::CONFIG_DATABASE:
+        return isc::dhcp::Dhcp4Parser::make_CONSISTENCY(driver.loc_);
+    default:
+        return isc::dhcp::Dhcp4Parser::make_STRING("consistency", driver.loc_);
+    }
+}
+
+\"serial-consistency\" {
+    switch(driver.ctx_) {
+    case isc::dhcp::Parser4Context::LEASE_DATABASE:
+    case isc::dhcp::Parser4Context::HOSTS_DATABASE:
+    case isc::dhcp::Parser4Context::CONFIG_DATABASE:
+        return isc::dhcp::Dhcp4Parser::make_SERIAL_CONSISTENCY(driver.loc_);
+    default:
+        return isc::dhcp::Dhcp4Parser::make_STRING("serial-consistency", driver.loc_);
     }
 }
 

@@ -50,8 +50,11 @@ using namespace std;
   NULL_TYPE "null"
 
   DHCP4 "Dhcp4"
+
   CONFIG_CONTROL "config-control"
   CONFIG_DATABASES "config-databases"
+  CONFIG_FETCH_WAIT_TIME "config-fetch-wait-time"
+
   INTERFACES_CONFIG "interfaces-config"
   INTERFACES "interfaces"
   DHCP_SOCKET_TYPE "dhcp-socket-type"
@@ -90,6 +93,8 @@ using namespace std;
   CONNECT_TIMEOUT "connect-timeout"
   CONTACT_POINTS "contact-points"
   KEYSPACE "keyspace"
+  CONSISTENCY "consistency"
+  SERIAL_CONSISTENCY "serial-consistency"
   MAX_RECONNECT_TRIES "max-reconnect-tries"
   RECONNECT_WAIT_TIME "reconnect-wait-time"
   REQUEST_TIMEOUT "request-timeout"
@@ -712,6 +717,8 @@ database_map_param: database_type
                   | tcp_keepalive
                   | tcp_nodelay
                   | keyspace
+                  | consistency
+                  | serial_consistency
                   | unknown_map_entry
                   ;
 
@@ -813,6 +820,22 @@ keyspace: KEYSPACE {
 } COLON STRING {
     ElementPtr ks(new StringElement($4, ctx.loc2pos(@4)));
     ctx.stack_.back()->set("keyspace", ks);
+    ctx.leave();
+};
+
+consistency: CONSISTENCY {
+    ctx.enter(ctx.NO_KEYWORD);
+} COLON STRING {
+    ElementPtr c(new StringElement($4, ctx.loc2pos(@4)));
+    ctx.stack_.back()->set("consistency", c);
+    ctx.leave();
+};
+
+serial_consistency: SERIAL_CONSISTENCY {
+    ctx.enter(ctx.NO_KEYWORD);
+} COLON STRING {
+    ElementPtr c(new StringElement($4, ctx.loc2pos(@4)));
+    ctx.stack_.back()->set("serial-consistency", c);
     ctx.leave();
 };
 
@@ -2124,6 +2147,7 @@ config_control_params: config_control_param
 
 // This defines a list of allowed parameters for each subnet.
 config_control_param: config_databases
+                    | config_fetch_wait_time
                     ;
 
 config_databases: CONFIG_DATABASES {
@@ -2134,6 +2158,11 @@ config_databases: CONFIG_DATABASES {
 } COLON LSQUARE_BRACKET database_list RSQUARE_BRACKET {
     ctx.stack_.pop_back();
     ctx.leave();
+};
+
+config_fetch_wait_time: CONFIG_FETCH_WAIT_TIME COLON INTEGER {
+    ElementPtr value(new IntElement($3, ctx.loc2pos(@3)));
+    ctx.stack_.back()->set("config-fetch-wait-time", value);
 };
 
 // --- logging entry -----------------------------------------

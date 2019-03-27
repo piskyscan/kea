@@ -227,9 +227,9 @@ public:
     /// result set, i.e. entries later than specified time are returned.
     /// @return Collection of audit entries.
     virtual db::AuditEntryCollection
-    getRecentAuditEntries4(const db::BackendSelector& backend_selector,
-                           const db::ServerSelector& server_selector,
-                           const boost::posix_time::ptime& modification_time) const;
+    getRecentAuditEntries(const db::BackendSelector& backend_selector,
+                          const db::ServerSelector& server_selector,
+                          const boost::posix_time::ptime& modification_time) const;
 
     /// @brief Creates or updates a subnet.
     ///
@@ -352,6 +352,18 @@ public:
     virtual uint64_t
     deleteAllSubnets4(const db::BackendSelector& backend_selector,
                       const db::ServerSelector& server_selector);
+
+    /// @brief Deletes all subnets belonging to a specified shared network.
+    ///
+    /// @param backend_selector Backend selector.
+    /// @param server_selector Server selector.
+    /// @param shared_network_name Name of the shared network for which the
+    /// subnets should be deleted.
+    /// @return Number of deleted subnets.
+    virtual uint64_t
+    deleteSharedNetworkSubnets4(const db::BackendSelector& backend_selector,
+                                const db::ServerSelector& server_selector,
+                                const std::string& shared_network_name);
 
     /// @brief Deletes shared network by name.
     ///
