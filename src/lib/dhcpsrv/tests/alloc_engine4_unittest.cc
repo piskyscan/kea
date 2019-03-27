@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2018 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2015-2019 Internet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -7,6 +7,7 @@
 #include <config.h>
 #include <dhcp/pkt4.h>
 #include <dhcpsrv/shared_network.h>
+#include <dhcpsrv/host_mgr.h>
 #include <dhcpsrv/tests/alloc_engine_utils.h>
 #include <dhcpsrv/tests/test_utils.h>
 #include <hooks/hooks_manager.h>
@@ -807,6 +808,51 @@ TEST_F(SharedNetworkAlloc4Test, discoverSharedNetworkPoolClassification) {
 // reservations belong.
 TEST_F(SharedNetworkAlloc4Test, discoverSharedNetworkReservations) {
 
+    EXPECT_FALSE(HostMgr::instance().getDisableSingleQuery());
+
+    // Create reservation for the client.
+    HostPtr host(new Host(&hwaddr_->hwaddr_[0], hwaddr_->hwaddr_.size(),
+                          Host::IDENT_HWADDR, subnet2_->getID(),
+                          SUBNET_ID_UNUSED, IOAddress("10.2.3.23")));
+    CfgMgr::instance().getStagingCfg()->getCfgHosts()->add(host);
+    CfgMgr::instance().commit();
+
+    // Start allocation from subnet1. The engine should determine that the
+    // client has reservations in subnet2 and should rather assign reserved
+    // addresses.
+    AllocEngine::ClientContext4
+        ctx(subnet1_, ClientIdPtr(), hwaddr_, IOAddress::IPV4_ZERO_ADDRESS(),
+            false, false, "host.example.com.", true);
+    ctx.query_.reset(new Pkt4(DHCPDISCOVER, 1234));
+    AllocEngine::findReservation(ctx);
+    Lease4Ptr lease = engine_.allocateLease4(ctx);
+    ASSERT_TRUE(lease);
+    EXPECT_EQ("10.2.3.23", lease->addr_.toText());
+
+    // Let's create a lease for the client to make sure the lease is not
+    // renewed but a reserved lease is offerred.
+    Lease4Ptr lease2(new Lease4(IOAddress("192.0.2.17"), hwaddr_, ClientIdPtr(),
+                                501, 502, 503, time(NULL), subnet1_->getID()));
+    lease->cltt_ = time(NULL) - 10; // Allocated 10 seconds ago
+    ASSERT_TRUE(LeaseMgrFactory::instance().addLease(lease2));
+    ctx.subnet_ = subnet1_;
+    AllocEngine::findReservation(ctx);
+    lease = engine_.allocateLease4(ctx);
+    ASSERT_TRUE(lease);
+    EXPECT_EQ("10.2.3.23", lease->addr_.toText());
+}
+
+// Test that reservations within shared network take precedence over the
+// existing leases regardless in which subnet belonging to a shared network
+// reservations belong. Host lookups returning a collection are disabled.
+// As it is only an optimization the behavior (so the test) must stay
+// unchanged.
+TEST_F(SharedNetworkAlloc4Test, discoverSharedNetworkReservationsNoColl) {
+
+    // Disable host lookups returning a collection.
+    ASSERT_FALSE(HostMgr::instance().getDisableSingleQuery());
+    HostMgr::instance().setDisableSingleQuery(true);
+
     // Create reservation for the client.
     HostPtr host(new Host(&hwaddr_->hwaddr_[0], hwaddr_->hwaddr_.size(),
                           Host::IDENT_HWADDR, subnet2_->getID(),
@@ -1062,6 +1108,54 @@ TEST_F(SharedNetworkAlloc4Test, requestSharedNetworkPoolClassification) {
 // existing leases regardless in which subnet belonging to a shared network
 // reservations belong (DHCPREQUEST case).
 TEST_F(SharedNetworkAlloc4Test, requestSharedNetworkReservations) {
+
+    EXPECT_FALSE(HostMgr::instance().getDisableSingleQuery());
+
+    // Create reservation for the client.
+    HostPtr host(new Host(&hwaddr_->hwaddr_[0], hwaddr_->hwaddr_.size(),
+                          Host::IDENT_HWADDR, subnet2_->getID(),
+                          SUBNET_ID_UNUSED, IOAddress("10.2.3.23")));
+    CfgMgr::instance().getStagingCfg()->getCfgHosts()->add(host);
+    CfgMgr::instance().commit();
+
+    // Start allocation from subnet1. The engine should determine that the
+    // client has reservations in subnet2 and should rather assign reserved
+    // addresses.
+    AllocEngine::ClientContext4
+        ctx(subnet1_, ClientIdPtr(), hwaddr_, IOAddress::IPV4_ZERO_ADDRESS(),
+            false, false, "host.example.com.", false);
+    ctx.query_.reset(new Pkt4(DHCPREQUEST, 1234));
+    AllocEngine::findReservation(ctx);
+    Lease4Ptr lease = engine_.allocateLease4(ctx);
+    ASSERT_TRUE(lease);
+    EXPECT_EQ("10.2.3.23", lease->addr_.toText());
+
+    // Remove the lease for another test below.
+    ASSERT_TRUE(LeaseMgrFactory::instance().deleteLease(lease->addr_));
+
+    // Let's create a lease for the client to make sure the lease is not
+    // renewed but a reserved lease is allocated again.
+    Lease4Ptr lease2(new Lease4(IOAddress("192.0.2.17"), hwaddr_, ClientIdPtr(),
+                                501, 502, 503, time(NULL), subnet1_->getID()));
+    lease->cltt_ = time(NULL) - 10; // Allocated 10 seconds ago
+    ASSERT_TRUE(LeaseMgrFactory::instance().addLease(lease2));
+    ctx.subnet_ = subnet1_;
+    AllocEngine::findReservation(ctx);
+    lease = engine_.allocateLease4(ctx);
+    ASSERT_TRUE(lease);
+    EXPECT_EQ("10.2.3.23", lease->addr_.toText());
+}
+
+// Test that reservations within shared network take precedence over the
+// existing leases regardless in which subnet belonging to a shared network
+// reservations belong (DHCPREQUEST case). Host lookups returning a collection
+// are disabled. As it is only an optimization the behavior (so the test)
+// must stay unchanged.
+TEST_F(SharedNetworkAlloc4Test, requestSharedNetworkReservationsNoColl) {
+
+    // Disable host lookups returning a collection.
+    ASSERT_FALSE(HostMgr::instance().getDisableSingleQuery());
+    HostMgr::instance().setDisableSingleQuery(true);
 
     // Create reservation for the client.
     HostPtr host(new Host(&hwaddr_->hwaddr_[0], hwaddr_->hwaddr_.size(),

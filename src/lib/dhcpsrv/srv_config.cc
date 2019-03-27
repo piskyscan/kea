@@ -40,8 +40,7 @@ SrvConfig::SrvConfig()
       decline_timer_(0), echo_v4_client_id_(true), dhcp4o6_port_(0),
       d2_client_config_(new D2ClientConfig()),
       configured_globals_(Element::createMap()),
-      cfg_consist_(new CfgConsistency()),
-      server_tag_("") {
+      cfg_consist_(new CfgConsistency()) {
 }
 
 SrvConfig::SrvConfig(const uint32_t sequence)
@@ -59,8 +58,7 @@ SrvConfig::SrvConfig(const uint32_t sequence)
       decline_timer_(0), echo_v4_client_id_(true), dhcp4o6_port_(0),
       d2_client_config_(new D2ClientConfig()),
       configured_globals_(Element::createMap()),
-      cfg_consist_(new CfgConsistency()),
-      server_tag_("") {
+      cfg_consist_(new CfgConsistency()) {
 }
 
 std::string
@@ -166,7 +164,7 @@ SrvConfig::merge(ConfigBase& other) {
         if (CfgMgr::instance().getFamily() == AF_INET) {
             merge4(other_srv_config);
         } else {
-            // @todo merge6();
+            /// @todo merge6();
         }
     } catch (const std::bad_cast&) {
         isc_throw(InvalidOperation, "internal server error: must use derivation"
@@ -177,21 +175,26 @@ SrvConfig::merge(ConfigBase& other) {
 
 void
 SrvConfig::merge4(SrvConfig& other) {
-    /// We merge objects in order of dependency (real or theoretical).
+    // We merge objects in order of dependency (real or theoretical).
 
-    /// Merge globals.
+    // Merge globals.
     mergeGlobals4(other);
 
-    /// Merge option defs
+    // Merge option defs. We need to do this next so we
+    // pass these into subsequent merges so option instances
+    // at each level can be created based on the merged
+    // definitions.
     cfg_option_def_->merge((*other.getCfgOptionDef()));
 
-    /// @todo merge options
+    // Merge options.  
+    cfg_option_->merge(cfg_option_def_, (*other.getCfgOption()));
 
     // Merge shared networks.
-    cfg_shared_networks4_->merge(*(other.getCfgSharedNetworks4()));
+    cfg_shared_networks4_->merge(cfg_option_def_, *(other.getCfgSharedNetworks4()));
 
-    /// Merge subnets.
-    cfg_subnets4_->merge(getCfgSharedNetworks4(), *(other.getCfgSubnets4()));
+    // Merge subnets.
+    cfg_subnets4_->merge(cfg_option_def_, getCfgSharedNetworks4(), 
+                         *(other.getCfgSubnets4()));
 
     /// @todo merge other parts of the configuration here.
 }
@@ -283,6 +286,15 @@ SrvConfig::toElement() const {
 
     // Set user-context
     contextToElement(dhcp);
+
+    // Set data directory if DHCPv6 and specified.
+    if (family == AF_INET6) {
+        const util::Optional<std::string>& datadir =
+            CfgMgr::instance().getDataDir();
+        if (!datadir.unspecified()) {
+            dhcp->set("data-directory", Element::create(datadir));
+        }
+    }
 
     // Set decline-probation-period
     dhcp->set("decline-probation-period",
@@ -445,7 +457,7 @@ SrvConfig::toElement() const {
     }
     // Set client-classes
     ConstElementPtr client_classes = class_dictionary_->toElement();
-    // @todo accept empty list
+    /// @todo accept empty list
     if (!client_classes->empty()) {
         dhcp->set("client-classes", client_classes);
     }

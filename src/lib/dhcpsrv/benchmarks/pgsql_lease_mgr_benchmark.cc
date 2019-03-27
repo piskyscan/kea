@@ -37,7 +37,7 @@ public:
     ///
     /// It cleans up schema and recreates tables, then instantiates LeaseMgr
     void SetUp(::benchmark::State const&) override {
-        destroyPgSQLSchema();
+        // Ensure we have the proper schema with no transient data.
         createPgSQLSchema();
         try {
             LeaseMgrFactory::destroy();
@@ -64,6 +64,7 @@ public:
                  << endl;
         }
         LeaseMgrFactory::destroy();
+        // If data wipe enabled, delete transient data otherwise destroy the schema
         destroyPgSQLSchema();
     }
 

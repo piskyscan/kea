@@ -27,13 +27,14 @@ CfgMgr::instance() {
     return (cfg_mgr);
 }
 
-std::string CfgMgr::getDataDir() const {
+Optional<std::string>
+CfgMgr::getDataDir() const {
     return (datadir_);
 }
 
 void
-CfgMgr::setDataDir(const std::string& datadir) {
-    datadir_ = datadir;
+CfgMgr::setDataDir(const std::string& datadir, bool unspecified) {
+    datadir_ = Optional<std::string>(datadir, unspecified);
 }
 
 void
@@ -187,7 +188,17 @@ CfgMgr::mergeIntoStagingCfg(const uint32_t seq) {
 
 void
 CfgMgr::mergeIntoCurrentCfg(const uint32_t seq) {
-    mergeIntoCfg(getCurrentCfg(), seq);
+    try {
+        // First we need to remove statistics.
+        getCurrentCfg()->removeStatistics();
+        mergeIntoCfg(getCurrentCfg(), seq);
+
+    } catch (...) {
+        // Make sure the statistics is updated even if the merge failed.
+        getCurrentCfg()->updateStatistics();
+        throw;
+    }
+    getCurrentCfg()->updateStatistics();
 }
 
 void
@@ -204,7 +215,7 @@ CfgMgr::mergeIntoCfg(const SrvConfigPtr& target_config, const uint32_t seq) {
 }
 
 CfgMgr::CfgMgr()
-    : datadir_(DHCP_DATA_DIR), d2_client_mgr_(), family_(AF_INET) {
+    : datadir_(DHCP_DATA_DIR, true), d2_client_mgr_(), family_(AF_INET) {
     // DHCP_DATA_DIR must be set set with -DDHCP_DATA_DIR="..." in Makefile.am
     // Note: the definition of DHCP_DATA_DIR needs to include quotation marks
     // See AM_CPPFLAGS definition in Makefile.am

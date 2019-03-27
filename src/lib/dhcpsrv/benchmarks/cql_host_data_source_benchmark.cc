@@ -40,8 +40,8 @@ public:
     ///
     /// It cleans up schema and recreates tables, then instantiates HostMgr
     void SetUp(::benchmark::State const&) override {
-        destroyCqlSchema(false, true);
-        createCqlSchema(false, true);
+        // Ensure we have the proper schema with no transient data.
+        createCqlSchema();
         try {
             HostMgr::create();
             HostMgr::addBackend(validCqlConnectionString());
@@ -66,8 +66,9 @@ public:
                     " is opened in read-only mode, continuing..."
                  << endl;
         }
-        HostMgr::delBackend("cql");
-        destroyCqlSchema(false, true);
+        HostDataSourceFactory::destroy();
+        // If data wipe enabled, delete transient data otherwise destroy the schema
+        destroyCqlSchema();
     }
 
     void TearDown(::benchmark::State& s) override {

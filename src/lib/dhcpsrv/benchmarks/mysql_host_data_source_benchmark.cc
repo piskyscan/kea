@@ -40,7 +40,7 @@ public:
     ///
     /// It cleans up schema and recreates tables, then instantiates HostMgr
     void SetUp(::benchmark::State const&) override {
-        destroyMySQLSchema();
+        // Ensure we have the proper schema with no transient data.
         createMySQLSchema();
         try {
             HostMgr::create();
@@ -66,7 +66,8 @@ public:
                     " is opened in read-only mode, continuing..."
                  << endl;
         }
-        HostMgr::delBackend("mysql");
+        HostDataSourceFactory::destroy();
+        // If data wipe enabled, delete transient data otherwise destroy the schema.
         destroyMySQLSchema();
     }
 
