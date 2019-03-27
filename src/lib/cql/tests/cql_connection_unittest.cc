@@ -23,6 +23,7 @@ using isc::db::StatementMap;
 using isc::db::StatementTag;
 using isc::db::StatementTagHash;
 using isc::db::exchangeType;
+using isc::db::CqlConnection;
 
 class CqlConnectionTest {
 public:
@@ -58,6 +59,19 @@ TEST(CqlConnection, statementMapHash) {
     EXPECT_TRUE(tag2_text);
     ASSERT_EQ(std::strcmp(tag1_text, tag2_text), 0);
     ASSERT_EQ(map.size(), 1u);
+}
+
+/// @brief Check that the parseConsistency function return proper values.
+TEST(CqlConnection, parseConsistency) {
+    std::string consistency;
+    consistency = "quorum";
+    ASSERT_EQ(CqlConnection::parseConsistency(consistency), CASS_CONSISTENCY_QUORUM);
+    consistency = "serial";
+    ASSERT_EQ(CqlConnection::parseConsistency(consistency), CASS_CONSISTENCY_SERIAL);
+    consistency = "";
+    ASSERT_EQ(CqlConnection::parseConsistency(consistency), CASS_CONSISTENCY_UNKNOWN);
+    consistency = "unknown";
+    ASSERT_EQ(CqlConnection::parseConsistency(consistency), CASS_CONSISTENCY_UNKNOWN);
 }
 
 }  // namespace

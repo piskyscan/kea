@@ -595,6 +595,25 @@ The default value for Cassandra is 2000 ms.
         algorithm on connections. The default is true.
       </simpara></listitem>
 
+      <listitem><simpara>
+        <command>consistency</command> - configures consistency level.
+        The default is "quorum".
+        Supported values: any, one, two, three, quorum, all, local-quorum, each-quorum,
+        serial, local-serial, local-one.
+        See <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://docs.datastax.com/en/cassandra/3.0/cassandra/dml/dmlConfigConsistency.html">Cassandra consistency</link>
+        for more details.
+      </simpara></listitem>
+
+      <listitem><simpara>
+        <command>serial-consistency</command> - configures serial consistency
+        level which manages lightweight transaction isolation. The default is
+        "serial".
+        Supported values: any, one, two, three, quorum, all, local-quorum, each-quorum,
+        serial, local-serial, local-one.
+        See <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://docs.datastax.com/en/cassandra/3.0/cassandra/dml/dmlConfigSerialConsistency.html">Cassandra serial consistency</link>
+        for more details.
+      </simpara></listitem>
+
     </itemizedlist>
   </para>
 
@@ -1664,7 +1683,7 @@ It is merely echoed by the server.
 <row><entry>pana-agent</entry><entry>136</entry><entry>ipv4-address</entry><entry>true</entry><entry>false</entry></row>
 <row><entry>v4-lost</entry><entry>137</entry><entry>fqdn</entry><entry>false</entry><entry>false</entry></row>
 <row><entry>capwap-ac-v4</entry><entry>138</entry><entry>ipv4-address</entry><entry>true</entry><entry>false</entry></row>
-<row><entry>sip-ua-cs-domains</entry><entry>142</entry><entry>fqdn</entry><entry>true</entry><entry>false</entry></row>
+<row><entry>sip-ua-cs-domains</entry><entry>141</entry><entry>fqdn</entry><entry>true</entry><entry>false</entry></row>
 <row><entry>rdnss-selection</entry><entry>146</entry><entry>record (uint8, ipv4-address, ipv4-address, fqdn)</entry><entry>true</entry><entry>false</entry></row>
 <row><entry>v4-portparams</entry><entry>159</entry><entry>record (uint8, psid)</entry><entry>false</entry><entry>false</entry></row>
 <row><entry>v4-captive-portal</entry><entry>160</entry><entry>string</entry><entry>false</entry><entry>false</entry></row>

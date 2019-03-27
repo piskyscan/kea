@@ -2200,7 +2200,7 @@ public:
     ///
     /// Recreates MySQL schema for a test.
     DORAMySQLTest() : DORATest() {
-        db::test::destroyMySQLSchema();
+        // Ensure we have the proper schema with no transient data.
         db::test::createMySQLSchema();
     }
 
@@ -2208,6 +2208,7 @@ public:
     ///
     /// Destroys MySQL schema.
     virtual ~DORAMySQLTest() {
+        // If data wipe enabled, delete transient data otherwise destroy the schema.
         db::test::destroyMySQLSchema();
     }
 };
@@ -2233,7 +2234,7 @@ public:
     ///
     /// Recreates PgSQL schema for a test.
     DORAPgSQLTest() : DORATest() {
-        db::test::destroyPgSQLSchema();
+        // Ensure we have the proper schema with no transient data.
         db::test::createPgSQLSchema();
     }
 
@@ -2241,6 +2242,7 @@ public:
     ///
     /// Destroys PgSQL schema.
     virtual ~DORAPgSQLTest() {
+        // If data wipe enabled, delete transient data otherwise destroy the schema
         db::test::destroyPgSQLSchema();
     }
 };
@@ -2265,15 +2267,16 @@ public:
     ///
     /// Recreates CQL schema for a test.
     DORACQLTest() : DORATest() {
-        db::test::destroyCqlSchema(false, true);
-        db::test::createCqlSchema(false, true);
+        // Ensure we have the proper schema with no transient data.
+        db::test::createCqlSchema();
     }
 
     /// @brief Destructor.
     ///
     /// Destroys CQL schema.
     virtual ~DORACQLTest() {
-        db::test::destroyCqlSchema(false, true);
+        // If data wipe enabled, delete transient data otherwise destroy the schema
+        db::test::destroyCqlSchema();
     }
 };
 

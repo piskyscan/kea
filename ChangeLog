@@ -1,3 +1,63 @@
+1548.	[func]		razvan
+	Added consistency and serial-consistency parameters to CQL
+	connection.
+	(Gitlab #16,!266, git 5771173d721464d879869fad6456211031858d6c)
+
+1547.	[bug, doc]		fdupont
+	Option value for sip-ua-cs-domains has been corrected in the
+	Kea User's Guide. Thanks to Shawn Routhier from Infoblox for
+	reporting this issue.
+	(Gitlab #536,!281, git c128fd9a6b7bffc36ba4fe9a0badebe55441d673)
+
+1546.	[func]		tmark
+	kea-dhcp4 now uses options fetched from configured backends.
+	(Gitlab #401,!254, git 6a33a6f1810f5899ff9c8bc79d0093eebad5c728)
+
+1545.	[func]		fdupont
+	A new parameter "data-directory" has been added to DHCPv6.
+	If specified, it allows DHCPv6 server to store lease and
+	server-id files in non-standard locations.
+	(Gitlab #430,!263, git 1f094e18a21124abcaf846cab52c8cba65ca36bc)
+
+1544.	[build]		fdupont
+	Message compiler is no longer needed during compilation and
+	generated message files are part of the distribution. They can be
+	regenerated using --enable-generate-messages switch passed to
+	configure script.
+	(Gitlab #441,!233, git 499b7c36454bcac2553f7bf304d48d7d80f4d4ca)
+
+1543.	[bug]		fdupont
+	Corrected behavior of the remote-subnet4-set so as it is now
+	possible to set the subnet using both an ID or a subnet prefix.
+	(Gitlab #481,!251, git 9ef651950fde16e258e4b03dd21bbf6dd07d5231)
+
+1542.	[test]		tmark
+	MySQL, PostgreSQL, and CQL unit tests will now attempt to wipe
+	the unit test data, rather than the (re)create the schema between
+	each test.  This reduces test execution time appreciably.  The
+	behavior may be overridden by defining environment variable:
+	KEA_TEST_DB_WIPE_DATA_ONLY="false".  This will cause the schema
+	to be recreated before each test but may dramatically increase
+	test execution time.
+	(Gitlab #526,!269, git 7e81d7bea27e919b652351880872aae68ad1b209)
+	(Gitlab #531,!279, git 7f8c4fc535df3019789aea1881b7bb3bd539963a)
+
+1541.	[bug]		fdupont
+	Empty Relay Agent Information option is no longer sent in server
+	responses. Thanks to Geoffrey Huang from Qingdao Agricultural
+	University, and Jiaqi Liu from Qingdao WuKeSong Company
+	Communication Limited, Shandong, PRC for reporting this issue.
+	(Gitlab #519,#510,!271, git f3563396d2227e48e96a5d65587406d8d1868db5)
+
+1540.	[func]		fdupont
+	Added a new method deleteSharedNetworkSubnets4 in the config
+	backend API to delete all subnets belonging to a shared network.
+	(Gitlab #512,!256, git 76991c42d115641c7fdcd0f215137be578fb39a0)
+
+1539.	[build]		fdupont
+	Obsolete dns++.pc file for pkg-config was removed.
+	(Gitlab #498,!274, git 93cd62c99f69cc379c08cd06791db522c1fb0aca)
+
 1538.	[func]		marcin
 	DHCP configuration parsers correctly handle unspecified parameters.
 	This change was required for the MySQL Config Backend to record

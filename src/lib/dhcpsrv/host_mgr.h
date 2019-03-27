@@ -427,6 +427,19 @@ public:
         negative_caching_ = negative_caching;
     }
 
+    /// @brief Returns the disable single query flag.
+    ///
+    /// @return the disable single query flag.
+    bool getDisableSingleQuery() const {
+        return (disable_single_query_);
+    }
+
+    /// @brief Sets the disable single query flag.
+    ///
+    void setDisableSingleQuery(bool disable_single_query) {
+        disable_single_query_ = disable_single_query;
+    }
+
 protected:
     /// @brief The negative caching flag.
     ///
@@ -434,6 +447,13 @@ protected:
     /// negative answers are inserted in the cache.
     /// This works for get[46] for a subnet and an identifier.
     bool negative_caching_;
+
+    /// @brief The disable single query flag.
+    ///
+    /// When true prevent the use of lookup methods returning a collection
+    /// aka single queries when methods returning a host object are usable
+    /// instead.
+    bool disable_single_query_;
 
     /// @brief Cache an answer.
     ///
@@ -456,7 +476,7 @@ protected:
 private:
 
     /// @brief Private default constructor.
-    HostMgr() : negative_caching_(false) { }
+    HostMgr() : negative_caching_(false), disable_single_query_(false) { }
 
     /// @brief List of alternate host data sources.
     HostDataSourceList alternate_sources_;

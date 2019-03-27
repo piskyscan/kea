@@ -258,7 +258,7 @@ void
 HostMgrTest::testGetAll(BaseHostDataSource& data_source1,
                         BaseHostDataSource& data_source2) {
     // Initially, no reservations should be present.
-    ConstHostCollection hosts = 
+    ConstHostCollection hosts =
         HostMgr::instance().getAll(Host::IDENT_HWADDR,
                                    &hwaddrs_[1]->hwaddr_[0],
                                    hwaddrs_[1]->hwaddr_.size());
@@ -863,8 +863,8 @@ public:
     /// appropriate schema and create a basic host manager to
     /// wipe out any prior instance
     virtual void SetUp() {
-        DatabaseConnection::db_lost_callback = 0;  
-        destroySchema();
+        DatabaseConnection::db_lost_callback = 0;
+        // Ensure we have the proper schema with no transient data.
         createSchema();
         // Wipe out any pre-existing mgr
         HostMgr::create();
@@ -875,7 +875,8 @@ public:
     /// Invoked by gtest upon test exit, we destroy the schema
     /// we created.
     virtual void TearDown() {
-        DatabaseConnection::db_lost_callback = 0;  
+        DatabaseConnection::db_lost_callback = 0;
+        // If data wipe enabled, delete transient data otherwise destroy the schema
         destroySchema();
     }
 
@@ -971,8 +972,7 @@ void
 MySQLHostMgrTest::SetUp() {
     HostMgrTest::SetUp();
 
-    // Ensure schema is the correct one.
-    db::test::destroyMySQLSchema();
+    // Ensure we have the proper schema with no transient data.
     db::test::createMySQLSchema();
 
     // Connect to the database
@@ -992,6 +992,8 @@ void
 MySQLHostMgrTest::TearDown() {
     HostMgr::instance().getHostDataSource()->rollback();
     HostMgr::delBackend("mysql");
+
+    // If data wipe enabled, delete transient data otherwise destroy the schema
     db::test::destroyMySQLSchema();
 }
 
@@ -1000,10 +1002,12 @@ MySQLHostMgrTest::TearDown() {
 class MySQLHostMgrDbLostCallbackTest : public HostMgrDbLostCallbackTest {
 public:
     virtual void destroySchema() {
+        // If data wipe enabled, delete transient data otherwise destroy the schema
         db::test::destroyMySQLSchema();
     }
 
     virtual void createSchema() {
+        // Ensure we have the proper schema with no transient data.
         db::test::createMySQLSchema();
     }
 
@@ -1094,8 +1098,7 @@ void
 PostgreSQLHostMgrTest::SetUp() {
     HostMgrTest::SetUp();
 
-    // Ensure schema is the correct one.
-    db::test::destroyPgSQLSchema();
+    // Ensure we have the proper schema with no transient data.
     db::test::createPgSQLSchema();
 
     // Connect to the database
@@ -1115,6 +1118,7 @@ void
 PostgreSQLHostMgrTest::TearDown() {
     HostMgr::instance().getHostDataSource()->rollback();
     HostMgr::delBackend("postgresql");
+    // If data wipe enabled, delete transient data otherwise destroy the schema
     db::test::destroyPgSQLSchema();
 }
 
@@ -1123,10 +1127,12 @@ PostgreSQLHostMgrTest::TearDown() {
 class PostgreSQLHostMgrDbLostCallbackTest : public HostMgrDbLostCallbackTest {
 public:
     virtual void destroySchema() {
+        // If data wipe enabled, delete transient data otherwise destroy the schema
         db::test::destroyPgSQLSchema();
     }
 
     virtual void createSchema() {
+        // Ensure we have the proper schema with no transient data.
         db::test::createPgSQLSchema();
     }
 
@@ -1216,9 +1222,8 @@ void
 CQLHostMgrTest::SetUp() {
     HostMgrTest::SetUp();
 
-    // Ensure schema is the correct one.
-    db::test::destroyCqlSchema(false, true);
-    db::test::createCqlSchema(false, true);
+    // Ensure we have the proper schema with no transient data.
+    db::test::createCqlSchema();
 
     // Connect to the database
     try {
@@ -1237,7 +1242,9 @@ void
 CQLHostMgrTest::TearDown() {
     HostMgr::instance().getHostDataSource()->rollback();
     HostMgr::delBackend("cql");
-    db::test::destroyCqlSchema(false, true);
+
+    // If data wipe enabled, delete transient data otherwise destroy the schema
+    db::test::destroyCqlSchema();
 }
 
 // This test verifies that reservations for a particular client can

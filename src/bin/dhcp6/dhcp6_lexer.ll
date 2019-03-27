@@ -1,4 +1,4 @@
-/* Copyright (C) 2016-2018 Internet Systems Consortium, Inc. ("ISC")
+/* Copyright (C) 2016-2019 Internet Systems Consortium, Inc. ("ISC")
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -432,6 +432,15 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
     }
 }
 
+\"data-directory\" {
+    switch(driver.ctx_) {
+    case isc::dhcp::Parser6Context::DHCP6:
+        return  isc::dhcp::Dhcp6Parser::make_DATA_DIRECTORY(driver.loc_);
+    default:
+        return isc::dhcp::Dhcp6Parser::make_STRING("data-directory", driver.loc_);
+    }
+}
+
 \"interfaces-config\" {
     switch(driver.ctx_) {
     case isc::dhcp::Parser6Context::DHCP6:
@@ -667,6 +676,28 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
         return isc::dhcp::Dhcp6Parser::make_KEYSPACE(driver.loc_);
     default:
         return isc::dhcp::Dhcp6Parser::make_STRING("keyspace", driver.loc_);
+    }
+}
+
+\"consistency\" {
+    switch(driver.ctx_) {
+    case isc::dhcp::Parser6Context::LEASE_DATABASE:
+    case isc::dhcp::Parser6Context::HOSTS_DATABASE:
+    case isc::dhcp::Parser6Context::CONFIG_DATABASE:
+        return isc::dhcp::Dhcp6Parser::make_CONSISTENCY(driver.loc_);
+    default:
+        return isc::dhcp::Dhcp6Parser::make_STRING("consistency", driver.loc_);
+    }
+}
+
+\"serial-consistency\" {
+    switch(driver.ctx_) {
+    case isc::dhcp::Parser6Context::LEASE_DATABASE:
+    case isc::dhcp::Parser6Context::HOSTS_DATABASE:
+    case isc::dhcp::Parser6Context::CONFIG_DATABASE:
+        return isc::dhcp::Dhcp6Parser::make_SERIAL_CONSISTENCY(driver.loc_);
+    default:
+        return isc::dhcp::Dhcp6Parser::make_STRING("serial-consistency", driver.loc_);
     }
 }
 

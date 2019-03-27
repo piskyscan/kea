@@ -149,35 +149,6 @@ public:
         }
     }
 
-    /// @brief Tests that a given global is in the staged configured globals
-    ///
-    /// @param name name of the global parameter
-    /// @param exp_value expected value of the global paramter as an Element
-    void checkConfiguredGlobal(const std::string &name,
-                               ConstElementPtr exp_value) {
-        SrvConfigPtr staging_cfg = CfgMgr::instance().getStagingCfg();
-        ConstElementPtr globals = staging_cfg->getConfiguredGlobals();
-        ConstElementPtr found_global = globals->get(name);
-        ASSERT_TRUE(found_global) << "expected global: "
-                    << name << " not found";
-
-        ASSERT_EQ(exp_value->getType(), found_global->getType())
-                  << "expected global: " << name << " has wrong type";
-
-        ASSERT_EQ(*exp_value, *found_global)
-                  << "expected global: " << name << " has wrong value";
-    }
-
-    /// @brief Tests that a given global is in the staged configured globals
-    ///
-    /// @param exp_global StampedValue representing the global value to verify
-    ///
-    /// @todo At the point in time StampedVlaue carries type, exp_type should be
-    /// replaced with exp_global->getType()
-    void checkConfiguredGlobal(StampedValuePtr& exp_global) {
-        checkConfiguredGlobal(exp_global->getName(), exp_global->getElementValue());
-    }
-
     boost::scoped_ptr<Dhcpv4Srv> srv_;  ///< DHCP4 server under test
     int rcode_;                         ///< Return code from element parsing
     ConstElementPtr comment_;           ///< Reason for parse fail
@@ -247,14 +218,16 @@ TEST_F(Dhcp4CBTest, mergeGlobals) {
     EXPECT_EQ(86400, staging_cfg->getDeclinePeriod());
 
     // Verify that the implicit globals from JSON are there.
-    ASSERT_NO_FATAL_FAILURE(checkConfiguredGlobal("valid-lifetime", Element::create(1000)));
-    ASSERT_NO_FATAL_FAILURE(checkConfiguredGlobal("rebind-timer", Element::create(800)));
+    ASSERT_NO_FATAL_FAILURE(checkConfiguredGlobal(staging_cfg, "valid-lifetime",
+                                                  Element::create(1000)));
+    ASSERT_NO_FATAL_FAILURE(checkConfiguredGlobal(staging_cfg, "rebind-timer",
+                                                  Element::create(800)));
 
     // Verify that the implicit globals from the backend are there.
-    ASSERT_NO_FATAL_FAILURE(checkConfiguredGlobal(server_hostname));
-    ASSERT_NO_FATAL_FAILURE(checkConfiguredGlobal(calc_tee_times));
-    ASSERT_NO_FATAL_FAILURE(checkConfiguredGlobal(t2_percent));
-    ASSERT_NO_FATAL_FAILURE(checkConfiguredGlobal(renew_timer));
+    ASSERT_NO_FATAL_FAILURE(checkConfiguredGlobal(staging_cfg, server_hostname));
+    ASSERT_NO_FATAL_FAILURE(checkConfiguredGlobal(staging_cfg, calc_tee_times));
+    ASSERT_NO_FATAL_FAILURE(checkConfiguredGlobal(staging_cfg, t2_percent));
+    ASSERT_NO_FATAL_FAILURE(checkConfiguredGlobal(staging_cfg, renew_timer));
 }
 
 // This test verifies that externally configured option definitions
@@ -335,15 +308,19 @@ TEST_F(Dhcp4CBTest, mergeOptionDefs) {
 
 // This test verifies that externally configured options
 // merged correctly into staging configuration.
-// @todo enable test when SrvConfig can merge options.
-TEST_F(Dhcp4CBTest, DISABLED_mergeOptions) {
+TEST_F(Dhcp4CBTest, mergeOptions) {
     string base_config =
         "{ \n"
-        "    \"option-data\": [ {"
-        "        \"name\": \"dhcp-message\","
-        "        \"data\": \"0A0B0C0D\","
-        "        \"csv-format\": false"
-        "     } ],"
+        "    \"option-data\": [ { \n"
+        "        \"name\": \"dhcp-message\", \n"
+        "        \"data\": \"0A0B0C0D\", \n"
+        "        \"csv-format\": false \n"
+        "     },{ \n" 
+        "        \"name\": \"host-name\", \n"
+        "        \"data\": \"old.example.com\", \n"
+        "        \"csv-format\": true \n"
+        "     } \n"
+        "    ], \n"
         "    \"config-control\": { \n"
         "       \"config-databases\": [ { \n"
         "               \"type\": \"memfile\", \n"
@@ -358,19 +335,28 @@ TEST_F(Dhcp4CBTest, DISABLED_mergeOptions) {
 
     extractConfig(base_config);
 
-    // Create option two and add it to first backend.
-    OptionDescriptorPtr opt_two(new OptionDescriptor(
-        createOption<OptionString>(Option::V4, DHO_BOOT_FILE_NAME,
-                                   true, false, "my-boot-file")));
-    opt_two->space_name_ = DHCP4_OPTION_SPACE;
-    db1_->createUpdateOption4(ServerSelector::ALL(), opt_two);
+    OptionDescriptorPtr opt;
 
-    // Create option three and add it to second backend.
-    OptionDescriptorPtr opt_three(new OptionDescriptor(
-        createOption<OptionString>(Option::V4, DHO_BOOT_FILE_NAME,
-                                   true, false, "your-boot-file")));
-    opt_three->space_name_ = DHCP4_OPTION_SPACE;
-    db2_->createUpdateOption4(ServerSelector::ALL(), opt_three);
+    // Add host-name to the first backend.
+    opt.reset(new OptionDescriptor(
+              createOption<OptionString>(Option::V4, DHO_HOST_NAME,
+                                         true, false, "new.example.com")));
+    opt->space_name_ = DHCP4_OPTION_SPACE;
+    db1_->createUpdateOption4(ServerSelector::ALL(), opt);
+
+    // Add boot-file-name to the first backend.
+    opt.reset(new OptionDescriptor(
+              createOption<OptionString>(Option::V4, DHO_BOOT_FILE_NAME,
+                                         true, false, "my-boot-file")));
+    opt->space_name_ = DHCP4_OPTION_SPACE;
+    db1_->createUpdateOption4(ServerSelector::ALL(), opt);
+
+    // Add boot-file-name to the second backend.
+    opt.reset(new OptionDescriptor(
+              createOption<OptionString>(Option::V4, DHO_BOOT_FILE_NAME,
+                                         true, false, "your-boot-file")));
+    opt->space_name_ = DHCP4_OPTION_SPACE;
+    db2_->createUpdateOption4(ServerSelector::ALL(), opt);
 
     // Should parse and merge without error.
     ASSERT_NO_FATAL_FAILURE(configure(base_config, CONTROL_RESULT_SUCCESS, ""));
@@ -381,13 +367,21 @@ TEST_F(Dhcp4CBTest, DISABLED_mergeOptions) {
     // Option definition from JSON should be there.
     CfgOptionPtr options = staging_cfg->getCfgOption();
 
+    // dhcp-message should come from the original config.
     OptionDescriptor found_opt = options->get("dhcp4", DHO_DHCP_MESSAGE);
     ASSERT_TRUE(found_opt.option_);
     EXPECT_EQ("0x0A0B0C0D", found_opt.option_->toHexString());
 
+    // host-name should come from the first back end, 
+    // (overwriting the original).
+    found_opt = options->get("dhcp4", DHO_HOST_NAME);
+    ASSERT_TRUE(found_opt.option_);
+    EXPECT_EQ("new.example.com", found_opt.option_->toString());
+
+    // booth-file-name should come from the first back end.
     found_opt = options->get("dhcp4", DHO_BOOT_FILE_NAME);
     ASSERT_TRUE(found_opt.option_);
-    EXPECT_EQ("my-boot-file", found_opt.formatted_value_);
+    EXPECT_EQ("my-boot-file", found_opt.option_->toString());
 }
 
 // This test verifies that externally configured shared-networks are
