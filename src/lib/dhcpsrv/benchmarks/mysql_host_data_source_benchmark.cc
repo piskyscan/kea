@@ -67,7 +67,7 @@ public:
                  << endl;
         }
         HostDataSourceFactory::destroy();
-        // If data wipe enabled, delete transient data otherwise destroy the schema.
+        // If data wipe enabled, delete transient data otherwise destroy the schema
         destroyMySQLSchema();
     }
 

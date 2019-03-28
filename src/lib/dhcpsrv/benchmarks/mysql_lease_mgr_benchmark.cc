@@ -64,8 +64,7 @@ public:
                  << endl;
         }
         LeaseMgrFactory::destroy();
-        // If data wipe enabled, delete transient data otherwise destroy the schema.
-        destroyMySQLSchema();
+        // If data wipe enabled, delete transient data otherwise destroy the schema
         destroyMySQLSchema();
     }
 
