@@ -343,9 +343,6 @@ configureDhcp4Server(Dhcpv4Srv& server, isc::data::ConstElementPtr config_set,
         // Get the staging configuration
         srv_cfg = CfgMgr::instance().getStagingCfg();
 
-        // Preserve all scalar global parameters
-        srv_cfg->extractConfiguredGlobals(config_set);
-
         // This is a way to convert ConstElementPtr to ElementPtr.
         // We need a config that can be edited, because we will insert
         // default values and will insert derived values as well.
@@ -532,20 +529,22 @@ configureDhcp4Server(Dhcpv4Srv& server, isc::data::ConstElementPtr config_set,
                 continue;
             }
 
-            // Timers are not used in the global scope. Their values are derived
-            // to specific subnets (see SimpleParser6::deriveParameters).
-            // decline-probation-period, dhcp4o6-port, echo-client-id,
-            // user-context are handled in global_parser.parse() which
-            // sets global parameters.
-            // match-client-id and authoritative are derived to subnet scope
-            // level.
+            // As of Kea 1.6.0 we have two ways of inheriting the global parameters.
+            // The old method is used in JSON configuration parsers when the global
+            // parameters are derived into the subnets and shared networks and are
+            // being treated as explicitly specified. The new way used by the config
+            // backend is the dynamic inheritance whereby each subnet and shared
+            // network uses a callback function to return global parameter if it
+            // is not specified at lower level. This callback uses configured globals.
+            // We deliberately include both default and explicitly specified globals
+            // so as the callback can access the appropriate global values regardless
+            // whether they are set to a default or other value.
             if ( (config_pair.first == "renew-timer") ||
                  (config_pair.first == "rebind-timer") ||
                  (config_pair.first == "valid-lifetime") ||
                  (config_pair.first == "decline-probation-period") ||
                  (config_pair.first == "dhcp4o6-port") ||
                  (config_pair.first == "echo-client-id") ||
-                 (config_pair.first == "user-context") ||
                  (config_pair.first == "match-client-id") ||
                  (config_pair.first == "authoritative") ||
                  (config_pair.first == "next-server") ||
@@ -556,6 +555,15 @@ configureDhcp4Server(Dhcpv4Srv& server, isc::data::ConstElementPtr config_set,
                  (config_pair.first == "calculate-tee-times") ||
                  (config_pair.first == "t1-percent") ||
                  (config_pair.first == "t2-percent")) {
+
+                CfgMgr::instance().getStagingCfg()->addConfiguredGlobal(config_pair.first,
+                                                                        config_pair.second);
+                continue;
+
+            }
+
+            // Nothing to configure for the user-context.
+            if (config_pair.first == "user-context") {
                 continue;
             }
 

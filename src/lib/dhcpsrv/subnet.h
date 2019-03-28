@@ -11,8 +11,8 @@
 #include <cc/data.h>
 #include <cc/user_context.h>
 #include <dhcp/option_space_container.h>
-#include <dhcpsrv/assignable_network.h>
 #include <dhcpsrv/lease.h>
+#include <dhcpsrv/network.h>
 #include <dhcpsrv/pool.h>
 #include <dhcpsrv/subnet_id.h>
 #include <dhcpsrv/triplet.h>
@@ -31,12 +31,7 @@
 namespace isc {
 namespace dhcp {
 
-class Subnet : public virtual data::UserContext, public data::CfgToElement {
-
-    // Assignable network is our friend to allow it to call
-    // @ref Subnet::setSharedNetwork private function.
-    friend class AssignableNetwork;
-
+class Subnet : public virtual Network {
 public:
 
     /// @brief checks if specified address is in range
@@ -250,10 +245,8 @@ public:
     template<typename SharedNetworkPtrType>
     void getSharedNetwork(SharedNetworkPtrType& shared_network) const {
         shared_network = boost::dynamic_pointer_cast<
-            typename SharedNetworkPtrType::element_type>(shared_network_.lock());
+            typename SharedNetworkPtrType::element_type>(parent_network_.lock());
     }
-
-private:
 
     /// @brief Assigns shared network to a subnet.
     ///
@@ -263,10 +256,8 @@ private:
     /// @param shared_network Pointer to a new shared network to be associated
     /// with the subnet.
     void setSharedNetwork(const NetworkPtr& shared_network) {
-        shared_network_ = shared_network;
+        parent_network_ = shared_network;
     }
-
-public:
 
     /// @brief Returns shared network name.
     std::string getSharedNetworkName() const {
@@ -443,9 +434,6 @@ protected:
 
     /// @brief Name of the network interface (if connected directly)
     std::string iface_;
-
-    /// @brief Pointer to a shared network that subnet belongs to.
-    WeakNetworkPtr shared_network_;
 
     /// @brief Shared network name.
     std::string shared_network_name_;

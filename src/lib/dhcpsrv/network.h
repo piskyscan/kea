@@ -10,6 +10,7 @@
 #include <asiolink/io_address.h>
 #include <cc/cfg_to_element.h>
 #include <cc/data.h>
+#include <cc/element_value.h>
 #include <cc/stamped_element.h>
 #include <cc/user_context.h>
 #include <dhcp/classify.h>
@@ -21,7 +22,28 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 #include <cstdint>
+#include <functional>
 #include <string>
+
+namespace isc {
+namespace data {
+
+/// @brief The @c ElementValue specialization for IOAddress.
+template<>
+class ElementValue<asiolink::IOAddress> {
+public:
+
+    /// @brief Function operator extracting an @c Element value as
+    /// string.
+    ///
+    /// @param el Element holding a value to be extracted.
+    asiolink::IOAddress operator()(ConstElementPtr el) const {
+        return (asiolink::IOAddress(el->stringValue()));
+    }
+};
+
+} // end of namespace isc::data
+} // end of namespace isc
 
 namespace isc {
 namespace dhcp {
@@ -29,11 +51,23 @@ namespace dhcp {
 /// List of IOAddresses
 typedef std::vector<isc::asiolink::IOAddress> IOAddressList;
 
+class Network;
+
+/// @brief Pointer to the @ref Network object.
+typedef boost::shared_ptr<Network> NetworkPtr;
+
+/// @brief Weak pointer to the @ref Network object.
+typedef boost::weak_ptr<Network> WeakNetworkPtr;
+
+/// @brief Callback function for @c Network that retrieves globally
+/// configured parameters.
+typedef std::function<data::ConstElementPtr()> FetchNetworkGlobalsFn;
+
 /// @brief Common interface representing a network to which the DHCP clients
 /// are connected.
 ///
 /// The most common type of network, in Kea's terminology, is a subnet. The
-/// @ref Subnet implements this interface. Another types of objects implementing
+/// @ref Subnet derives from this class. Another types of objects implementing
 /// this interface are @ref SharedNetwork4 and @ref SharedNetwork6 objects.
 /// They group multiple subnets together to provide means for
 /// extending available address pools (a single client may obtain IP
@@ -43,10 +77,62 @@ typedef std::vector<isc::asiolink::IOAddress> IOAddressList;
 /// selected for cable modems, different one for routers).
 ///
 /// The subnets and shared networks share many data structures, e.g. DHCP
-/// options, local interface name, address manipulation methods, thus this
-/// class provides an abstract interface that must be implemented by derived
-/// classes and, where appropriate, implements common methods used by the
-/// derived classes.
+/// options, local interface name, address manipulation methods. Both subnets
+/// and shared networks derive from this class to provide the common
+/// functionality.
+///
+/// The DHCP server configuration is complex because many parameters may
+/// be specified at different levels of hierarchy. The lower level values,
+/// e.g. subnet specific values, take precedence over upper level values,
+/// e.g. shared network specific ones. For historical reasons, the DHCP
+/// servers expect that the appropriate values are inherited from the
+/// upper configuration levels to the lower configuration levels upon
+/// the reconfiguration. For example: if a user didn't specify
+/// valid-lifetime for a subnet, calling @c Subnet4::getValid() should
+/// result in returning a global value of valid-lifetime. In the early
+/// Kea days it was achieved by the configuration parsers which would
+/// explicitly assign the global valid lifetime to the @c Subnet4
+/// instances for which the subnet specific value was not provided. This
+/// approach has a major benefit that it is fast. However, it makes
+/// the subnets tightly dependent on the global values (and shared
+/// network specific values). Modification of the global value must
+/// result in modification of this value in all subnets for which
+/// there is no explicit value provided. This issue became a serious
+/// road block during the implementation of the Configuration Backend.
+///
+/// The @c Network object has been modified to address the problem of
+/// inheritance of global, shared network specific and subnet specific
+/// parameters in a generic way, at the same time minimizing the need to
+/// change the existing server logic.
+///
+/// The @c Network object now holds the pointer to the "parent" @c Network
+/// object. Thus subnets which belong to a shared network will have
+/// that shared network as its parent. Stand-alone subnets, will have
+/// no parent.
+///
+/// The general idea is that the accessor functions of the network
+/// will first check if the accessed value is specified or not (that
+/// is handled by @c util::Optional object). If the value is specified
+/// it is returned. Otherwise, the object will check if there is a
+/// parent object it belongs to and will call the appropriate method
+/// of that object. If the value is present it is returned. Otherwise
+/// the global value is returned.
+///
+/// Accessing global values from the @c Network object is troublesome.
+/// There is no uniform way to access those values. For example, the
+/// given network may be in a staging or current configuration and
+/// it really has no means to know in which of the two it belongs.
+/// In fact, an attempt to pass the pointer to the @c SrvConfig object
+/// would cause a circular dependency between the @c Network and the
+/// @c SrvConfig. Even if it was possible and the @c Network had
+/// access to the specific @c SrvConfig instance, it doesn't handle
+/// the cases when the @c SrvConfig instance was modified.
+///
+/// To deal with the problem of accessing the global parameters in a
+/// flexible manner, we elected to use an optional callback function
+/// which can be associated with the @c Network object. This callback
+/// implements the logic to retrieve global parameters and return them
+/// in a well known form, so as the @c Network accessors can use them.
 class Network : public virtual isc::data::StampedElement,
                 public virtual isc::data::UserContext,
                 public isc::data::CfgToElement {
@@ -128,6 +214,22 @@ public:
     /// Does nothing at the moment.
     virtual ~Network() { };
 
+    /// @brief Sets the optional callback function used to fetch globally
+    /// configured parameters.
+    ///
+    /// @param fetch_globals_fn Pointer to the function.
+    void setFetchGlobalsFn(FetchNetworkGlobalsFn fetch_globals_fn) {
+        fetch_globals_fn_ = fetch_globals_fn;
+    }
+
+    /// @brief Checks if the network is associated with a function used to
+    /// fetch globally configured parameters.
+    ///
+    /// @return true if it is associated, false otherwise.
+    bool hasFetchGlobalsFn() const {
+        return (static_cast<bool>(fetch_globals_fn_));
+    }
+
     /// @brief Sets local name of the interface for which this network is
     /// selected.
     ///
@@ -145,7 +247,7 @@ public:
     ///
     /// @return Interface name as text.
     util::Optional<std::string> getIface() const {
-        return (iface_name_);
+        return (getProperty(&Network::getIface, iface_name_, "interface"));
     };
 
     /// @brief Sets information about relay
@@ -239,13 +341,13 @@ public:
     /// returned it is valid.
     ///
     /// @return client class @ref client_class_
-    const util::Optional<ClientClass>& getClientClass() const {
-        return (client_class_);
+    util::Optional<ClientClass> getClientClass() const {
+        return (getProperty<Network>(&Network::getClientClass, client_class_));
     }
 
     /// @brief Return valid-lifetime for addresses in that prefix
     Triplet<uint32_t> getValid() const {
-        return (valid_);
+        return (getProperty<Network>(&Network::getValid, valid_, "valid-lifetime"));
     }
 
     /// @brief Sets new valid lifetime for a network.
@@ -257,7 +359,7 @@ public:
 
     /// @brief Returns T1 (renew timer), expressed in seconds
     Triplet<uint32_t> getT1() const {
-        return (t1_);
+        return (getProperty<Network>(&Network::getT1, t1_, "renew-timer"));
     }
 
     /// @brief Sets new renew timer for a network.
@@ -269,7 +371,7 @@ public:
 
     /// @brief Returns T2 (rebind timer), expressed in seconds
     Triplet<uint32_t> getT2() const {
-        return (t2_);
+        return (getProperty<Network>(&Network::getT2, t2_, "rebind-timer"));
     }
 
     /// @brief Sets new rebind timer for a network.
@@ -289,7 +391,9 @@ public:
     /// @return whether in-pool host reservations are allowed.
     util::Optional<HRMode>
     getHostReservationMode() const {
-        return (host_reservation_mode_);
+        return (getProperty<Network>(&Network::getHostReservationMode,
+                                     host_reservation_mode_,
+                                     "reservation-mode"));
     }
 
     /// @brief Sets host reservation mode.
@@ -314,7 +418,9 @@ public:
 
     /// @brief Returns whether or not T1/T2 calculation is enabled.
     util::Optional<bool> getCalculateTeeTimes() const {
-        return (calculate_tee_times_);
+        return (getProperty<Network>(&Network::getCalculateTeeTimes,
+                                     calculate_tee_times_,
+                                     "calculate-tee-times"));
     }
 
     /// @brief Sets whether or not T1/T2 calculation is enabled.
@@ -326,7 +432,9 @@ public:
 
     /// @brief Returns percentage to use when calculating the T1 (renew timer).
     util::Optional<double> getT1Percent() const {
-        return (t1_percent_);
+        return (getProperty<Network>(&Network::getT1Percent,
+                                     t1_percent_,
+                                     "t1-percent"));
     }
 
     /// @brief Sets new precentage for calculating T1 (renew timer).
@@ -338,7 +446,9 @@ public:
 
     /// @brief Returns percentage to use when calculating the T2 (rebind timer).
     util::Optional<double> getT2Percent() const {
-        return (t2_percent_);
+        return (getProperty<Network>(&Network::getT2Percent,
+                                     t2_percent_,
+                                     "t2-percent"));
     }
 
     /// @brief Sets new precentage for calculating T2 (rebind timer).
@@ -354,6 +464,110 @@ public:
     virtual data::ElementPtr toElement() const;
 
 protected:
+
+    /// @brief Returns a value associated with a network using inheritance.
+    ///
+    /// This template method provides a generic mechanism to retrieve a
+    /// network parameter using inheritance. It is called from public
+    /// accessor methods which return an @c OptionalValue or @c Triplet.
+    ///
+    /// @tparam BaseType Type of this instance, e.g. @c Network, @c Network4
+    /// etc, which exposes a method to be called.
+    /// @tparam ReturnType Type of the returned value, e.g.
+    /// @c Optional<std::string>.
+    ///
+    /// @param MethodPointer Pointer to the method of the base class which
+    /// should be called on the parent network instance (typically on
+    /// @c SharedNetwork4 or @c SharedNetwork6) to fetch the parent specific
+    /// value if the value is unspecified for this instance.
+    /// @param global_name Optional name of the global parameter which value
+    /// should be returned if the given parameter is not specified on network
+    /// level. This value is empty by default, which indicates that the
+    /// global value for the given parameter is not supported and shouldn't
+    /// be fetched.
+    ///
+    /// @return Optional value fetched from this instance level, parent
+    /// network level or global level
+    template<typename BaseType, typename ReturnType>
+    ReturnType
+    getProperty(ReturnType(BaseType::*MethodPointer)() const,
+                ReturnType property,
+                const std::string& global_name = "") const {
+        // If the value is specified on this level, let's simply return it.
+        // The lower level value always takes precedence.
+        if (property.unspecified()) {
+            // Check if this instance has a parent network.
+            auto parent = boost::dynamic_pointer_cast<BaseType>(parent_network_.lock());
+            if (parent) {
+                // Run the same method on the parent instance to fetch the
+                // parent level (typically shared network level) value.
+                auto parent_property = ((*parent).*MethodPointer)();
+                // If the value is found, return it.
+                if (!parent_property.unspecified()) {
+                    return (parent_property);
+                }
+            }
+
+            // The value is not specified on network level. If the value
+            // can be specified on global level and there is a callback
+            // that returns the global values, try to find this parameter
+            // at the global scope.
+            if (!global_name.empty() && fetch_globals_fn_) {
+                data::ConstElementPtr globals = fetch_globals_fn_();
+                if (globals && (globals->getType() == data::Element::map)) {
+                    data::ConstElementPtr global_param = globals->get(global_name);
+                    if (global_param) {
+                        // If there is a global parameter, convert it to the
+                        // optional value of the given type and return.
+                        return (data::ElementValue<typename ReturnType::ValueType>()(global_param));
+                    }
+                }
+            }
+        }
+
+        // We haven't found the value at any level, so return the unspecified.
+        return (property);
+    }
+
+    /// @brief Returns option pointer associated with a network using inheritance.
+    ///
+    /// This template method provides a generic mechanism to retrieve a
+    /// network parameter using inheritance. It is called from public
+    /// accessor methods which return an @c OptionPtr.
+    ///
+    /// @tparam BaseType Type of this instance, e.g. @c Network, @c Network4
+    /// etc, which exposes a method to be called.
+    ///
+    /// @param MethodPointer Pointer to the method of the base class which
+    /// should be called on the parent network instance (typically on
+    /// @c SharedNetwork4 or @c SharedNetwork6) to fetch the parent specific
+    /// value if the value is unspecified for this instance.
+    ///
+    /// @return Option pointer fetched from this instance level or parent
+    /// network level.
+    template<typename BaseType>
+    OptionPtr
+    getOptionProperty(OptionPtr(BaseType::*MethodPointer)() const,
+                      OptionPtr property) const {
+        // If the value is specified on this level, let's simply return it.
+        // The lower level value always takes precedence.
+        if (!property) {
+            // Check if this instance has a parent network.
+            auto parent = boost::dynamic_pointer_cast<BaseType>(parent_network_.lock());
+            if (parent) {
+                // Run the same method on the parent instance to fetch the
+                // parent level (typically shared network level) value.
+                auto parent_property = ((*parent).*MethodPointer)();
+                // If the value is found, return it.
+                if (parent_property) {
+                    return (parent_property);
+                }
+            }
+        }
+
+        // We haven't found the value at any level, so return the unspecified.
+        return (property);
+    }
 
     /// @brief Holds interface name for which this network is selected.
     util::Optional<std::string> iface_name_;
@@ -401,16 +615,22 @@ protected:
 
     /// @brief Percentage of the lease lifetime to use when calculating T2 timer
     util::Optional<double> t2_percent_;
+
+    /// @brief Pointer to another network that this network belongs to.
+    ///
+    /// The most common case is that this instance is a subnet which belongs
+    /// to a shared network and the @c parent_network_ points to the shared
+    /// network object. If the network instance (subnet) doesn't belong to
+    /// a shared network this pointer is null.
+    WeakNetworkPtr parent_network_;
+
+    /// @brief Pointer to the optional callback used to fetch globally
+    /// configured parameters inherited to the @c Network object.
+    FetchNetworkGlobalsFn fetch_globals_fn_;
 };
 
-/// @brief Pointer to the @ref Network object.
-typedef boost::shared_ptr<Network> NetworkPtr;
-
-/// @brief Weak pointer to the @ref Network object.
-typedef boost::weak_ptr<Network> WeakNetworkPtr;
-
 /// @brief Specialization of the @ref Network object for DHCPv4 case.
-class Network4 : public Network {
+class Network4 : public virtual Network {
 public:
 
     /// @brief Constructor.
@@ -424,7 +644,9 @@ public:
     ///
     /// @return true if client identifiers should be used, false otherwise.
     util::Optional<bool> getMatchClientId() const {
-        return (match_client_id_);
+        return (getProperty<Network4>(&Network4::getMatchClientId,
+                                      match_client_id_,
+                                      "match-client-id"));
     }
 
     /// @brief Sets the flag indicating if the client identifier should be
@@ -442,7 +664,8 @@ public:
     /// @return true if requests for unknown IP addresses should be rejected,
     /// false otherwise.
     util::Optional<bool> getAuthoritative() const {
-        return (authoritative_);
+        return (getProperty<Network4>(&Network4::getAuthoritative, authoritative_,
+                                      "authoritative"));
     }
 
     /// @brief Sets the flag indicating if requests for unknown IP addresses
@@ -464,7 +687,10 @@ public:
     /// @brief Returns siaddr for this network.
     ///
     /// @return siaddr value
-    const util::Optional<asiolink::IOAddress>& getSiaddr() const;
+    util::Optional<asiolink::IOAddress> getSiaddr() const {
+        return (getProperty<Network4>(&Network4::getSiaddr, siaddr_,
+                                      "next-server"));
+    }
 
     /// @brief Sets server hostname for the network.
     ///
@@ -474,7 +700,10 @@ public:
     /// @brief Returns server hostname for this network.
     ///
     /// @return server hostname value
-    const util::Optional<std::string>& getSname() const;
+    util::Optional<std::string> getSname() const {
+        return (getProperty<Network4>(&Network4::getSname, sname_,
+                                      "server-hostname"));
+    }
 
     /// @brief Sets boot file name for the network.
     ///
@@ -484,7 +713,10 @@ public:
     /// @brief Returns boot file name for this subnet
     ///
     /// @return boot file name value
-    const util::Optional<std::string>& getFilename() const;
+    util::Optional<std::string> getFilename() const {
+        return (getProperty<Network4>(&Network4::getFilename, filename_,
+                                      "boot-file-name"));
+    }
 
     /// @brief Unparses network object.
     ///
@@ -517,7 +749,7 @@ private:
 };
 
 /// @brief Specialization of the @ref Network object for DHCPv6 case.
-class Network6 : public Network {
+class Network6 : public virtual Network {
 public:
 
     /// @brief Constructor.
@@ -529,7 +761,8 @@ public:
     ///
     /// @return a triplet with preferred lifetime
     Triplet<uint32_t> getPreferred() const {
-        return (preferred_);
+        return (getProperty<Network6>(&Network6::getPreferred, preferred_,
+                                      "preferred-lifetime"));
     }
 
     /// @brief Sets new preferred lifetime for a network.
@@ -543,7 +776,7 @@ public:
     ///
     /// @return interface-id option (if defined)
     OptionPtr getInterfaceId() const {
-        return (interface_id_);
+        return (getOptionProperty<Network6>(&Network6::getInterfaceId, interface_id_));
     }
 
     /// @brief sets interface-id option (if defined)
@@ -558,7 +791,8 @@ public:
     ///
     /// @return true if the Rapid Commit option is supported, false otherwise.
     util::Optional<bool> getRapidCommit() const {
-        return (rapid_commit_);
+        return (getProperty<Network6>(&Network6::getRapidCommit, rapid_commit_,
+                                      "rapid-commit"));
     }
 
     /// @brief Enables or disables Rapid Commit option support for the subnet.

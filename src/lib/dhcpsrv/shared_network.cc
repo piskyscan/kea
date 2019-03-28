@@ -244,30 +244,25 @@ public:
 namespace isc {
 namespace dhcp {
 
-NetworkPtr
-SharedNetwork4::sharedFromThis() {
-    return (shared_from_this());
-}
-
 void
 SharedNetwork4::add(const Subnet4Ptr& subnet) {
     Impl::add(subnets_, subnet);
     // Associate the subnet with this network.
-    setSharedNetwork(subnet);
+    subnet->setSharedNetwork(shared_from_this());
     subnet->setSharedNetworkName(name_);
 }
 
 void
 SharedNetwork4::del(const SubnetID& subnet_id) {
     Subnet4Ptr subnet = Impl::del<Subnet4Ptr>(subnets_, subnet_id);
-    clearSharedNetwork(subnet);
+    subnet->setSharedNetwork(NetworkPtr());
     subnet->setSharedNetworkName("");
 }
 
 void
 SharedNetwork4::delAll() {
     for (auto subnet = subnets_.cbegin(); subnet != subnets_.cend(); ++subnet) {
-        clearSharedNetwork(*subnet);
+        (*subnet)->setSharedNetwork(NetworkPtr());
         (*subnet)->setSharedNetworkName("");
     }
     subnets_.clear();
@@ -309,30 +304,25 @@ SharedNetwork4::toElement() const {
     return (map);
 }
 
-NetworkPtr
-SharedNetwork6::sharedFromThis() {
-    return (shared_from_this());
-}
-
 void
 SharedNetwork6::add(const Subnet6Ptr& subnet) {
     Impl::add(subnets_, subnet);
     // Associate the subnet with this network.
-    setSharedNetwork(subnet);
+    subnet->setSharedNetwork(shared_from_this());
     subnet->setSharedNetworkName(name_);
 }
 
 void
 SharedNetwork6::del(const SubnetID& subnet_id) {
     Subnet6Ptr subnet = Impl::del<Subnet6Ptr>(subnets_, subnet_id);
-    clearSharedNetwork(subnet);
+    subnet->setSharedNetwork(NetworkPtr());
     subnet->setSharedNetworkName("");
 }
 
 void
 SharedNetwork6::delAll() {
     for (auto subnet = subnets_.cbegin(); subnet != subnets_.cend(); ++subnet) {
-        clearSharedNetwork(*subnet);
+        (*subnet)->setSharedNetwork(NetworkPtr());
     }
     subnets_.clear();
 }

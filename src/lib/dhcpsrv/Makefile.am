@@ -62,12 +62,12 @@ libkea_dhcpsrv_la_SOURCES  =
 libkea_dhcpsrv_la_SOURCES += alloc_engine.cc alloc_engine.h
 libkea_dhcpsrv_la_SOURCES += alloc_engine_log.cc alloc_engine_log.h
 libkea_dhcpsrv_la_SOURCES += alloc_engine_messages.h alloc_engine_messages.cc
-libkea_dhcpsrv_la_SOURCES += assignable_network.h
 libkea_dhcpsrv_la_SOURCES += base_host_data_source.h
 libkea_dhcpsrv_la_SOURCES += cache_host_data_source.h
 libkea_dhcpsrv_la_SOURCES += callout_handle_store.h
 libkea_dhcpsrv_la_SOURCES += cb_ctl_dhcp.h
 libkea_dhcpsrv_la_SOURCES += cb_ctl_dhcp4.cc cb_ctl_dhcp4.h
+libkea_dhcpsrv_la_SOURCES += cb_ctl_dhcp6.cc cb_ctl_dhcp6.h
 libkea_dhcpsrv_la_SOURCES += cfg_4o6.cc cfg_4o6.h
 libkea_dhcpsrv_la_SOURCES += cfg_consistency.cc cfg_consistency.h
 libkea_dhcpsrv_la_SOURCES += cfg_db_access.cc cfg_db_access.h
@@ -280,12 +280,12 @@ libkea_dhcpsrv_include_HEADERS = \
 	alloc_engine.h \
 	alloc_engine_log.h \
 	alloc_engine_messages.h \
-	assignable_network.h \
 	base_host_data_source.h \
 	cache_host_data_source.h \
 	callout_handle_store.h \
 	cb_ctl_dhcp.h \
 	cb_ctl_dhcp4.h \
+	cb_ctl_dhcp6.h \
 	cfg_4o6.h \
 	cfg_consistency.h \
 	cfg_db_access.h \

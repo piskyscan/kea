@@ -5,7 +5,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include <config.h>
-#include <dhcpsrv/cb_ctl_dhcp4.h>
+#include <dhcpsrv/cb_ctl_dhcp6.h>
 #include <dhcpsrv/cfgmgr.h>
 #include <dhcpsrv/dhcpsrv_log.h>
 
@@ -16,7 +16,7 @@ namespace isc {
 namespace dhcp {
 
 void
-CBControlDHCPv4::databaseConfigApply(const db::BackendSelector& backend_selector,
+CBControlDHCPv6::databaseConfigApply(const db::BackendSelector& backend_selector,
                                      const db::ServerSelector& server_selector,
                                      const boost::posix_time::ptime& lb_modification_time,
                                      const db::AuditEntryCollection& audit_entries) {
@@ -24,17 +24,17 @@ CBControlDHCPv4::databaseConfigApply(const db::BackendSelector& backend_selector
     SrvConfigPtr external_cfg = CfgMgr::instance().createExternalCfg();
 
     // First let's fetch the globals and add them to external config.
-    if (fetchConfigElement(audit_entries, "dhcp4_global_parameter")) {
+    if (fetchConfigElement(audit_entries, "dhcp6_global_parameter")) {
         data::StampedValueCollection globals;
-        globals = getMgr().getPool()->getModifiedGlobalParameters4(backend_selector, server_selector,
+        globals = getMgr().getPool()->getModifiedGlobalParameters6(backend_selector, server_selector,
                                                                    lb_modification_time);
         addGlobalsToConfig(external_cfg, globals);
     }
 
     // Now we fetch the option definitions and add them.
-    if (fetchConfigElement(audit_entries, "dhcp4_option_def")) {
+    if (fetchConfigElement(audit_entries, "dhcp6_option_def")) {
         OptionDefContainer option_defs =
-            getMgr().getPool()->getModifiedOptionDefs4(backend_selector, server_selector,
+            getMgr().getPool()->getModifiedOptionDefs6(backend_selector, server_selector,
                                                        lb_modification_time);
         for (auto option_def = option_defs.begin(); option_def != option_defs.end(); ++option_def) {
             external_cfg->getCfgOptionDef()->add((*option_def), (*option_def)->getOptionSpaceName());
@@ -42,8 +42,8 @@ CBControlDHCPv4::databaseConfigApply(const db::BackendSelector& backend_selector
     }
 
     // Next fetch the options. They are returned as a container of OptionDescriptors.
-    if (fetchConfigElement(audit_entries, "dhcp4_options")) {
-        OptionContainer options = getMgr().getPool()->getModifiedOptions4(backend_selector,
+    if (fetchConfigElement(audit_entries, "dhcp6_options")) {
+        OptionContainer options = getMgr().getPool()->getModifiedOptions6(backend_selector,
                                                                           server_selector,
                                                                           lb_modification_time);
         for (auto option = options.begin(); option != options.end(); ++option) {
@@ -52,34 +52,22 @@ CBControlDHCPv4::databaseConfigApply(const db::BackendSelector& backend_selector
     }
 
     // Now fetch the shared networks.
-    if (fetchConfigElement(audit_entries, "dhcp4_shared_network")) {
-        SharedNetwork4Collection networks =
-            getMgr().getPool()->getModifiedSharedNetworks4(backend_selector, server_selector,
+    if (fetchConfigElement(audit_entries, "dhcp6_shared_network")) {
+        SharedNetwork6Collection networks =
+            getMgr().getPool()->getModifiedSharedNetworks6(backend_selector, server_selector,
                                                            lb_modification_time);
         for (auto network = networks.begin(); network != networks.end(); ++network) {
-            // In order to take advantage of the dynamic inheritance of global
-            // parameters to a shared network we need to set a callback function
-            // for each network to allow for fetching global parameters.
-            (*network)->setFetchGlobalsFn([] () -> ConstElementPtr {
-                return (CfgMgr::instance().getCurrentCfg()->getConfiguredGlobals());
-            });
-            external_cfg->getCfgSharedNetworks4()->add((*network));
+            external_cfg->getCfgSharedNetworks6()->add((*network));
         }
     }
 
     // Next we fetch subnets.
-    if (fetchConfigElement(audit_entries, "dhcp4_subnet")) {
-        Subnet4Collection subnets = getMgr().getPool()->getModifiedSubnets4(backend_selector,
+    if (fetchConfigElement(audit_entries, "dhcp6_subnet")) {
+        Subnet6Collection subnets = getMgr().getPool()->getModifiedSubnets6(backend_selector,
                                                                             server_selector,
                                                                             lb_modification_time);
         for (auto subnet = subnets.begin(); subnet != subnets.end(); ++subnet) {
-            // In order to take advantage of the dynamic inheritance of global
-            // parameters to a subnet we need to set a callback function for each
-            // subnet to allow for fetching global parameters.
-            (*subnet)->setFetchGlobalsFn([] () -> ConstElementPtr {
-                return (CfgMgr::instance().getCurrentCfg()->getConfiguredGlobals());
-            });
-            external_cfg->getCfgSubnets4()->add((*subnet));
+            external_cfg->getCfgSubnets6()->add((*subnet));
         }
     }
 
@@ -89,7 +77,7 @@ CBControlDHCPv4::databaseConfigApply(const db::BackendSelector& backend_selector
     } else {
         CfgMgr::instance().mergeIntoCurrentCfg(external_cfg->getSequence());
     }
-    LOG_INFO(dhcpsrv_logger, DHCPSRV_CFGMGR_CONFIG4_MERGED);
+    LOG_INFO(dhcpsrv_logger, DHCPSRV_CFGMGR_CONFIG6_MERGED);
 }
 
 

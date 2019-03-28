@@ -16,6 +16,7 @@
 #include <dhcp6/dhcp6_log.h>
 #include <dhcp6/dhcp6_srv.h>
 #include <dhcp/iface_mgr.h>
+#include <dhcpsrv/cb_ctl_dhcp4.h>
 #include <dhcpsrv/cfg_option.h>
 #include <dhcpsrv/cfgmgr.h>
 #include <dhcpsrv/db_type.h>
@@ -419,6 +420,7 @@ configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
     if (!check_only) {
         TimerMgr::instance()->unregisterTimers();
         server.discardPackets();
+        server.getCBControl()->reset();
     }
 
     // Revert any runtime option definitions configured so far and not committed.
@@ -444,12 +446,10 @@ configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
     // the parsers.  It is declared outside the loop so in case of error, the
     // name of the failing parser can be retrieved within the "catch" clause.
     ConfigPair config_pair;
+    SrvConfigPtr srv_config;
     try {
-
-        SrvConfigPtr srv_config = CfgMgr::instance().getStagingCfg();
-
-        // Preserve all scalar global parameters
-        srv_config->extractConfiguredGlobals(config_set);
+        // Get the staging configuration.
+        srv_config = CfgMgr::instance().getStagingCfg();
 
         // Set all default values if not specified by the user.
         SimpleParser6::setAllDefaults(mutable_cfg);
@@ -653,20 +653,31 @@ configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
                 continue;
             }
 
-            // Timers are not used in the global scope. Their values are derived
-            // to specific subnets (see SimpleParser6::deriveParameters).
-            // decline-probation-period, dhcp4o6-port and user-context
-            // are handled in the global_parser.parse() which sets
-            // global parameters.
+            // As of Kea 1.6.0 we have two ways of inheriting the global parameters.
+            // The old method is used in JSON configuration parsers when the global
+            // parameters are derived into the subnets and shared networks and are
+            // being treated as explicitly specified. The new way used by the config
+            // backend is the dynamic inheritance whereby each subnet and shared
+            // network uses a callback function to return global parameter if it
+            // is not specified at lower level. This callback uses configured globals.
+            // We deliberately include both default and explicitly specified globals
+            // so as the callback can access the appropriate global values regardless
+            // whether they are set to a default or other value.
             if ( (config_pair.first == "renew-timer") ||
                  (config_pair.first == "rebind-timer") ||
                  (config_pair.first == "preferred-lifetime") ||
                  (config_pair.first == "valid-lifetime") ||
                  (config_pair.first == "decline-probation-period") ||
                  (config_pair.first == "dhcp4o6-port") ||
-                 (config_pair.first == "user-context") ||
                  (config_pair.first == "server-tag") ||
                  (config_pair.first == "reservation-mode")) {
+                CfgMgr::instance().getStagingCfg()->addConfiguredGlobal(config_pair.first,
+                                                                        config_pair.second);
+                continue;
+            }
+
+            // Nothing to configure for the user-context.
+            if (config_pair.first == "user-context") {
                 continue;
             }
 
@@ -739,6 +750,10 @@ configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
             const HooksConfig& libraries =
                 CfgMgr::instance().getStagingCfg()->getHooksConfig();
             libraries.loadLibraries();
+
+            // If there are config backends, fetch and merge into staging config
+            server.getCBControl()->databaseConfigFetch(srv_config,
+                                                       CBControlDHCPv6::FetchMode::FETCH_ALL);
         }
         catch (const isc::Exception& ex) {
             LOG_ERROR(dhcp6_logger, DHCP6_PARSER_COMMIT_FAIL).arg(ex.what());
