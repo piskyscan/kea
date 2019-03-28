@@ -66,7 +66,7 @@ public:
                     " is opened in read-only mode, continuing..."
                  << endl;
         }
-        HostDataSourceFactory::destroy();
+        HostMgr::delBackend("mysql");
         // If data wipe enabled, delete transient data otherwise destroy the schema
         destroyMySQLSchema();
     }
