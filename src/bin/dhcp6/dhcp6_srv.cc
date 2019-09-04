@@ -46,11 +46,11 @@
 #include <hooks/hooks_log.h>
 #include <hooks/hooks_manager.h>
 #include <stats/stats_mgr.h>
-
 #include <util/encode/hex.h>
 #include <util/io_utilities.h>
 #include <util/pointer_util.h>
 #include <util/range_utilities.h>
+#include <util/threads/lock_guard.h>
 #include <log/logger.h>
 #include <cryptolink/cryptolink.h>
 #include <cfgrpt/config_report.h>
@@ -91,6 +91,8 @@ using namespace isc::log;
 using namespace isc::stats;
 using namespace isc::util;
 using namespace std;
+
+using isc::util::thread::LockGuard;
 
 namespace {
 
@@ -205,12 +207,16 @@ namespace dhcp {
 
 const std::string Dhcpv6Srv::VENDOR_CLASS_PREFIX("VENDOR_CLASS_");
 
-Dhcpv6Srv::Dhcpv6Srv(uint16_t server_port, uint16_t client_port)
+Dhcpv6Srv::Dhcpv6Srv(uint16_t server_port, uint16_t client_port,
+                     bool run_multithreaded /* = false */)
     : io_service_(new IOService()), server_port_(server_port),
-      client_port_(client_port), serverid_(), shutdown_(true),
-      alloc_engine_(), name_change_reqs_(),
+      client_port_(client_port), serverid_(),
+      shutdown_(true), alloc_engine_(),
+      name_change_reqs_(),
       network_state_(new NetworkState(NetworkState::DHCPv6)),
-      cb_control_(new CBControlDHCPv6()) {
+      cb_control_(new CBControlDHCPv6()),
+      run_multithreaded_(run_multithreaded) {
+
     LOG_DEBUG(dhcp6_logger, DBG_DHCP6_START, DHCP6_OPEN_SOCKET)
         .arg(server_port);
 
@@ -454,6 +460,14 @@ bool Dhcpv6Srv::run() {
         // Kea is listening, read for Kea to read it via asynchronous I/O.
         fuzzer.transfer();
 #else
+    if (run_multithreaded_) {
+        // Creating the process packet thread pool
+        // The number of thread pool's threads should be read from configuration
+        // file or it should be determined by the number of hardware threads and
+        // the number of Cassandra DB nodes.
+        pkt_thread_pool_.create(Dhcpv6Srv::threadCount());
+    }
+
     while (!shutdown_) {
 #endif // ENABLE_AFL
         try {
@@ -472,6 +486,11 @@ bool Dhcpv6Srv::run() {
         }
     }
 
+    // destroying the thread pool
+    if (run_multithreaded_) {
+        pkt_thread_pool_.destroy();
+    }
+
     return (true);
 }
 
@@ -481,6 +500,18 @@ void Dhcpv6Srv::run_one() {
     Pkt6Ptr rsp;
 
     try {
+
+        // Do not read more packets from socket if there are enough
+        // packets to be processed in the packet thread pool queue
+        const int max_queued_pkt_per_thread = Dhcpv6Srv::maxThreadQueueSize();
+        const auto queue_full_wait = std::chrono::milliseconds(1);
+        size_t pkt_queue_size = pkt_thread_pool_.count();
+        if (pkt_queue_size >= Dhcpv6Srv::threadCount() *
+            max_queued_pkt_per_thread) {
+            std::this_thread::sleep_for(queue_full_wait);
+            return;
+        }
+
         // Set select() timeout to 1s. This value should not be modified
         // because it is important that the select() returns control
         // frequently so as the IOService can be polled for ready handlers.
@@ -558,9 +589,31 @@ void Dhcpv6Srv::run_one() {
             .arg(query->getLabel());
         return;
     } else {
-        processPacket(query, rsp);
+    if (run_multithreaded_) {
+        ThreadPool::WorkItemCallBack call_back =
+            std::bind(&Dhcpv6Srv::processPacketAndSendResponseNoThrow, this, query, rsp);
+        pkt_thread_pool_.add(call_back);
+    } else {
+        processPacketAndSendResponse(query, rsp);
     }
+    }
+}
 
+void
+Dhcpv6Srv::processPacketAndSendResponseNoThrow(Pkt6Ptr& query, Pkt6Ptr& rsp) {
+    try {
+        processPacketAndSendResponse(query, rsp);
+    } catch (const std::exception& e) {
+        LOG_ERROR(packet6_logger, DHCP6_PACKET_PROCESS_STD_EXCEPTION)
+            .arg(e.what());
+    } catch (...) {
+        LOG_ERROR(packet6_logger, DHCP6_PACKET_PROCESS_EXCEPTION);
+    }
+}
+
+void
+Dhcpv6Srv::processPacketAndSendResponse(Pkt6Ptr& query, Pkt6Ptr& rsp) {
+    processPacket(query, rsp);
     if (!rsp) {
         return;
     }
@@ -3995,6 +4048,23 @@ Dhcpv6Srv::requestedInORO(const Pkt6Ptr& query, const uint16_t code) const {
     }
 
     return (false);
+}
+
+uint32_t Dhcpv6Srv::threadCount() {
+    uint32_t sys_threads = CfgMgr::instance().getCurrentCfg()->getServerThreadCount();
+    if (sys_threads) {
+        return sys_threads;
+    }
+    sys_threads = std::thread::hardware_concurrency();
+    return sys_threads * 1;
+}
+
+uint32_t Dhcpv6Srv::maxThreadQueueSize() {
+    uint32_t max_thread_queue_size = CfgMgr::instance().getCurrentCfg()->getServerMaxThreadQueueSize();
+    if (max_thread_queue_size) {
+        return max_thread_queue_size;
+    }
+    return 4;
 }
 
 void Dhcpv6Srv::discardPackets() {

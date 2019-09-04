@@ -26,6 +26,7 @@
 
 #include <limits>
 #include <list>
+#include <mutex>
 
 using namespace std;
 using namespace isc::dhcp;
@@ -146,11 +147,11 @@ LibDHCP::getVendorOptionDef(const Option::Universe u, const uint32_t vendor_id,
                             const std::string& name) {
     const OptionDefContainerPtr& defs = getVendorOptionDefs(u, vendor_id);
 
-    if (!defs) {
+    if (!option_defs_ptr) {
         return (OptionDefinitionPtr());
     }
 
-    const OptionDefContainerNameIndex& idx = defs->get<2>();
+    const OptionDefContainerNameIndex& idx = option_defs_ptr->get<2>();
     const OptionDefContainerNameRange& range = idx.equal_range(name);
     if (range.first != range.second) {
         return (*range.first);
@@ -164,14 +165,14 @@ LibDHCP::getVendorOptionDef(const Option::Universe u, const uint32_t vendor_id,
                             const uint16_t code) {
     const OptionDefContainerPtr& defs = getVendorOptionDefs(u, vendor_id);
 
-    if (!defs) {
+    if (!option_defs_ptr) {
         // Weird universe or unknown vendor_id. We don't care. No definitions
         // one way or another
         // What is it anyway?
         return (OptionDefinitionPtr());
     }
 
-    const OptionDefContainerTypeIndex& idx = defs->get<1>();
+    const OptionDefContainerTypeIndex& idx = option_defs_ptr->get<1>();
     const OptionDefContainerTypeRange& range = idx.equal_range(code);
     if (range.first != range.second) {
         return (*range.first);
@@ -621,8 +622,8 @@ LibDHCP::unpackVendorOptions6(const uint32_t vendor_id,
     // using option code. If there's no such vendor-id space, we're out of luck
     // anyway.
     const OptionDefContainerTypeIndex* idx = NULL;
-    if (option_defs) {
-        idx = &(option_defs->get<1>());
+    if (option_defs_ptr) {
+        idx = &(option_defs_ptr->get<1>());
     }
 
     // The buffer being read comprises a set of options, each starting with
@@ -714,8 +715,8 @@ LibDHCP::unpackVendorOptions4(const uint32_t vendor_id, const OptionBuffer& buf,
     // Get the search index #1. It allows to search for option definitions
     // using option code.
     const OptionDefContainerTypeIndex* idx = NULL;
-    if (option_defs) {
-        idx = &(option_defs->get<1>());
+    if (option_defs_ptr) {
+        idx = &(option_defs_ptr->get<1>());
     }
 
     // The buffer being read comprises a set of options, each starting with
@@ -802,7 +803,7 @@ LibDHCP::unpackVendorOptions4(const uint32_t vendor_id, const OptionBuffer& buf,
             options.insert(std::make_pair(opt_type, opt));
             offset += opt_len;
 
-        } // end of data-chunk
+        }  // end of data-chunk
 
         break; // end of the vendor block.
     }
@@ -880,8 +881,7 @@ LibDHCP::OptionFactoryRegister(Option::Universe u,
         v6factories_[opt_type] = factory;
         return;
     }
-    case Option::V4:
-    {
+    case Option::V4: {
         // Option 0 is special (a one octet-long, equal 0) PAD option. It is never
         // instantiated as an Option object, but rather consumed during packet parsing.
         if (opt_type == 0) {
