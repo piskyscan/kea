@@ -17,12 +17,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cassert>
 #include <config.h>
+
 #include <dhcpsrv/dhcpsrv_log.h>
 #include <dhcpsrv/thread_pool.h>
-
-#include <functional>
 
 using namespace std;
 
@@ -43,10 +41,25 @@ void ThreadPool::create(uint32_t worker_threads) {
         return;
     }
     destroy();
-    queue_.create();
+    if (run) {
+        start(worker_threads);
+    }
+
+    LOG_INFO(dhcpsrv_logger, "Thread pool created");
+}
+
+void ThreadPool::destroy() {
+    LOG_INFO(dhcpsrv_logger, "Thread pool shutting down");
+    stop(true);
+
+    LOG_INFO(dhcpsrv_logger, "Thread pool shut down");
+}
+
+void ThreadPool::start(uint32_t worker_threads) {
+    queue_.start();
     exit_ = false;
     for (int i = 0; i < worker_threads; ++i) {
-        worker_threads_.push_back(make_shared<thread>(&ThreadPool::threadRun, this));
+        worker_threads_.push_back(make_shared<thread>(&ThreadPool::run, this));
     }
 
     LOG_INFO(dhcpsrv_logger, "Packet thread pool started");
@@ -55,7 +68,7 @@ void ThreadPool::create(uint32_t worker_threads) {
 void ThreadPool::destroy() {
     LOG_INFO(dhcpsrv_logger, "Shutting down packet thread pool");
     exit_ = true;
-    queue_.destroy();
+    queue_.stop(clear);
     for (auto thread : worker_threads_) {
         thread->join();
     }
@@ -65,20 +78,20 @@ void ThreadPool::destroy() {
 }
 
 void ThreadPool::add(WorkItemCallBack call_back) {
-    queue_.add(call_back);
+    queue_.push(call_back);
 }
 
 size_t ThreadPool::count() {
     return queue_.count();
 }
 
-void ThreadPool::threadRun() {
+void ThreadPool::run() {
     thread::id th_id = this_thread::get_id();
     LOG_INFO(dhcpsrv_logger, "Packet thread pool new thread started. id: %1").arg(th_id);
 
     while (!exit_) {
         WorkItemCallBack work_item;
-        if (queue_.get(work_item)) {
+        if (queue_.pop(work_item)) {
             work_item();
         }
     }
