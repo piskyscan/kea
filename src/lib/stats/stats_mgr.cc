@@ -10,7 +10,7 @@
 #include <stats/stats_mgr.h>
 #include <cc/data.h>
 #include <cc/command_interpreter.h>
-#include <util/threads/lock_guard.h>
+#include <util/lock_guard.h>
 #include <util/boost_time_utils.h>
 #include <util/multi_threading_mgr.h>
 #include <boost/date_time/posix_time/posix_time.hpp>

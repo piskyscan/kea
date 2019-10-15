@@ -46,7 +46,7 @@
 #include <hooks/hooks_manager.h>
 #include <stats/stats_mgr.h>
 #include <util/strutil.h>
-#include <util/threads/lock_guard.h>
+#include <util/lock_guard.h>
 #include <log/logger.h>
 #include <cryptolink/cryptolink.h>
 #include <cfgrpt/config_report.h>
@@ -82,7 +82,7 @@ using namespace isc::log;
 using namespace isc::stats;
 using namespace std;
 
-using isc::util::thread::LockGuard;
+using isc::util::LockGuard;
 
 namespace {
 
