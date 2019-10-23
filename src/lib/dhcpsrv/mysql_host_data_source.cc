@@ -2182,7 +2182,7 @@ public:
                          const uint8_t* identifier_begin,
                          const size_t identifier_len,
                          StatementIndex stindex,
-                         boost::shared_ptr<MySqlHostExchange> exchange) const;
+                         std::shared_ptr<MySqlHostExchange> exchange) const;
 
     /// @brief Throws exception if database is read only.
     ///
@@ -2918,6 +2918,9 @@ MySqlHostDataSource::add(const HostPtr& host) {
     // If operating in read-only mode, throw exception.
     impl_->checkReadOnly(ctx);
 
+    thread_local std::shared_ptr<MySqlHostWithOptionsExchange> host_ipv4_exchange(
+        std::make_shared<MySqlHostWithOptionsExchange>(MySqlHostWithOptionsExchange::DHCP4_ONLY));
+
     // Initiate MySQL transaction as we will have to make multiple queries
     // to insert host information into multiple tables. If that fails on
     // any stage, the transaction will be rolled back by the destructor of
@@ -2990,7 +2993,7 @@ MySqlHostDataSource::del(const SubnetID& subnet_id,
     }
 
     // v6
-    ConstHostPtr host = get6(subnet_id, addr);
+    ConstHostPtr host(get6(subnet_id, addr));
     if (!host) {
         return (false);
     }

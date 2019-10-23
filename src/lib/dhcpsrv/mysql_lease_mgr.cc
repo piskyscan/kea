@@ -1767,11 +1767,10 @@ MySqlLeaseMgr::MySqlLeaseMgr(const MySqlConnection::ParameterMap& parameters)
                                                MYSQL_SCHEMA_VERSION_MINOR);
     std::pair<uint32_t, uint32_t> db_version = getVersion();
     if (code_version != db_version) {
-        isc_throw(DbOpenError,
-                  "MySQL schema version mismatch: need version: "
-                      << code_version.first << "." << code_version.second
-                      << " found version: " << db_version.first << "."
-                      << db_version.second);
+        isc_throw(DbOpenError, "MySQL schema version mismatch: need version: "
+                  << code_version.first << "." << code_version.second
+                  << " found version:  " << db_version.first << "."
+                  << db_version.second);
     }
 
     // Create an initial context.
@@ -2730,6 +2729,9 @@ MySqlLeaseMgr::updateLeaseCommon(MySqlLeaseContextPtr& ctx,
 
 void
 MySqlLeaseMgr::updateLease4(const Lease4Ptr& lease) {
+    thread_local std::shared_ptr<MySqlLease4Exchange> exchange4(
+        std::make_shared<MySqlLease4Exchange>());
+
     const StatementIndex stindex = UPDATE_LEASE4;
 
     LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE_DETAIL, DHCPSRV_MYSQL_UPDATE_ADDR4)
@@ -2771,6 +2773,9 @@ MySqlLeaseMgr::updateLease4(const Lease4Ptr& lease) {
 
 void
 MySqlLeaseMgr::updateLease6(const Lease6Ptr& lease) {
+    thread_local std::shared_ptr<MySqlLease6Exchange> exchange6(
+        std::make_shared<MySqlLease6Exchange>());
+
     const StatementIndex stindex = UPDATE_LEASE6;
 
     LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE_DETAIL, DHCPSRV_MYSQL_UPDATE_ADDR6)
