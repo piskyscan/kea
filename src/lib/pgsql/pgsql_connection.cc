@@ -41,6 +41,7 @@ const int PGSQL_DEFAULT_CONNECTION_TIMEOUT = 5; // seconds
 const char PgSqlConnection::DUPLICATE_KEY[] = ERRCODE_UNIQUE_VIOLATION;
 
 void
+<<<<<<< HEAD
 PgSqlHolder::setConnection(PGconn* connection) {
     // clear prepared statements associated to current connection
     clearPrepared();
@@ -59,6 +60,10 @@ PgSqlHolder::setConnection(PGconn* connection) {
 void
 PgSqlHolder::clearPrepared() {
     if (pgsql_ != NULL) {
+=======
+PgSqlHolder::clearPrepared() {
+    if (pgconn_ != NULL) {
+>>>>>>> support reconfigure
         // Deallocate the prepared queries.
         if (PQstatus(pgsql_) == CONNECTION_OK) {
             PgSqlResult r(PQexec(pgsql_, "DEALLOCATE all"));
@@ -69,6 +74,17 @@ PgSqlHolder::clearPrepared() {
             }
         }
     }
+}
+
+void
+PgSqlHolder::setConnection(PGconn* connection) {
+    clearPrepared();
+    if (pgconn_ != NULL) {
+        PQfinish(pgconn_);
+    }
+    pgconn_ = connection;
+    connected_ = false;
+    prepared_ = false;
 }
 
 void
@@ -101,7 +117,11 @@ PgSqlHolder::prepareStatements(PgSqlConnection& connection) {
     // Prepare all statements queries with all known fields datatype
     for (auto it = connection.statements_.begin();
         it != connection.statements_.end(); ++it) {
+<<<<<<< HEAD
         PgSqlResult r(PQprepare(pgsql_, (*it)->name, (*it)->text,
+=======
+        PgSqlResult r(PQprepare(pgconn_, (*it)->name, (*it)->text,
+>>>>>>> support reconfigure
                                 (*it)->nbparams, (*it)->types));
         if (PQresultStatus(r) != PGRES_COMMAND_OK) {
             isc_throw(DbOperationError, "unable to prepare PostgreSQL statement: "
