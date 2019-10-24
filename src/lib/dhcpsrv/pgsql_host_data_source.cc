@@ -299,7 +299,7 @@ public:
         // most recently added host is different than the host id of the
         // currently processed host.
         if (hosts.empty() || row_host_id != hosts.back()->getHostId()) {
-            HostPtr host = retrieveHost(r, row, row_host_id);
+            HostPtr host(retrieveHost(r, row, row_host_id));
             hosts.push_back(host);
         }
     }
@@ -1522,7 +1522,7 @@ public:
                          const uint8_t* identifier_begin,
                          const size_t identifier_len,
                          StatementIndex stindex,
-                         boost::shared_ptr<PgSqlHostExchange> exchange) const;
+                         std::shared_ptr<PgSqlHostExchange> exchange) const;
 
     /// @brief Throws exception if database is read only.
     ///
@@ -2260,6 +2260,7 @@ std::pair<uint32_t, uint32_t>
 PgSqlHostDataSourceImpl::getVersion() const {
     LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE_DETAIL,
               DHCPSRV_PGSQL_HOST_DB_GET_VERSION);
+
     return (PgSqlConnection::getVersion(parameters_));
 }
 
@@ -2288,6 +2289,9 @@ PgSqlHostDataSource::add(const HostPtr& host) {
 
     // If operating in read-only mode, throw exception.
     impl_->checkReadOnly(ctx);
+
+    thread_local std::shared_ptr<PgSqlHostWithOptionsExchange> host_ipv4_exchange(
+        std::make_shared<PgSqlHostWithOptionsExchange>(PgSqlHostWithOptionsExchange::DHCP4_ONLY));
 
     // Initiate PostgreSQL transaction as we will have to make multiple queries
     // to insert host information into multiple tables. If that fails on
@@ -2638,9 +2642,12 @@ PgSqlHostDataSource::get4(const SubnetID& subnet_id,
     PgSqlHostContextPtr ctx = get_context.ctx_;
 
     if (!address.isV4()) {
-        isc_throw(BadValue, "PgSqlHostDataSource::get4(id, address) - "
-                  " wrong address type, address supplied is an IPv6 address");
+        isc_throw(BadValue, "PgSqlHostDataSource::get4(id, address): "
+                  "wrong address type, address supplied is an IPv6 address");
     }
+
+    thread_local std::shared_ptr<PgSqlHostWithOptionsExchange> host_ipv4_exchange(
+        std::make_shared<PgSqlHostWithOptionsExchange>(PgSqlHostWithOptionsExchange::DHCP4_ONLY));
 
     // Set up the WHERE clause value
     PsqlBindArrayPtr bind_array(new PsqlBindArray());

@@ -136,7 +136,7 @@ PgSqlTaggedStatement tagged_statements[] = {
       "SELECT address, hwaddr, client_id, "
         "valid_lifetime, extract(epoch from expire)::bigint, subnet_id, "
         "fqdn_fwd, fqdn_rev, hostname, "
-      "state, user_context "
+        "state, user_context "
       "FROM lease4 "
       "WHERE subnet_id = $1"},
 
@@ -337,7 +337,7 @@ PgSqlTaggedStatement tagged_statements[] = {
     { 0, { OID_NONE },
      "all_lease6_stats",
      "SELECT subnet_id, lease_type, state, leases as state_count"
-     "  FROM lease6_stat ORDER BY subnet_id, lease_type, state" },
+     "  FROM lease6_stat ORDER BY subnet_id, lease_type, state"},
 
     // SUBNET_LEASE6_STATS
     { 1, { OID_INT8 },
@@ -345,7 +345,7 @@ PgSqlTaggedStatement tagged_statements[] = {
       "SELECT subnet_id, lease_type, state, leases as state_count"
       "  FROM lease6_stat "
       "  WHERE subnet_id = $1 "
-      "  ORDER BY lease_type, state" },
+      "  ORDER BY lease_type, state"},
 
     // SUBNET_RANGE_LEASE6_STATS
     { 2, { OID_INT8, OID_INT8 },
@@ -353,7 +353,8 @@ PgSqlTaggedStatement tagged_statements[] = {
       "SELECT subnet_id, lease_type, state, leases as state_count"
       "  FROM lease6_stat "
       "  WHERE subnet_id >= $1 and subnet_id <= $2 "
-      "  ORDER BY subnet_id, lease_type, state" },
+      "  ORDER BY subnet_id, lease_type, state"},
+
     // End of list sentinel
     { 0,  { 0 }, NULL, NULL}
 };
@@ -1947,6 +1948,9 @@ PgSqlLeaseMgr::updateLeaseCommon(PgSqlLeaseContextPtr& ctx,
 
 void
 PgSqlLeaseMgr::updateLease4(const Lease4Ptr& lease) {
+    thread_local std::shared_ptr<PgSqlLease4Exchange> exchange4(
+        std::make_shared<PgSqlLease4Exchange>());
+
     const StatementIndex stindex = UPDATE_LEASE4;
 
     LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE_DETAIL, DHCPSRV_PGSQL_UPDATE_ADDR4)
@@ -1961,8 +1965,8 @@ PgSqlLeaseMgr::updateLease4(const Lease4Ptr& lease) {
     ctx->exchange4_->createBindForSend(lease, bind_array);
 
     // Set up the WHERE clause and append it to the SQL_BIND array
-    std::string addr4_str = boost::lexical_cast<std::string>(lease->addr_.toUint32());
-    bind_array.add(addr4_str);
+    std::string addr_str = boost::lexical_cast<std::string>(lease->addr_.toUint32());
+    bind_array.add(addr_str);
 
     std::string expire_str = PgSqlLeaseExchange::convertToDatabaseTime(lease->old_cltt_,
                                                                        lease->old_valid_lft_);
@@ -1977,6 +1981,9 @@ PgSqlLeaseMgr::updateLease4(const Lease4Ptr& lease) {
 
 void
 PgSqlLeaseMgr::updateLease6(const Lease6Ptr& lease) {
+    thread_local std::shared_ptr<PgSqlLease6Exchange> exchange6(
+        std::make_shared<PgSqlLease6Exchange>());
+
     const StatementIndex stindex = UPDATE_LEASE6;
 
     LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE_DETAIL, DHCPSRV_PGSQL_UPDATE_ADDR6)
