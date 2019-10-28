@@ -1679,12 +1679,14 @@ private:
     /// Safely fetch the statement from the connection based on statement index
     /// @throw  BadValue if statement index is out of range
     void validateStatement() {
+        MySqlHolder& holderHandle = conn_.handle();
+
         if (statement_index_ >= MySqlLeaseMgr::NUM_STATEMENTS) {
             isc_throw(BadValue, "MySqlLeaseStatsQuery"
                       " - invalid statement index" << statement_index_);
         }
 
-        statement_ = conn_.statements_[statement_index_];
+        statement_ = holderHandle.statements_[statement_index_];
     }
 
     /// @brief Database connection to use to execute the query
@@ -1829,6 +1831,7 @@ bool
 MySqlLeaseMgr::addLeaseCommon(MySqlLeaseContextPtr& ctx,
                               StatementIndex stindex,
                               std::vector<MYSQL_BIND>& bind) {
+    MySqlHolder& holderHandle = conn_.handle();
 
     // Bind the parameters to the statement
     int status = mysql_stmt_bind_param(ctx->conn_.statements_[stindex], &bind[0]);
@@ -2697,6 +2700,7 @@ MySqlLeaseMgr::updateLeaseCommon(MySqlLeaseContextPtr& ctx,
                                  StatementIndex stindex,
                                  MYSQL_BIND* bind,
                                  const LeasePtr& lease) {
+    MySqlHolder& holderHandle = conn_.handle();
 
     // Bind the parameters to the statement
     int status = mysql_stmt_bind_param(ctx->conn_.statements_[stindex], bind);

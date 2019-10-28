@@ -2715,6 +2715,8 @@ bool
 MySqlHostDataSourceImpl::delStatement(MySqlHostContextPtr& ctx,
                                       StatementIndex stindex,
                                       MYSQL_BIND* bind) {
+    MySqlHolder& holderHandle = conn_.handle();
+
     // Bind the parameters to the statement
     int status = mysql_stmt_bind_param(ctx->conn_.statements_[stindex], &bind[0]);
     checkError(ctx, status, stindex, "unable to bind parameters");
