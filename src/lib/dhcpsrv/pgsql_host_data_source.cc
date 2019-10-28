@@ -2290,7 +2290,7 @@ PgSqlHostDataSource::add(const HostPtr& host) {
     // If operating in read-only mode, throw exception.
     impl_->checkReadOnly(ctx);
 
-    thread_local std::shared_ptr<PgSqlHostWithOptionsExchange> host_ipv4_exchange(
+    std::shared_ptr<PgSqlHostWithOptionsExchange> host_ipv4_exchange(
         std::make_shared<PgSqlHostWithOptionsExchange>(PgSqlHostWithOptionsExchange::DHCP4_ONLY));
 
     // Initiate PostgreSQL transaction as we will have to make multiple queries
@@ -2646,7 +2646,7 @@ PgSqlHostDataSource::get4(const SubnetID& subnet_id,
                   "wrong address type, address supplied is an IPv6 address");
     }
 
-    thread_local std::shared_ptr<PgSqlHostWithOptionsExchange> host_ipv4_exchange(
+    std::shared_ptr<PgSqlHostWithOptionsExchange> host_ipv4_exchange(
         std::make_shared<PgSqlHostWithOptionsExchange>(PgSqlHostWithOptionsExchange::DHCP4_ONLY));
 
     // Set up the WHERE clause value
