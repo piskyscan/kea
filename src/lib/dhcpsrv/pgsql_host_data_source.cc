@@ -2094,6 +2094,7 @@ PgSqlHostDataSourceImpl::addStatement(PgSqlHostContextPtr& ctx,
                                       StatementIndex stindex,
                                       PsqlBindArrayPtr& bind_array,
                                       const bool return_last_id) {
+    PgSqlHolder& holderHandle = conn_.handle();
     uint64_t last_id = 0;
     PgSqlResult r(PQexecPrepared(ctx->conn_, tagged_statements[stindex].name,
                                  tagged_statements[stindex].nbparams,

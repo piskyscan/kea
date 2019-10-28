@@ -1050,10 +1050,11 @@ public:
     /// parameters (for all subnets), a subnet id for a single subnet, or
     /// a first and last subnet id for a subnet range.
     void start() {
+        PgSqlHolder& holderHandle = conn_.handle();
 
         if (getSelectMode() == ALL_SUBNETS) {
             // Run the query with no where clause parameters.
-            result_set_.reset(new PgSqlResult(PQexecPrepared(conn_, statement_.name,
+            result_set_.reset(new PgSqlResult(PQexecPrepared(holderHandle, statement_.name,
                                                              0, 0, 0, 0, 0)));
         } else {
             // Set up the WHERE clause values
@@ -1071,7 +1072,7 @@ public:
             }
 
             // Run the query with where clause parameters.
-            result_set_.reset(new PgSqlResult(PQexecPrepared(conn_, statement_.name,
+            result_set_.reset(new PgSqlResult(PQexecPrepared(holderHandle, statement_.name,
                                               parms.size(), &parms.values_[0],
                                               &parms.lengths_[0], &parms.formats_[0], 0)));
         }
