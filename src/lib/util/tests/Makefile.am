@@ -54,6 +54,7 @@ run_unittests_SOURCES += staged_value_unittest.cc
 run_unittests_SOURCES += state_model_unittest.cc
 run_unittests_SOURCES += strutil_unittest.cc
 run_unittests_SOURCES += thread_pool_unittest.cc
+run_unittests_SOURCES += thread_resource_unittest.cc
 run_unittests_SOURCES += time_utilities_unittest.cc
 run_unittests_SOURCES += range_utilities_unittest.cc
 run_unittests_SOURCES += signal_set_unittest.cc
