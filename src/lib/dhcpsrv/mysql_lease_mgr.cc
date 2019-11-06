@@ -2729,7 +2729,7 @@ MySqlLeaseMgr::updateLeaseCommon(MySqlLeaseContextPtr& ctx,
 
 void
 MySqlLeaseMgr::updateLease4(const Lease4Ptr& lease) {
-    std::shared_ptr<MySqlLease4Exchange> exchange4(
+    thread_local std::shared_ptr<MySqlLease4Exchange> exchange4(
         std::make_shared<MySqlLease4Exchange>());
 
     const StatementIndex stindex = UPDATE_LEASE4;
@@ -2773,7 +2773,7 @@ MySqlLeaseMgr::updateLease4(const Lease4Ptr& lease) {
 
 void
 MySqlLeaseMgr::updateLease6(const Lease6Ptr& lease) {
-    std::shared_ptr<MySqlLease6Exchange> exchange6(
+    thread_local std::shared_ptr<MySqlLease6Exchange> exchange6(
         std::make_shared<MySqlLease6Exchange>());
 
     const StatementIndex stindex = UPDATE_LEASE6;

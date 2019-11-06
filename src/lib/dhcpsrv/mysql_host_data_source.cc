@@ -2918,7 +2918,7 @@ MySqlHostDataSource::add(const HostPtr& host) {
     // If operating in read-only mode, throw exception.
     impl_->checkReadOnly(ctx);
 
-    std::shared_ptr<MySqlHostWithOptionsExchange> host_ipv4_exchange(
+    thread_local std::shared_ptr<MySqlHostWithOptionsExchange> host_ipv4_exchange(
         std::make_shared<MySqlHostWithOptionsExchange>(MySqlHostWithOptionsExchange::DHCP4_ONLY));
 
     // Initiate MySQL transaction as we will have to make multiple queries
