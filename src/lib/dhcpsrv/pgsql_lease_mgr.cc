@@ -1948,7 +1948,7 @@ PgSqlLeaseMgr::updateLeaseCommon(PgSqlLeaseContextPtr& ctx,
 
 void
 PgSqlLeaseMgr::updateLease4(const Lease4Ptr& lease) {
-    std::shared_ptr<PgSqlLease4Exchange> exchange4(
+    thread_local std::shared_ptr<PgSqlLease4Exchange> exchange4(
         std::make_shared<PgSqlLease4Exchange>());
 
     const StatementIndex stindex = UPDATE_LEASE4;
@@ -1981,7 +1981,7 @@ PgSqlLeaseMgr::updateLease4(const Lease4Ptr& lease) {
 
 void
 PgSqlLeaseMgr::updateLease6(const Lease6Ptr& lease) {
-    std::shared_ptr<PgSqlLease6Exchange> exchange6(
+    thread_local std::shared_ptr<PgSqlLease6Exchange> exchange6(
         std::make_shared<PgSqlLease6Exchange>());
 
     const StatementIndex stindex = UPDATE_LEASE6;
