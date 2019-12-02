@@ -21,6 +21,7 @@
 #include <dhcpsrv/subnet.h>
 #include <dhcpsrv/lease_mgr.h>
 #include <hooks/callout_handle.h>
+#include <util/multi_threading_mgr.h>
 
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
@@ -28,6 +29,7 @@
 
 #include <list>
 #include <map>
+#include <mutex>
 #include <set>
 #include <utility>
 
@@ -45,7 +47,8 @@ public:
     /// @param line line of the file, where exception occurred
     /// @param what text description of the issue that caused exception
     AllocFailed(const char* file, size_t line, const char* what)
-        : isc::Exception(file, line, what) {}
+        : isc::Exception(file, line, what) {
+    }
 };
 
 /// @brief DHCPv4 and DHCPv6 allocation engine
@@ -58,14 +61,12 @@ public:
 /// @todo: Does not handle out of allocation attempts well
 class AllocEngine : public boost::noncopyable {
 protected:
-
     /// @brief base class for all address/prefix allocation algorithms
     ///
     /// This is an abstract class that should not be used directly, but rather
     /// specialized implementations should be used instead.
     class Allocator {
     public:
-
         /// @brief picks one address out of available pools in a given subnet
         ///
         /// This method returns one address from the available pools in the
@@ -87,30 +88,42 @@ protected:
         /// @param subnet next address will be returned from pool of that subnet
         /// @param client_classes list of classes client belongs to
         /// @param duid Client's DUID
-        /// @param hint client's hint
+        /// @param hint Client's hint
         ///
         /// @return the next address
         virtual isc::asiolink::IOAddress
         pickAddress(const SubnetPtr& subnet,
                     const ClientClasses& client_classes,
                     const DuidPtr& duid,
-                    const isc::asiolink::IOAddress& hint) = 0;
+                    const isc::asiolink::IOAddress& hint) {
+            return util::MultiThreadingMgr::call(
+                mutex_, [&]() {return pickAddressInternal(subnet, client_classes, duid, hint);});
+        }
 
         /// @brief Default constructor.
         ///
         /// Specifies which type of leases this allocator will assign
         /// @param pool_type specifies pool type (addresses, temp. addr or prefixes)
-        Allocator(Lease::Type pool_type)
-            :pool_type_(pool_type) {
+        Allocator(Lease::Type pool_type) : pool_type_(pool_type) {
         }
 
         /// @brief virtual destructor
         virtual ~Allocator() {
         }
-    protected:
 
+    private:
+        virtual isc::asiolink::IOAddress
+        pickAddressInternal(const SubnetPtr& subnet,
+                            const ClientClasses& client_classes,
+                            const DuidPtr& duid,
+                            const isc::asiolink::IOAddress& hint) = 0;
+
+    protected:
         /// @brief defines pool type allocation
         Lease::Type pool_type_;
+
+    private:
+        std::mutex mutex_;
     };
 
     /// defines a pointer to allocator
@@ -124,27 +137,28 @@ protected:
     /// over).
     class IterativeAllocator : public Allocator {
     public:
-
         /// @brief default constructor
         ///
         /// Does not do anything
         /// @param type - specifies allocation type
         IterativeAllocator(Lease::Type type);
 
+    private:
         /// @brief returns the next address from pools in a subnet
         ///
         /// @param subnet next address will be returned from pool of that subnet
         /// @param client_classes list of classes client belongs to
         /// @param duid Client's DUID (ignored)
-        /// @param hint client's hint (ignored)
+        /// @param hint Client's hint (ignored)
+        ///
         /// @return the next address
         virtual isc::asiolink::IOAddress
-            pickAddress(const SubnetPtr& subnet,
-                        const ClientClasses& client_classes,
-                        const DuidPtr& duid,
-                        const isc::asiolink::IOAddress& hint);
-    protected:
+        pickAddressInternal(const SubnetPtr& subnet,
+                            const ClientClasses& client_classes,
+                            const DuidPtr& duid,
+                            const isc::asiolink::IOAddress& hint);
 
+    protected:
         /// @brief Returns the next prefix
         ///
         /// This method works for IPv6 addresses only. It increases the
@@ -154,6 +168,7 @@ protected:
         ///
         /// @param prefix prefix to be increased
         /// @param prefix_len length of the prefix to be increased
+        ///
         /// @return result prefix
         static isc::asiolink::IOAddress
         increasePrefix(const isc::asiolink::IOAddress& prefix,
@@ -167,11 +182,11 @@ protected:
         /// @param address address or prefix to be increased
         /// @param prefix true when the previous argument is a prefix
         /// @param prefix_len length of the prefix
+        ///
         /// @return result address or prefix
         static isc::asiolink::IOAddress
         increaseAddress(const isc::asiolink::IOAddress& address,
                         bool prefix, const uint8_t prefix_len);
-
     };
 
     /// @brief Address/prefix allocator that gets an address based on a hash
@@ -179,11 +194,11 @@ protected:
     /// @todo: This is a skeleton class for now and is missing an implementation.
     class HashedAllocator : public Allocator {
     public:
-
         /// @brief default constructor (does nothing)
         /// @param type - specifies allocation type
         HashedAllocator(Lease::Type type);
 
+    private:
         /// @brief returns an address based on hash calculated from client's DUID.
         ///
         /// @todo: Implement this method
@@ -192,12 +207,13 @@ protected:
         /// @param client_classes list of classes client belongs to
         /// @param duid Client's DUID
         /// @param hint a hint (last address that was picked)
+        ///
         /// @return selected address
         virtual isc::asiolink::IOAddress
-            pickAddress(const SubnetPtr& subnet,
-                        const ClientClasses& client_classes,
-                        const DuidPtr& duid,
-                        const isc::asiolink::IOAddress& hint);
+        pickAddressInternal(const SubnetPtr& subnet,
+                            const ClientClasses& client_classes,
+                            const DuidPtr& duid,
+                            const isc::asiolink::IOAddress& hint);
     };
 
     /// @brief Random allocator that picks address randomly
@@ -205,11 +221,11 @@ protected:
     /// @todo: This is a skeleton class for now and is missing an implementation.
     class RandomAllocator : public Allocator {
     public:
-
         /// @brief default constructor (does nothing)
         /// @param type - specifies allocation type
         RandomAllocator(Lease::Type type);
 
+    private:
         /// @brief returns a random address from pool of specified subnet
         ///
         /// @todo: Implement this method
@@ -218,16 +234,16 @@ protected:
         /// @param client_classes list of classes client belongs to
         /// @param duid Client's DUID (ignored)
         /// @param hint the last address that was picked (ignored)
+        ///
         /// @return a random address from the pool
         virtual isc::asiolink::IOAddress
-        pickAddress(const SubnetPtr& subnet,
-                    const ClientClasses& client_classes,
-                    const DuidPtr& duid,
-                    const isc::asiolink::IOAddress& hint);
+        pickAddressInternal(const SubnetPtr& subnet,
+                            const ClientClasses& client_classes,
+                            const DuidPtr& duid,
+                            const isc::asiolink::IOAddress& hint);
     };
 
 public:
-
     /// @brief specifies allocation type
     typedef enum {
         ALLOC_ITERATIVE, // iterative - one address after another
@@ -254,12 +270,13 @@ public:
     /// @brief Returns allocator for a given pool type
     ///
     /// @param type type of pool (V4, IA, TA or PD)
+    ///
     /// @throw BadValue if allocator for a given type is missing
+    ///
     /// @return pointer to allocator handling a given resource types
     AllocatorPtr getAllocator(Lease::Type type);
 
 private:
-
     /// @brief a pointer to currently used allocator
     ///
     /// For IPv4, there will be only one allocator: TYPE_V4
@@ -274,7 +291,6 @@ private:
     int hook_index_lease6_select_; ///< index for lease6_select hook
 
 public:
-
     /// @brief Defines a single hint
     ///
     /// This is an entry that represents what the client had requested,
@@ -285,7 +301,6 @@ public:
     /// @note Seems to be used only for DHCPv6.
     class Resource {
     public:
-
         /// @brief Default constructor.
         ///
         /// @param address the address or prefix
@@ -333,6 +348,7 @@ public:
         /// @brief Compares two @c AllocEngine::Resource objects for equality.
         ///
         /// @param other object to be compared with this object
+        ///
         /// @return true if objects are equal, false otherwise.
         bool equals(const Resource& other) const {
             return (address_ == other.address_ &&
@@ -342,13 +358,13 @@ public:
         /// @brief Equality operator.
         ///
         /// @param other object to be compared with this object
+        ///
         /// @return true if objects are equal, false otherwise.
         bool operator==(const Resource& other) const {
             return (equals(other));
         }
 
     protected:
-
         /// @brief The address or prefix.
         isc::asiolink::IOAddress address_;
 
@@ -369,8 +385,9 @@ public:
         /// @brief Compare operator
         ///
         /// @note Only the address/prefix part of resources is used.
-        /// @param lhr Left hand resource objet
-        /// @param rhr Right hand resource objet
+        /// @param lhr Left hand resource object
+        /// @param rhr Right hand resource object
+        ///
         /// @return true if lhr is less than rhr, false otherwise
         bool operator() (const Resource& lhr, const Resource& rhr) const {
             if (lhr.getAddress() == rhr.getAddress()) {
@@ -416,7 +433,6 @@ public:
     /// information to the allocation engine methods is that adding
     /// new information doesn't modify the API of the allocation engine.
     struct ClientContext6 : public boost::noncopyable {
-
         /// @name Parameters pertaining to DHCPv6 message
         //@{
 
@@ -481,7 +497,6 @@ public:
 
         /// @brief A collection of newly allocated leases.
         Lease6Collection new_leases_;
-
         //@}
 
         /// @brief Parameters pertaining to individual IAs.
@@ -540,12 +555,14 @@ public:
             /// @brief Convenience method adding new hint from IAADDR option.
             ///
             /// @param iaaddr Pointer to IAADDR.
+            ///
             /// @throw BadValue if iaaddr is null.
             void addHint(const Option6IAAddrPtr& iaaddr);
 
             /// @brief Convenience method adding new hint from IAPREFIX option.
             ///
             /// @param iaprefix Pointer to IAPREFIX.
+            ///
             /// @throw BadValue if iaprefix is null.
             void addHint(const Option6IAPrefixPtr& iaprefix);
         };
@@ -907,12 +924,14 @@ public:
     /// pointer if no matches are found.
     ///
     /// @param ctx Client context holding various information about the client.
+    ///
     /// @return Pointer to the reservation found, or an empty pointer.
     static ConstHostPtr findGlobalReservation(ClientContext6& ctx);
 
     /// @brief Creates an IPv6Resrv instance from a Lease6
     ///
     /// @param lease Reference to the Lease6
+    ///
     /// @return The newly formed IPv6Resrv instance
     static IPv6Resrv makeIPv6Resrv(const Lease6& lease) {
         if (lease.type_ == Lease::TYPE_NA) {
@@ -924,7 +943,6 @@ public:
     }
 
 private:
-
     /// @brief creates a lease and inserts it in LeaseMgr if necessary
     ///
     /// Creates a lease based on specified parameters and tries to insert it
@@ -940,10 +958,10 @@ private:
     /// @param [out] callout_status callout returned by the lease6_select
     ///
     /// The following fields of the ctx structure are used:
-    /// @ref ClientContext6::subnet_ subnet the lease is allocated from
-    /// @ref ClientContext6::duid_ client's DUID
+    /// @ref ClientContext6::subnet_ Subnet the lease is allocated from
+    /// @ref ClientContext6::duid_ Client's DUID
     /// @ref ClientContext6::iaid_ IAID from the IA_NA container the client sent to us
-    /// @ref ClientContext6::type_ lease type (IA, TA or PD)
+    /// @ref ClientContext6::type_ Lease type (IA, TA or PD)
     /// @ref ClientContext6::fwd_dns_update_ A boolean value which indicates that server takes
     ///        responsibility for the forward DNS Update for this lease
     ///        (if true).
@@ -957,6 +975,7 @@ private:
     ///        registered)
     /// @ref ClientContext6::fake_allocation_ is this real i.e. REQUEST (false) or just picking
     ///        an address for SOLICIT that is not really allocated (true)
+    ///
     /// @return allocated lease (or NULL in the unlikely case of the lease just
     ///         became unavailable)
     Lease6Ptr createLease6(ClientContext6& ctx,
@@ -972,6 +991,7 @@ private:
     /// This may change in the future.
     ///
     /// @param ctx client context that contains all details (subnet, client-id, etc.)
+    ///
     /// @return collection of newly allocated leases
     Lease6Collection allocateUnreservedLeases6(ClientContext6& ctx);
 
@@ -1060,8 +1080,8 @@ private:
     /// @param [out] callout_status callout returned by the lease6_select
     ///
     /// The following parameters are used from the ctx structure:
-    /// @ref ClientContext6::subnet_ subnet the lease is allocated from
-    /// @ref ClientContext6::duid_ client's DUID
+    /// @ref ClientContext6::subnet_ Subnet the lease is allocated from
+    /// @ref ClientContext6::duid_ Client's DUID
     /// @ref ClientContext6::iaid_ IAID from the IA_NA container the client sent to us
     /// @ref ClientContext6::fwd_dns_update_ A boolean value which indicates that server takes
     ///        responsibility for the forward DNS Update for this lease
@@ -1077,6 +1097,7 @@ private:
     ///        allocated (true)
     ///
     /// @return refreshed lease
+    ///
     /// @throw BadValue if trying to recycle lease that is still valid
     Lease6Ptr
     reuseExpiredLease(Lease6Ptr& expired,
@@ -1108,6 +1129,7 @@ private:
     /// @brief Utility function that removes all leases with a specified address
     /// @param container A collection of Lease6 pointers
     /// @param addr address to be removed
+    ///
     /// @return true if removed (false otherwise)
     static bool
     removeLeases(Lease6Collection& container,
@@ -1231,6 +1253,7 @@ private:
     /// - call lease4_recover hook
     ///
     /// @param lease Lease to be reclaimed from Declined state
+    ///
     /// @return true if it's ok to remove the lease (false = hooks status says
     ///         to keep it)
     bool reclaimDeclined(const Lease4Ptr& lease);
@@ -1244,12 +1267,12 @@ private:
     /// - call lease6_recover hook
     ///
     /// @param lease Lease to be reclaimed from Declined state
+    ///
     /// @return true if it's ok to remove the lease (false = hooks status says
     ///         to keep it)
     bool reclaimDeclined(const Lease6Ptr& lease);
 
 public:
-
     /// @brief Context information for the DHCPv4 lease allocation.
     ///
     /// This structure holds a set of information provided by the DHCPv4
@@ -1517,11 +1540,11 @@ public:
     /// matches are found.
     ///
     /// @param ctx Client context holding various information about the client.
+    ///
     /// @return Pointer to the reservation found, or an empty pointer.
     static ConstHostPtr findGlobalReservation(ClientContext4& ctx);
 
 private:
-
     /// @brief Offers the lease.
     ///
     /// This method is called by the @c AllocEngine::allocateLease4 when
@@ -1584,7 +1607,7 @@ private:
     /// -# If the client is not requesting any specific address, allocate
     ///    the address from the dynamic pool.
     ///
-    /// @throws various exceptions if the allocation goes wrong.
+    /// @throw various exceptions if the allocation goes wrong.
     ///
     /// @param ctx Client context holding the data extracted from the
     /// client's message.
@@ -1619,6 +1642,7 @@ private:
     /// - @ref ClientContext4::fake_allocation_ Is this real i.e. REQUEST (false)
     ///        or just picking an address for DISCOVER that is not really
     ///        allocated (true)
+    ///
     /// @return allocated lease (or NULL in the unlikely case of the lease just
     ///        become unavailable)
     Lease4Ptr createLease4(const ClientContext4& ctx,
@@ -1653,6 +1677,7 @@ private:
     /// @param [out] callout_status callout returned by the lease4_select
     ///
     /// @return Updated lease instance.
+    ///
     /// @throw BadValue if trying to reuse a lease which is still valid or
     /// when the provided parameters are invalid.
     Lease4Ptr
@@ -1719,8 +1744,8 @@ private:
     /// @param [out] lease A pointer to the lease to be updated.
     /// @param ctx A context containing information from the server about the
     /// client and its message.
-    void updateLease4Information(const Lease4Ptr& lease,
-                                 ClientContext4& ctx) const;
+    static void updateLease4Information(const Lease4Ptr& lease,
+                                        ClientContext4& ctx);
 
     /// @brief Extends the lease lifetime.
     ///
@@ -1741,10 +1766,9 @@ private:
     ///
     /// @return true if the lease lifetime has been extended, false
     /// otherwise.
-    bool conditionalExtendLifetime(Lease& lease) const;
+    static bool conditionalExtendLifetime(Lease& lease);
 
 private:
-
     /// @brief Number of consecutive DHCPv4 leases' reclamations after
     /// which there are still expired leases in the database.
     uint16_t incomplete_v4_reclamations_;
@@ -1757,7 +1781,7 @@ private:
 /// @brief A pointer to the @c AllocEngine object.
 typedef boost::shared_ptr<AllocEngine> AllocEnginePtr;
 
-}; // namespace isc::dhcp
-}; // namespace isc
+}  // namespace dhcp
+}  // namespace isc
 
 #endif // ALLOC_ENGINE_H
