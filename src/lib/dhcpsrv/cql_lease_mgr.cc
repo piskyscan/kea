@@ -26,6 +26,7 @@
 #include <dhcp/hwaddr.h>
 
 #include <asiolink/io_address.h>
+#include <boost/make_shared.hpp>
 
 using namespace isc::data;
 using namespace isc::db;
@@ -50,7 +51,7 @@ public:
     ///
     /// @param connection already open Cassandra connection.
     CqlLeaseExchange(const CqlConnection &connection)
-        : connection_(connection), valid_lifetime_(0), expire_(0),
+        : connection_(connection), valid_lifetime_(0), expire_(0), old_expire_(0),
           subnet_id_(0), fqdn_fwd_(cass_false), fqdn_rev_(cass_false),
           state_(0), user_context_(NULL_USER_CONTEXT) {
     }
@@ -86,6 +87,9 @@ protected:
 
     /// @brief Lease expiry time
     cass_int64_t expire_;
+
+    /// @brief Expiration time of lease before update
+    cass_int64_t old_expire_;
 
     /// @brief Subnet identifier
     cass_int32_t subnet_id_;
@@ -270,7 +274,8 @@ StatementMap CqlLease4Exchange::tagged_statements_{
       ") VALUES ( "
       "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? "
       ") "
-      "IF NOT EXISTS "}},
+      "IF NOT EXISTS "
+     }},
 
     // Updates existing IPv4 lease
     {UPDATE_LEASE4,
@@ -287,14 +292,16 @@ StatementMap CqlLease4Exchange::tagged_statements_{
       "state = ?, "
       "user_context = ? "
       "WHERE address = ? "
-      "IF EXISTS "}},
+      "IF expire = ? "
+     }},
 
     // Deletes existing IPv4 lease
     {DELETE_LEASE4,
      {DELETE_LEASE4,
       "DELETE FROM lease4 "
       "WHERE address = ? "
-      "IF EXISTS "}},
+      "IF expire = ? "
+     }},
 
     // Gets up to a certain number of expired IPv4 leases
     {GET_LEASE4_EXPIRE,
@@ -307,7 +314,8 @@ StatementMap CqlLease4Exchange::tagged_statements_{
       "AND valid_lifetime < 4294967295 "
       "AND expire < ? "
       "LIMIT ? "
-      "ALLOW FILTERING "}},
+      "ALLOW FILTERING "
+     }},
 
      // Gets an IPv4 lease(s)
      {GET_LEASE4,
@@ -315,7 +323,8 @@ StatementMap CqlLease4Exchange::tagged_statements_{
        "SELECT "
        "address, hwaddr, client_id, valid_lifetime, expire, subnet_id, "
        "fqdn_fwd, fqdn_rev, hostname, state, user_context "
-       "FROM lease4 "}},
+       "FROM lease4 "
+     }},
 
     // Gets an IPv4 lease with specified IPv4 address
     {GET_LEASE4_ADDR,
@@ -324,7 +333,8 @@ StatementMap CqlLease4Exchange::tagged_statements_{
       "address, hwaddr, client_id, valid_lifetime, expire, subnet_id, "
       "fqdn_fwd, fqdn_rev, hostname, state, user_context "
       "FROM lease4 "
-      "WHERE address = ? "}},
+      "WHERE address = ? "
+     }},
 
     // Gets an IPv4 lease(s) with specified client-id
     {GET_LEASE4_CLIENTID,
@@ -334,7 +344,8 @@ StatementMap CqlLease4Exchange::tagged_statements_{
       "fqdn_fwd, fqdn_rev, hostname, state, user_context "
       "FROM lease4 "
       "WHERE client_id = ? "
-      "ALLOW FILTERING "}},
+      "ALLOW FILTERING "
+     }},
 
     // Gets an IPv4 lease with specified client-id and subnet-id
     {GET_LEASE4_CLIENTID_SUBID,
@@ -345,7 +356,8 @@ StatementMap CqlLease4Exchange::tagged_statements_{
       "FROM lease4 "
       "WHERE client_id = ? "
       "AND subnet_id = ? "
-      "ALLOW FILTERING "}},
+      "ALLOW FILTERING "
+     }},
 
     // Gets all IPv4 leases with specified hardware address
     {GET_LEASE4_HWADDR,
@@ -355,7 +367,8 @@ StatementMap CqlLease4Exchange::tagged_statements_{
       "fqdn_fwd, fqdn_rev, hostname, state, user_context "
       "FROM lease4 "
       "WHERE hwaddr = ? "
-      "ALLOW FILTERING "}},
+      "ALLOW FILTERING "
+     }},
 
     // Gets an IPv4 lease with specified hardware addr and subnet-id
     {GET_LEASE4_HWADDR_SUBID,
@@ -366,7 +379,8 @@ StatementMap CqlLease4Exchange::tagged_statements_{
       "FROM lease4 "
       "WHERE hwaddr = ? "
       "AND subnet_id = ? "
-      "ALLOW FILTERING "}},
+      "ALLOW FILTERING "
+     }},
 
     // Get range of lease4 from first lease with a limit (paging)
     {GET_LEASE4_LIMIT,
@@ -376,7 +390,8 @@ StatementMap CqlLease4Exchange::tagged_statements_{
       "fqdn_fwd, fqdn_rev, hostname, state, user_context "
       "FROM lease4 "
       "LIMIT ? "
-      "ALLOW FILTERING "}},
+      "ALLOW FILTERING "
+     }},
 
     // Get range of lease4 from address with a limit (paging)
     {GET_LEASE4_PAGE,
@@ -387,7 +402,8 @@ StatementMap CqlLease4Exchange::tagged_statements_{
       "FROM lease4 "
       "WHERE TOKEN(address) > TOKEN(?) "
       "LIMIT ? "
-      "ALLOW FILTERING "}},
+      "ALLOW FILTERING "
+     }},
 
      // Gets an IPv4 lease(s) with specified subnet-id
      {GET_LEASE4_SUBID,
@@ -407,7 +423,8 @@ StatementMap CqlLease4Exchange::tagged_statements_{
        "fqdn_fwd, fqdn_rev, hostname, state, user_context "
        "FROM lease4 "
        "WHERE hostname = ? "
-       "ALLOW FILTERING "}}
+       "ALLOW FILTERING "
+     }}
 };
 
 CqlLease4Exchange::CqlLease4Exchange(const CqlConnection &connection)
@@ -565,8 +582,7 @@ CqlLease4Exchange::createBindForUpdate(const Lease4Ptr &lease, AnyArray &data,
         // For convenience for external tools, this is converted to lease
         // expiry time (expire). The relationship is given by:
         // expire = cltt_ + valid_lft_
-        CqlExchange::convertToDatabaseTime(lease_->cltt_, lease_->valid_lft_,
-                                           expire_);
+        CqlExchange::convertToDatabaseTime(lease_->cltt_, lease_->valid_lft_, expire_);
 
         // subnet_id: int
         subnet_id_ = static_cast<cass_int32_t>(lease_->subnet_id_);
@@ -612,6 +628,8 @@ CqlLease4Exchange::createBindForUpdate(const Lease4Ptr &lease, AnyArray &data,
         data.add(&user_context_);
         data.add(&address_);
 
+        CqlExchange::convertToDatabaseTime(lease_->old_cltt_, lease_->old_valid_lft_, old_expire_);
+        data.add(&old_expire_);
     } catch (const Exception &ex) {
         isc_throw(DbOperationError,
                   "CqlLease4Exchange::createBindUpdate(): "
@@ -640,6 +658,8 @@ CqlLease4Exchange::createBindForDelete(const Lease4Ptr &lease, AnyArray &data,
         data.clear();
         data.add(&address_);
 
+        CqlExchange::convertToDatabaseTime(lease_->old_cltt_, lease_->old_valid_lft_, old_expire_);
+        data.add(&old_expire_);
     } catch (const Exception &ex) {
         isc_throw(DbOperationError,
                   "CqlLease4Exchange::createBindForDelete(): "
@@ -718,7 +738,7 @@ CqlLease4Exchange::retrieve() {
         time_t cltt = 0;
         CqlExchange::convertFromDatabaseTime(expire_, valid_lifetime_, cltt);
 
-        HWAddrPtr hwaddr(new HWAddr(hwaddr_, HTYPE_ETHER));
+        HWAddrPtr hwaddr = boost::make_shared<HWAddr>(hwaddr_, HTYPE_ETHER);
 
         uint32_t addr4 = static_cast<uint32_t>(address_);
 
@@ -731,10 +751,10 @@ CqlLease4Exchange::retrieve() {
             }
         }
 
-        Lease4Ptr result(new Lease4(addr4, hwaddr, client_id_.data(),
-                                    client_id_.size(), valid_lifetime_,
-                                    cltt, subnet_id_, fqdn_fwd_, fqdn_rev_,
-                                    hostname_));
+        Lease4Ptr result(boost::make_shared<Lease4>(addr4, hwaddr, client_id_.data(),
+                                                    client_id_.size(), valid_lifetime_,
+                                                    cltt, subnet_id_, fqdn_fwd_, fqdn_rev_,
+                                                    hostname_));
 
         result->state_ = state_;
 
@@ -809,8 +829,7 @@ CqlLease4Exchange::getExpiredLeases(const size_t &max_leases,
 
         // Retrieve leases from the database.
         Lease4Collection temp_collection;
-        getLeaseCollection(CqlLease4Exchange::GET_LEASE4_EXPIRE, data,
-                           temp_collection);
+        getLeaseCollection(CqlLease4Exchange::GET_LEASE4_EXPIRE, data, temp_collection);
 
         for (Lease4Ptr &lease : temp_collection) {
             expired_leases.push_back(lease);
@@ -983,7 +1002,8 @@ StatementMap CqlLease6Exchange::tagged_statements_ = {
       ") VALUES ("
       "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?"
       ") "
-      "IF NOT EXISTS "}},
+      "IF NOT EXISTS "
+     }},
 
     // Updates existing IPv6 lease
     {UPDATE_LEASE6,
@@ -1006,14 +1026,16 @@ StatementMap CqlLease6Exchange::tagged_statements_ = {
       "state = ?, "
       "user_context = ? "
       "WHERE address = ? "
-      "IF EXISTS "}},
+      "IF expire = ? "
+     }},
 
     // Deletes existing IPv6 lease
     {DELETE_LEASE6,
      {DELETE_LEASE6,
       "DELETE FROM lease6 "
       "WHERE address = ? "
-      "IF EXISTS "}},
+      "IF expire = ? "
+     }},
 
     // Gets up to a certain number of expired IPv6 leases
     {GET_LEASE6_EXPIRE,
@@ -1027,7 +1049,8 @@ StatementMap CqlLease6Exchange::tagged_statements_ = {
       "AND valid_lifetime < 4294967295 "
       "AND expire < ? "
       "LIMIT ? "
-      "ALLOW FILTERING "}},
+      "ALLOW FILTERING "
+     }},
 
     // Gets an IPv6 lease with specified IPv6 address
     {GET_LEASE6_ADDR,
@@ -1039,7 +1062,8 @@ StatementMap CqlLease6Exchange::tagged_statements_ = {
       "FROM lease6 "
       "WHERE address = ? "
       "AND lease_type = ? "
-      "ALLOW FILTERING "}},
+      "ALLOW FILTERING "
+     }},
 
     // Gets an IPv6 lease with specified duid
     {GET_LEASE6_DUID,
@@ -1050,7 +1074,8 @@ StatementMap CqlLease6Exchange::tagged_statements_ = {
       "hwaddr_source, state, user_context "
       "FROM lease6 "
       "WHERE duid = ? "
-      "ALLOW FILTERING "}},
+      "ALLOW FILTERING "
+     }},
 
     // Gets an IPv6 lease(s) with specified duid and iaid
     {GET_LEASE6_DUID_IAID,
@@ -1062,7 +1087,8 @@ StatementMap CqlLease6Exchange::tagged_statements_ = {
       "FROM lease6 "
       "WHERE duid = ? AND iaid = ? "
       "AND lease_type = ? "
-      "ALLOW FILTERING "}},
+      "ALLOW FILTERING "
+     }},
 
     // Gets an IPv6 lease with specified duid, iaid and subnet-id
     {GET_LEASE6_DUID_IAID_SUBID,
@@ -1075,7 +1101,8 @@ StatementMap CqlLease6Exchange::tagged_statements_ = {
       "WHERE duid = ? AND iaid = ? "
       "AND lease_type = ? "
       "AND subnet_id = ? "
-      "ALLOW FILTERING "}},
+      "ALLOW FILTERING "
+     }},
 
     // Get range of IPv6 leases from first lease with a limit (paging)
     {GET_LEASE6_LIMIT,
@@ -1086,7 +1113,8 @@ StatementMap CqlLease6Exchange::tagged_statements_ = {
       "hwaddr_source, state, user_context "
       "FROM lease6 "
       "LIMIT ? "
-      "ALLOW FILTERING "}},
+      "ALLOW FILTERING "
+     }},
 
     // Get range of IPv6 leases from address with a limit (paging)
     {GET_LEASE6_PAGE,
@@ -1098,7 +1126,8 @@ StatementMap CqlLease6Exchange::tagged_statements_ = {
       "FROM lease6 "
       "WHERE TOKEN(address) > TOKEN(?) "
       "LIMIT ? "
-      "ALLOW FILTERING "}},
+      "ALLOW FILTERING "
+     }},
 
     // Gets an IPv6 lease(s) with specified hostname
     {GET_LEASE6_HOSTNAME,
@@ -1109,9 +1138,8 @@ StatementMap CqlLease6Exchange::tagged_statements_ = {
       "hwaddr_source, state, user_context "
       "FROM lease6 "
       "WHERE hostname = ? "
-      "ALLOW FILTERING "}},
-
-
+      "ALLOW FILTERING "
+     }}
 };
 
 CqlLease6Exchange::CqlLease6Exchange(const CqlConnection &connection)
@@ -1282,8 +1310,7 @@ CqlLease6Exchange::createBindForUpdate(const Lease6Ptr &lease, AnyArray &data,
         // For convenience for external tools, this is converted to lease
         // expiry time (expire). The relationship is given by:
         // expire = cltt_ + valid_lft_
-        CqlExchange::convertToDatabaseTime(lease_->cltt_, lease_->valid_lft_,
-                                           expire_);
+        CqlExchange::convertToDatabaseTime(lease_->cltt_, lease_->valid_lft_, expire_);
 
         // subnet_id: int
         subnet_id_ = static_cast<cass_int32_t>(lease_->subnet_id_);
@@ -1386,6 +1413,8 @@ CqlLease6Exchange::createBindForUpdate(const Lease6Ptr &lease, AnyArray &data,
         data.add(&user_context_);
         data.add(&address_);
 
+        CqlExchange::convertToDatabaseTime(lease_->old_cltt_, lease_->old_valid_lft_, old_expire_);
+        data.add(&old_expire_);
     } catch (const Exception &ex) {
         isc_throw(DbOperationError,
                   "CqlLease6Exchange::createBindForUpdate(): "
@@ -1420,6 +1449,8 @@ CqlLease6Exchange::createBindForDelete(const Lease6Ptr &lease, AnyArray &data,
         data.clear();
         data.add(&address_);
 
+        CqlExchange::convertToDatabaseTime(lease_->old_cltt_, lease_->old_valid_lft_, old_expire_);
+        data.add(&old_expire_);
     } catch (const Exception &ex) {
         isc_throw(DbOperationError,
                   "CqlLease6Exchange::createBindForDelete(): "
@@ -1527,11 +1558,11 @@ CqlLease6Exchange::retrieve() {
 
         IOAddress addr(address_);
 
-        DuidPtr duid(new DUID(duid_));
+        DuidPtr duid(boost::make_shared<DUID>(duid_));
 
         HWAddrPtr hwaddr;
         if (hwaddr_.size()) {
-            hwaddr.reset(new HWAddr(hwaddr_, hwtype_));
+            hwaddr = boost::make_shared<HWAddr>(hwaddr_, hwtype_);
             hwaddr->source_ = hwaddr_source_;
         }
 
@@ -1546,14 +1577,15 @@ CqlLease6Exchange::retrieve() {
 
         // Create the lease and set the cltt (after converting from the
         // expire time retrieved from the database).
-        Lease6Ptr result(new Lease6(static_cast<Lease::Type>(lease_type_), addr, duid,
-                                    iaid_, pref_lifetime_, valid_lifetime_,
-                                    subnet_id_, fqdn_fwd_, fqdn_rev_, hostname_,
-                                    hwaddr, prefix_len_));
+        Lease6Ptr result(boost::make_shared<Lease6>(static_cast<Lease::Type>(lease_type_), addr, duid,
+                                                    iaid_, pref_lifetime_, valid_lifetime_,
+                                                    subnet_id_, fqdn_fwd_, fqdn_rev_, hostname_,
+                                                    hwaddr, prefix_len_));
 
         time_t cltt = 0;
         CqlExchange::convertFromDatabaseTime(expire_, valid_lifetime_, cltt);
         result->cltt_ = cltt;
+        result->old_cltt_ = cltt;
 
         result->state_ = state_;
 
@@ -1629,8 +1661,7 @@ CqlLease6Exchange::getExpiredLeases(const size_t &max_leases,
 
         // Retrieve leases from the database.
         Lease6Collection temp_collection;
-        getLeaseCollection(CqlLease6Exchange::GET_LEASE6_EXPIRE, data,
-                           temp_collection);
+        getLeaseCollection(CqlLease6Exchange::GET_LEASE6_EXPIRE, data, temp_collection);
 
         for (Lease6Ptr &lease : temp_collection) {
             expired_leases.push_back(lease);

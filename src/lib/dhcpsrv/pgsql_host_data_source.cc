@@ -1515,7 +1515,8 @@ TaggedStatementArray tagged_statements = { {
     // it. Left joining the dhcp4_options table results in multiple rows being
     // returned for the same host. The host is retrieved by IPv4 address.
     {1,
-     { OID_INT8 }, "get_host_addr",
+     { OID_INT8 },
+     "get_host_addr",
      "SELECT h.host_id, h.dhcp_identifier, h.dhcp_identifier_type, "
      "  h.dhcp4_subnet_id, h.dhcp6_subnet_id, h.ipv4_address, h.hostname, "
      "  h.dhcp4_client_classes, h.dhcp6_client_classes, h.user_context, "
@@ -1529,7 +1530,7 @@ TaggedStatementArray tagged_statements = { {
      "ORDER BY h.host_id, o.option_id"
     },
 
-    //PgSqlHostDataSourceImpl::GET_HOST_SUBID4_DHCPID
+    // PgSqlHostDataSourceImpl::GET_HOST_SUBID4_DHCPID
     // Retrieves host information and DHCPv4 options using subnet identifier
     // and client's identifier. Left joining the dhcp4_options table results in
     // multiple rows being returned for the same host.
@@ -1546,7 +1547,7 @@ TaggedStatementArray tagged_statements = { {
      "FROM hosts AS h "
      "LEFT JOIN dhcp4_options AS o ON h.host_id = o.host_id "
      "WHERE h.dhcp4_subnet_id = $1 AND h.dhcp_identifier_type = $2 "
-     "   AND h.dhcp_identifier = $3 "
+     "  AND h.dhcp_identifier = $3 "
      "ORDER BY h.host_id, o.option_id"
     },
 
@@ -1570,11 +1571,11 @@ TaggedStatementArray tagged_statements = { {
      "LEFT JOIN dhcp6_options AS o ON h.host_id = o.host_id "
      "LEFT JOIN ipv6_reservations AS r ON h.host_id = r.host_id "
      "WHERE h.dhcp6_subnet_id = $1 AND h.dhcp_identifier_type = $2 "
-     " AND h.dhcp_identifier = $3 "
+     "  AND h.dhcp_identifier = $3 "
      "ORDER BY h.host_id, o.option_id, r.reservation_id"
     },
 
-    //PgSqlHostDataSourceImpl::GET_HOST_SUBID_ADDR
+    // PgSqlHostDataSourceImpl::GET_HOST_SUBID_ADDR
     // Retrieves host information and DHCPv4 options for the host using subnet
     // identifier and IPv4 reservation. Left joining the dhcp4_options table
     // results in multiple rows being returned for the host. The number of
@@ -1683,7 +1684,8 @@ TaggedStatementArray tagged_statements = { {
     // are usually many hosts in a subnet. The amount of returned data may
     // be huge.
     {1,
-     { OID_INT8 }, "get_host_subid6",
+     { OID_INT8 },
+     "get_host_subid6",
      "SELECT h.host_id, h.dhcp_identifier, "
      "  h.dhcp_identifier_type, h.dhcp4_subnet_id, "
      "  h.dhcp6_subnet_id, h.ipv4_address, h.hostname, "
@@ -1857,7 +1859,7 @@ TaggedStatementArray tagged_statements = { {
     // Using fixed scope_id = 3, which associates an option with host.
     {7,
      { OID_INT2, OID_BYTEA, OID_TEXT,
-       OID_VARCHAR, OID_BOOL, OID_TEXT, OID_INT8},
+       OID_VARCHAR, OID_BOOL, OID_TEXT, OID_INT8 },
      "insert_v4_host_option",
      "INSERT INTO dhcp4_options(code, value, formatted_value, space, "
      "  persistent, user_context, host_id, scope_id) "
@@ -1869,7 +1871,7 @@ TaggedStatementArray tagged_statements = { {
     // Using fixed scope_id = 3, which associates an option with host.
     {7,
      { OID_INT2, OID_BYTEA, OID_TEXT,
-       OID_VARCHAR, OID_BOOL, OID_TEXT, OID_INT8},
+       OID_VARCHAR, OID_BOOL, OID_TEXT, OID_INT8 },
      "insert_v6_host_option",
      "INSERT INTO dhcp6_options(code, value, formatted_value, space, "
      "  persistent, user_context, host_id, scope_id) "

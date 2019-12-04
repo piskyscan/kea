@@ -15,6 +15,7 @@
 #include <util/multi_threading_mgr.h>
 
 #include <boost/array.hpp>
+#include <boost/make_shared.hpp>
 #include <boost/static_assert.hpp>
 #include <mysqld_error.h>
 
@@ -95,12 +96,12 @@ const size_t USER_CONTEXT_MAX_LEN = 8192;
 boost::array<TaggedStatement, MySqlLeaseMgr::NUM_STATEMENTS>
 tagged_statements = { {
     {MySqlLeaseMgr::DELETE_LEASE4,
-                    "DELETE FROM lease4 WHERE address = ?"},
+                    "DELETE FROM lease4 WHERE address = ? AND expire = ?"},
     {MySqlLeaseMgr::DELETE_LEASE4_STATE_EXPIRED,
                     "DELETE FROM lease4 "
                         "WHERE state = ? AND expire < ?"},
     {MySqlLeaseMgr::DELETE_LEASE6,
-                    "DELETE FROM lease6 WHERE address = ?"},
+                    "DELETE FROM lease6 WHERE address = ? AND expire = ?"},
     {MySqlLeaseMgr::DELETE_LEASE6_STATE_EXPIRED,
                     "DELETE FROM lease6 "
                         "WHERE state = ? AND expire < ?"},
@@ -286,7 +287,7 @@ tagged_statements = { {
                         "subnet_id = ?, fqdn_fwd = ?, fqdn_rev = ?, "
                         "hostname = ?, "
                         "state = ?, user_context = ? "
-                            "WHERE address = ?"},
+                            "WHERE address = ? AND expire = ?"},
     {MySqlLeaseMgr::UPDATE_LEASE6,
                     "UPDATE lease6 SET address = ?, duid = ?, "
                         "valid_lifetime = ?, expire = ?, subnet_id = ?, "
@@ -294,38 +295,33 @@ tagged_statements = { {
                         "prefix_len = ?, fqdn_fwd = ?, fqdn_rev = ?, "
                         "hostname = ?, hwaddr = ?, hwtype = ?, hwaddr_source = ?, "
                         "state = ?, user_context = ? "
-                            "WHERE address = ?"},
+                            "WHERE address = ? and expire = ?"},
     {MySqlLeaseMgr::ALL_LEASE4_STATS,
-     "SELECT subnet_id, state, leases as state_count"
-     "  FROM lease4_stat ORDER BY subnet_id, state"},
-
+                    "SELECT subnet_id, state, leases as state_count "
+                        "FROM lease4_stat ORDER BY subnet_id, state"},
     {MySqlLeaseMgr::SUBNET_LEASE4_STATS,
-     "SELECT subnet_id, state, leases as state_count"
-     "  FROM lease4_stat "
-     "  WHERE subnet_id = ? "
-     "  ORDER BY state"},
-
+                    "SELECT subnet_id, state, leases as state_count "
+                        "FROM lease4_stat "
+                        "WHERE subnet_id = ? "
+                        "ORDER BY state"},
     {MySqlLeaseMgr::SUBNET_RANGE_LEASE4_STATS,
-     "SELECT subnet_id, state, leases as state_count"
-     "  FROM lease4_stat "
-     "  WHERE subnet_id >= ? and subnet_id <= ? "
-     "  ORDER BY subnet_id, state"},
-
+                    "SELECT subnet_id, state, leases as state_count "
+                        "FROM lease4_stat "
+                        "WHERE subnet_id >= ? and subnet_id <= ? "
+                        "ORDER BY subnet_id, state"},
     {MySqlLeaseMgr::ALL_LEASE6_STATS,
-     "SELECT subnet_id, lease_type, state, leases as state_count"
-     "  FROM lease6_stat ORDER BY subnet_id, lease_type, state" },
-
+                    "SELECT subnet_id, lease_type, state, leases as state_count "
+                        "FROM lease6_stat ORDER BY subnet_id, lease_type, state"},
     {MySqlLeaseMgr::SUBNET_LEASE6_STATS,
-     "SELECT subnet_id, lease_type, state, leases as state_count"
-     "  FROM lease6_stat "
-     "  WHERE subnet_id = ? "
-     "  ORDER BY lease_type, state" },
-
+                    "SELECT subnet_id, lease_type, state, leases as state_count "
+                        "FROM lease6_stat "
+                        "WHERE subnet_id = ? "
+                        "ORDER BY lease_type, state"},
     {MySqlLeaseMgr::SUBNET_RANGE_LEASE6_STATS,
-     "SELECT subnet_id, lease_type, state, leases as state_count"
-     "  FROM lease6_stat "
-     "  WHERE subnet_id >= ? and subnet_id <= ? "
-     "  ORDER BY subnet_id, lease_type, state" }
+                    "SELECT subnet_id, lease_type, state, leases as state_count "
+                        "FROM lease6_stat "
+                        "WHERE subnet_id >= ? and subnet_id <= ? "
+                        "ORDER BY subnet_id, lease_type, state"}
     }
 };
 
@@ -811,9 +807,9 @@ public:
             }
         }
 
-        Lease4Ptr lease(new Lease4(addr4_, hwaddr, client_id_buffer_,
-                                   client_id_length_, valid_lifetime_, cltt,
-                                   subnet_id_, fqdn_fwd_, fqdn_rev_, hostname));
+        Lease4Ptr lease(boost::make_shared<Lease4>(addr4_, hwaddr, client_id_buffer_,
+                                                   client_id_length_, valid_lifetime_, cltt,
+                                                   subnet_id_, fqdn_fwd_, fqdn_rev_, hostname));
 
         // Set state.
         lease->state_ = state_;
@@ -1427,6 +1423,7 @@ public:
         }
         MySqlConnection::convertFromDatabaseTime(expire_, valid_lft, cltt);
         result->cltt_ = cltt;
+        result->old_cltt_ = cltt;
 
         // Set state.
         result->state_ = state_;
