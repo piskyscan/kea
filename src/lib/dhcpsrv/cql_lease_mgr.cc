@@ -479,8 +479,7 @@ CqlLease4Exchange::createBindForInsert(const Lease4Ptr &lease, AnyArray &data) {
         // For convenience for external tools, this is converted to lease
         // expiry time (expire). The relationship is given by:
         // expire = cltt_ + valid_lft_
-        CqlExchange::convertToDatabaseTime(lease_->cltt_, lease_->valid_lft_,
-                                           expire_);
+        CqlExchange::convertToDatabaseTime(lease_->cltt_, lease_->valid_lft_, expire_);
 
         // subnet_id: int
         subnet_id_ = static_cast<cass_int32_t>(lease_->subnet_id_);
@@ -774,6 +773,9 @@ CqlLease4Exchange::retrieve() {
 void
 CqlLease4Exchange::getLeaseCollection(StatementTag &statement_tag, AnyArray &data,
                                       Lease4Collection &result) {
+    LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE_DETAIL, DHCPSRV_CQL_GET_ADDR4)
+        .arg(statement_tag);
+
     AnyArray collection = executeSelect(connection_, data, statement_tag);
 
     // Transfer Lease4 objects to result.
@@ -1606,6 +1608,9 @@ CqlLease6Exchange::retrieve() {
 void
 CqlLease6Exchange::getLeaseCollection(StatementTag &statement_tag, AnyArray &data,
                                       Lease6Collection &result) {
+    LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE_DETAIL, DHCPSRV_CQL_GET_ADDR6)
+        .arg(statement_tag);
+
     AnyArray collection = executeSelect(connection_, data, statement_tag);
 
     // Transfer Lease6 objects to result.
