@@ -548,7 +548,7 @@ AllocEngine::ClientContext6::getDdnsParams() {
     // Haven't created it, so this is the first time we've needed it
     // since being given a subnet.
     if (subnet_) {
-        ddns_params_ = CfgMgr::instance().getCurrentCfg()->getDdnsParams(*subnet_);
+        ddns_params_ = CfgMgr::instance().getCurrentCfg()->getDdnsParams(subnet_);
         return (ddns_params_);
     }
 
@@ -3076,7 +3076,7 @@ AllocEngine::ClientContext4::getDdnsParams() {
     // Haven't created it, so this is the first time we've needed it
     // since being given a subnet.
     if (subnet_) {
-        ddns_params_ = CfgMgr::instance().getCurrentCfg()->getDdnsParams(*subnet_);
+        ddns_params_ = CfgMgr::instance().getCurrentCfg()->getDdnsParams(subnet_);
         return (ddns_params_);
     }
 
