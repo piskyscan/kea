@@ -3674,8 +3674,7 @@ AllocEngine::renewLease4(const Lease4Ptr& lease,
     // (the lease returned points directly to the lease4 object in the database)
     // We'll need it if we want to skip update (i.e. roll back renewal)
     /// @todo: remove this?
-    Lease4 old_values = *lease;
-    ctx.old_lease_.reset(new Lease4(old_values));
+    ctx.old_lease_.reset(new Lease4(*lease));
 
     // Update the lease with the information from the context.
     updateLease4Information(lease, ctx);
