@@ -3674,7 +3674,8 @@ AllocEngine::renewLease4(const Lease4Ptr& lease,
     // (the lease returned points directly to the lease4 object in the database)
     // We'll need it if we want to skip update (i.e. roll back renewal)
     /// @todo: remove this?
-    ctx.old_lease_.reset(new Lease4(*lease));
+    Lease4 old_values = *lease;
+    ctx.old_lease_.reset(new Lease4(old_values));
 
     // Update the lease with the information from the context.
     updateLease4Information(lease, ctx);
@@ -3685,7 +3686,6 @@ AllocEngine::renewLease4(const Lease4Ptr& lease,
         // involves execution of hooks and DNS update.
         if (ctx.old_lease_->expired()) {
             reclaimExpiredLease(ctx.old_lease_, ctx.callout_handle_);
-
         }
 
         lease->state_ = Lease::STATE_DEFAULT;
