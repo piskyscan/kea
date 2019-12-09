@@ -30,7 +30,8 @@
 
 using namespace isc::data;
 using namespace isc::db;
-using isc::asiolink::IOAddress;
+using namespace isc::asiolink;
+using namespace std;
 
 namespace isc {
 namespace dhcp {
@@ -47,6 +48,7 @@ static constexpr char NULL_USER_CONTEXT[] = "";
 /// base to both of them, containing some common methods.
 class CqlLeaseExchange : public CqlExchange {
 public:
+
     /// @brief Constructor
     ///
     /// @param connection already open Cassandra connection.
@@ -76,6 +78,7 @@ public:
     virtual boost::any retrieve() override = 0;
 
 protected:
+
     /// @brief Database connection
     const CqlConnection &connection_;
 
@@ -101,13 +104,13 @@ protected:
     cass_bool_t fqdn_rev_;
 
     /// @brief Client hostname
-    std::string hostname_;
+    string hostname_;
 
     /// @brief Lease state
     cass_int32_t state_;
 
     /// @brief User context
-    std::string user_context_;
+    string user_context_;
 };
 
 /// @brief Exchange Lease4 information between Kea and CQL
@@ -124,6 +127,7 @@ protected:
 /// in all CqlLeaseMgr::xxx4() calls where it is used.
 class CqlLease4Exchange : public CqlLeaseExchange {
 public:
+
     /// @brief Constructor
     ///
     /// The initialization of the variables here is only to satisfy
@@ -240,6 +244,7 @@ public:
     /// @}
 
 private:
+
     // Pointer to lease object
     Lease4Ptr lease_;
     // IPv4 address
@@ -669,7 +674,6 @@ CqlLease4Exchange::createBindForDelete(const Lease4Ptr &lease, AnyArray &data,
 
 void
 CqlLease4Exchange::createBindForSelect(AnyArray &data, StatementTag /* unused */) {
-
     // Start with a fresh array.
     data.clear();
 
@@ -813,7 +817,7 @@ CqlLease4Exchange::getExpiredLeases(const size_t &max_leases,
     // If the number of leases is 0, we will return all leases. This is
     // achieved by setting the limit to a very high value.
     cass_int32_t limit = max_leases > 0u ? static_cast<cass_int32_t>(max_leases) :
-                                           std::numeric_limits<cass_int32_t>::max();
+                                           numeric_limits<cass_int32_t>::max();
 
     for (cass_int32_t state = Lease::STATE_DEFAULT;
          state <= Lease::STATE_EXPIRED_RECLAIMED; ++state) {
@@ -850,6 +854,7 @@ CqlLease4Exchange::getExpiredLeases(const size_t &max_leases,
 /// in all CqlLeaseMgr::xxx6() calls where it is used.
 class CqlLease6Exchange : public CqlLeaseExchange {
 public:
+
     /// @brief Constructor
     ///
     /// The initialization of the variables here is only to satisfy
@@ -949,11 +954,12 @@ public:
     // @}
 
 private:
+
     /// @brief Lease
     Lease6Ptr lease_;
 
     /// @brief IPv6 address
-    std::string address_;
+    string address_;
 
     /// @brief Preferred lifetime
     cass_int64_t pref_lifetime_;
@@ -1460,7 +1466,6 @@ CqlLease6Exchange::createBindForDelete(const Lease6Ptr &lease, AnyArray &data,
 
 void
 CqlLease6Exchange::createBindForSelect(AnyArray &data, StatementTag /* unused */) {
-
     // Start with a fresh array.
     data.clear();
 
@@ -1645,7 +1650,7 @@ CqlLease6Exchange::getExpiredLeases(const size_t &max_leases,
     // If the number of leases is 0, we will return all leases. This is
     // achieved by setting the limit to a very high value.
     cass_int32_t limit = max_leases > 0u ? static_cast<cass_int32_t>(max_leases) :
-                                           std::numeric_limits<cass_int32_t>::max();
+                                           numeric_limits<cass_int32_t>::max();
 
     for (cass_int32_t state = Lease::STATE_DEFAULT;
          state <= Lease::STATE_EXPIRED_RECLAIMED; ++state) {
@@ -1675,6 +1680,7 @@ CqlLease6Exchange::getExpiredLeases(const size_t &max_leases,
 ///
 class CqlLeaseStatsQuery : public LeaseStatsQuery {
 public:
+
     /// @brief Constructor to query for all subnets' stats
     ///
     ///  The query created will return statistics for all subnets
@@ -1811,6 +1817,7 @@ public:
     static StatementMap tagged_statements_;
 
 private:
+
     /// @brief Database connection to use to execute the query
     CqlConnection& conn_;
 
@@ -1822,10 +1829,10 @@ private:
 
 
     /// @brief map containing the aggregated lease counts
-    std::map<LeaseStatsRow, int> cummulative_rows_;
+    map<LeaseStatsRow, int> cummulative_rows_;
 
     /// @brief cursor pointing to the next row to read in aggregate map
-    std::map<LeaseStatsRow, int>::iterator next_row_;
+    map<LeaseStatsRow, int>::iterator next_row_;
 
     /// @brief Subnet identifier
     cass_int32_t subnet_id_;
@@ -1976,7 +1983,7 @@ CqlLeaseStatsQuery::executeSelect(const CqlConnection& connection, const AnyArra
     CqlTaggedStatement tagged_statement = it->second;
     if (tagged_statement.is_raw_) {
         // The entire query is the first element in data.
-        std::string* query = boost::any_cast<std::string*>(local_data.back());
+        string* query = boost::any_cast<string*>(local_data.back());
         local_data.pop_back();
         statement = cass_statement_new(query->c_str(), local_data.size());
     } else {
@@ -2025,7 +2032,7 @@ CqlLeaseStatsQuery::executeSelect(const CqlConnection& connection, const AnyArra
 
     // Wait for the statement execution to complete.
     cass_future_wait(future);
-    const std::string error = connection.checkFutureError(
+    const string error = connection.checkFutureError(
         "CqlLeaseStatsQuery::executeSelect(): cass_session_execute() != CASS_OK",
         future, statement_tag);
     rc = cass_future_error_code(future);
@@ -2077,11 +2084,11 @@ CqlLeaseStatsQuery::executeSelect(const CqlConnection& connection, const AnyArra
 }
 
 CqlLeaseMgr::CqlLeaseMgr(const DatabaseConnection::ParameterMap &parameters)
-  : LeaseMgr(), parameters_(parameters), dbconn_(parameters) {
+    : parameters_(parameters), dbconn_(parameters) {
     // Validate the schema version first.
-    std::pair<uint32_t, uint32_t> code_version(CQL_SCHEMA_VERSION_MAJOR,
-                                               CQL_SCHEMA_VERSION_MINOR);
-    std::pair<uint32_t, uint32_t> db_version = getVersion();
+    pair<uint32_t, uint32_t> code_version(CQL_SCHEMA_VERSION_MAJOR,
+                                          CQL_SCHEMA_VERSION_MINOR);
+    pair<uint32_t, uint32_t> db_version = getVersion();
     if (code_version != db_version) {
         isc_throw(DbOpenError, "Cassandra schema version mismatch: need version: "
                   << code_version.first << "." << code_version.second
@@ -2103,9 +2110,9 @@ CqlLeaseMgr::~CqlLeaseMgr() {
     // closed in the destructor of the dbconn_ member variable.
 }
 
-std::string
+string
 CqlLeaseMgr::getDBVersion() {
-    std::stringstream tmp;
+    stringstream tmp;
     tmp << "CQL backend " << CQL_SCHEMA_VERSION_MAJOR;
     tmp << "." << CQL_SCHEMA_VERSION_MINOR;
     tmp << ", library cassandra";
@@ -2128,6 +2135,10 @@ CqlLeaseMgr::addLease(const Lease4Ptr &lease) {
             .arg(exception.what());
         return false;
     }
+
+    lease->old_cltt_ = lease->cltt_;
+    lease->old_valid_lft_ = lease->valid_lft_;
+
     return true;
 }
 
@@ -2147,6 +2158,10 @@ CqlLeaseMgr::addLease(const Lease6Ptr &lease) {
             .arg(exception.what());
         return false;
     }
+
+    lease->old_cltt_ = lease->cltt_;
+    lease->old_valid_lft_ = lease->valid_lft_;
+
     return true;
 }
 
@@ -2291,14 +2306,14 @@ CqlLeaseMgr::getLeases4(SubnetID subnet_id) const {
 }
 
 Lease4Collection
-CqlLeaseMgr::getLeases4(const std::string& hostname) const {
+CqlLeaseMgr::getLeases4(const string& hostname) const {
     LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE_DETAIL, DHCPSRV_CQL_GET_HOSTNAME4)
         .arg(hostname);
 
     // Set up the WHERE clause value
     AnyArray data;
 
-    std::string hostname_data(hostname);
+    string hostname_data(hostname);
     data.add(&hostname_data);
 
     // Get the data.
@@ -2338,9 +2353,9 @@ CqlLeaseMgr::getLeases4(const asiolink::IOAddress& lower_bound_address,
         isc_throw(OutOfRange, "page size of retrieved leases must not be 0");
     }
 
-    if (page_size.page_size_ > std::numeric_limits<uint32_t>::max()) {
+    if (page_size.page_size_ > numeric_limits<uint32_t>::max()) {
         isc_throw(OutOfRange, "page size of retrieved leases must not be greater than "
-                  << std::numeric_limits<uint32_t>::max());
+                  << numeric_limits<uint32_t>::max());
     }
 
     LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE_DETAIL, DHCPSRV_CQL_GET_PAGE4)
@@ -2371,7 +2386,7 @@ CqlLeaseMgr::getLeases4(const asiolink::IOAddress& lower_bound_address,
 
 Lease6Ptr
 CqlLeaseMgr::getLease6(Lease::Type lease_type, const IOAddress &addr) const {
-    std::string addr_data = addr.toText();
+    string addr_data = addr.toText();
     LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE_DETAIL, DHCPSRV_CQL_GET_ADDR6)
         .arg(addr_data)
         .arg(lease_type);
@@ -2483,14 +2498,14 @@ CqlLeaseMgr::getLeases6(SubnetID) const {
 }
 
 Lease6Collection
-CqlLeaseMgr::getLeases6(const std::string& hostname) const {
+CqlLeaseMgr::getLeases6(const string& hostname) const {
     LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE_DETAIL, DHCPSRV_CQL_GET_HOSTNAME6)
         .arg(hostname);
 
     // Set up the WHERE clause value
     AnyArray data;
 
-    std::string hostname_data(hostname);
+    string hostname_data(hostname);
     data.add(&hostname_data);
 
     // Get the data.
@@ -2520,9 +2535,9 @@ CqlLeaseMgr::getLeases6(const asiolink::IOAddress& lower_bound_address,
         isc_throw(OutOfRange, "page size of retrieved leases must not be 0");
     }
 
-    if (page_size.page_size_ > std::numeric_limits<uint32_t>::max()) {
+    if (page_size.page_size_ > numeric_limits<uint32_t>::max()) {
         isc_throw(OutOfRange, "page size of retrieved leases must not be greater than "
-                  << std::numeric_limits<uint32_t>::max());
+                  << numeric_limits<uint32_t>::max());
     }
 
     LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE_DETAIL, DHCPSRV_CQL_GET_PAGE6)
@@ -2531,7 +2546,7 @@ CqlLeaseMgr::getLeases6(const asiolink::IOAddress& lower_bound_address,
 
     AnyArray data;
 
-    std::string lb_address_data;
+    string lb_address_data;
     if (!lower_bound_address.isV6Zero()) {
         lb_address_data = lower_bound_address.toText();
         if (lb_address_data.size() > ADDRESS6_TEXT_MAX_LEN) {
@@ -2593,6 +2608,9 @@ CqlLeaseMgr::updateLease4(const Lease4Ptr &lease) {
     } catch (const StatementNotApplied &exception) {
         isc_throw(NoSuchLease, exception.what());
     }
+
+    lease->old_cltt_ = lease->cltt_;
+    lease->old_valid_lft_ = lease->valid_lft_;
 }
 
 void
@@ -2609,12 +2627,15 @@ CqlLeaseMgr::updateLease6(const Lease6Ptr &lease) {
     } catch (const StatementNotApplied &exception) {
         isc_throw(NoSuchLease, exception.what());
     }
+
+    lease->old_cltt_ = lease->cltt_;
+    lease->old_valid_lft_ = lease->valid_lft_;
 }
 
 bool
 CqlLeaseMgr::deleteLease(const Lease4Ptr &lease) {
     const IOAddress &addr = lease->addr_;
-    std::string addr_data = addr.toText();
+    string addr_data = addr.toText();
     LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE_DETAIL, DHCPSRV_CQL_DELETE_ADDR)
         .arg(addr_data);
 
@@ -2638,7 +2659,7 @@ CqlLeaseMgr::deleteLease(const Lease4Ptr &lease) {
 bool
 CqlLeaseMgr::deleteLease(const Lease6Ptr &lease) {
     const IOAddress &addr = lease->addr_;
-    std::string addr_data = addr.toText();
+    string addr_data = addr.toText();
     LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE_DETAIL, DHCPSRV_CQL_DELETE_ADDR)
         .arg(addr_data);
 
@@ -2789,9 +2810,9 @@ CqlLeaseMgr::wipeLeases6(const SubnetID & /*subnet_id*/) {
     isc_throw(NotImplemented, "wipeLeases6 is not implemented for Cassandra backend");
 }
 
-std::string
+string
 CqlLeaseMgr::getName() const {
-    std::string name = "";
+    string name = "";
     try {
         name = dbconn_.getParameter("name");
     } catch (...) {
@@ -2800,9 +2821,9 @@ CqlLeaseMgr::getName() const {
     return name;
 }
 
-std::string
+string
 CqlLeaseMgr::getDescription() const {
-    return std::string("Cassandra Database");
+    return string("Cassandra Database");
 }
 
 VersionPair
