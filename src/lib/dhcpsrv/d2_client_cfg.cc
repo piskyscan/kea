@@ -41,7 +41,11 @@ const char* D2ClientConfig::DFT_HOSTNAME_CHAR_REPLACEMENT = "";
 
 D2ClientConfig::ReplaceClientNameMode
 D2ClientConfig::stringToReplaceClientNameMode(const std::string& mode_str) {
+#if 0
     if (boost::iequals(mode_str, "never")) {
+#else
+    if (mode_str == "never") {
+#endif
         return (D2ClientConfig::RCM_NEVER);
     }
 

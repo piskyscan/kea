@@ -665,7 +665,12 @@ public:
     }
     using Element::get;
     ConstElementPtr get(const std::string& s) const {
+#if 0
         return (contains(s) ? m.find(s)->second : ConstElementPtr());
+#else
+        auto found = m.find(s);
+        return (found != m.end() ? found->second : ConstElementPtr());
+#endif
     }
     using Element::set;
     void set(const std::string& key, ConstElementPtr value);
