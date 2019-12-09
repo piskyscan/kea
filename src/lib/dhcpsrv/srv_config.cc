@@ -592,13 +592,9 @@ SrvConfig::toElement() const {
 }
 
 DdnsParamsPtr
-SrvConfig::getDdnsParams(const Subnet4Ptr& /* subnet */) const {
-#if 0
+SrvConfig::getDdnsParams(const Subnet4Ptr& subnet) const {
     DdnsParamsPtr params(new DdnsParams(subnet,
                          getD2ClientConfig()->getEnableUpdates()));
-#else
-    DdnsParamsPtr params(new DdnsParams());
-#endif
     return params;
 }
 
