@@ -807,9 +807,12 @@ public:
             }
         }
 
-        Lease4Ptr lease(boost::make_shared<Lease4>(addr4_, hwaddr, client_id_buffer_,
-                                                   client_id_length_, valid_lifetime_, cltt,
-                                                   subnet_id_, fqdn_fwd_, fqdn_rev_, hostname));
+        Lease4Ptr lease(boost::make_shared<Lease4>(addr4_, hwaddr,
+                                                   client_id_buffer_,
+                                                   client_id_length_,
+                                                   valid_lifetime_, cltt,
+                                                   subnet_id_, fqdn_fwd_,
+                                                   fqdn_rev_, hostname));
 
         // Set state.
         lease->state_ = state_;
@@ -1046,9 +1049,9 @@ public:
                                               // reasons, see memset() above
 
             // prefix_len: unsigned tinyint
-            // Can use lease_->prefix_len_ directly as it is uint32_t.
+            // Can use lease_->prefixlen_ directly as it is uint32_t.
             bind_[8].buffer_type = MYSQL_TYPE_TINY;
-            bind_[8].buffer = reinterpret_cast<char*>(&lease_->prefix_len_);
+            bind_[8].buffer = reinterpret_cast<char*>(&lease_->prefixlen_);
             bind_[8].is_unsigned = MLM_TRUE;
             // bind_[8].is_null = &MLM_FALSE; // commented out for performance
                                               // reasons, see memset() above
@@ -1412,9 +1415,11 @@ public:
         // Create the lease and set the cltt (after converting from the
         // expire time retrieved from the database).
         Lease6Ptr result(boost::make_shared<Lease6>(type, addr, duid_ptr, iaid_,
-                                                    pref_lifetime_, valid_lifetime_,
-                                                    subnet_id_, fqdn_fwd_, fqdn_rev_,
-                                                    hostname, hwaddr, prefix_len_));
+                                                    pref_lifetime_,
+                                                    valid_lifetime_, subnet_id_,
+                                                    fqdn_fwd_, fqdn_rev_,
+                                                    hostname, hwaddr,
+                                                    prefix_len_));
         time_t cltt = 0;
         // Recover from overflow
         uint32_t valid_lft = valid_lifetime_;
