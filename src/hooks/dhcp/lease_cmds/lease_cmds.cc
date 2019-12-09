@@ -1509,6 +1509,10 @@ LeaseCmdsImpl::getIPv6AddressForDelete(const Parameters& parameters) const {
         // Let's see if there's such a lease at all.
         lease6 = LeaseMgrFactory::instance().getLease6(parameters.lease_type,
                                                        parameters.addr);
+        if (!lease6) {
+            lease6.reset(new Lease6());
+            lease6->addr_ = parameters.addr;
+        }
         break;
     }
     case Parameters::TYPE_HWADDR: {
@@ -1526,7 +1530,7 @@ LeaseCmdsImpl::getIPv6AddressForDelete(const Parameters& parameters) const {
                                                        *parameters.duid,
                                                        parameters.iaid,
                                                        parameters.subnet_id);
-       break;
+        break;
     }
     default:
         isc_throw(InvalidOperation, "Unknown query type: "
