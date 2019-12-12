@@ -1071,9 +1071,13 @@ LeaseCmdsImpl::lease4DelHandler(CalloutHandle& handle) {
         }
         }
 
-        if (LeaseMgrFactory::instance().deleteLease(lease4)) {
-            setSuccessResponse(handle, "IPv4 lease deleted.");
-        } else {
+        try {
+            if (LeaseMgrFactory::instance().deleteLease(lease)) {
+                setSuccessResponse(handle, "IPv4 lease deleted.");
+            } else {
+                setErrorResponse (handle, "IPv4 lease not found.", CONTROL_RESULT_EMPTY);
+            }
+        } catch (NoSuchLease &ex) {
             setErrorResponse (handle, "IPv4 lease not found.", CONTROL_RESULT_EMPTY);
         }
     } catch (const std::exception& ex) {
@@ -1169,10 +1173,17 @@ LeaseCmdsImpl::lease6BulkApplyHandler(CalloutHandle& handle) {
                         // This may throw if the lease couldn't be deleted for
                         // any reason, but we still want to proceed with other
                         // leases.
-                        if (LeaseMgrFactory::instance().deleteLease(lease)) {
-                            ++success_count;
+                        bool deleted = false;
+                        try {
+                            if (LeaseMgrFactory::instance().deleteLease(lease)) {
+                                ++success_count;
+                                deleted = true;
+                            }
+                        } catch (NoSuchLease &ex) {
+                            // catch exceptions related to concurrent deletes
+                        }
 
-                        } else {
+                        if (!deleted) {
                             // Lazy creation of the list of leases which failed to delete.
                             if (!failed_deleted_list) {
                                 failed_deleted_list = Element::createList();
@@ -1318,9 +1329,13 @@ LeaseCmdsImpl::lease6DelHandler(CalloutHandle& handle) {
         }
         }
 
-        if (LeaseMgrFactory::instance().deleteLease(lease6)) {
-            setSuccessResponse(handle, "IPv6 lease deleted.");
-        } else {
+        try {
+            if (LeaseMgrFactory::instance().deleteLease(lease)) {
+                setSuccessResponse(handle, "IPv6 lease deleted.");
+            } else {
+                setErrorResponse (handle, "IPv6 lease not found.", CONTROL_RESULT_EMPTY);
+            }
+        } catch (NoSuchLease &ex) {
             setErrorResponse (handle, "IPv6 lease not found.", CONTROL_RESULT_EMPTY);
         }
     } catch (const std::exception& ex) {
