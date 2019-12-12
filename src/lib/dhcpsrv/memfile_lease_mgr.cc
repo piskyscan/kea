@@ -405,7 +405,7 @@ public:
         int64_t assigned = 0;
         int64_t declined = 0;
         for (Lease4StorageSubnetIdIndex::const_iterator lease = lower;
-            lease != upper; ++lease) {
+             lease != upper; ++lease) {
             // If we've hit the next subnet, add rows for the current subnet
             // and wipe the accumulators
             if ((*lease)->subnet_id_ != cur_id) {
@@ -548,7 +548,7 @@ public:
         int64_t declined = 0;
         int64_t assigned_pds = 0;
         for (Lease6StorageSubnetIdIndex::const_iterator lease = lower;
-            lease != upper; ++lease) {
+             lease != upper; ++lease) {
             // If we've hit the next subnet, add rows for the current subnet
             // and wipe the accumulators
             if ((*lease)->subnet_id_ != cur_id) {
@@ -1105,8 +1105,9 @@ Memfile_LeaseMgr::getLeases6Internal(Lease::Type type,
     std::pair<Lease6StorageDuidIaidTypeIndex::const_iterator,
               Lease6StorageDuidIaidTypeIndex::const_iterator> l =
         idx.equal_range(boost::make_tuple(duid.getDuid(), iaid, type));
+
     for (Lease6StorageDuidIaidTypeIndex::const_iterator lease =
-            l.first; lease != l.second; ++lease) {
+         l.first; lease != l.second; ++lease) {
         collection.push_back(Lease6Ptr(new Lease6(**lease)));
     }
 }
@@ -1144,8 +1145,9 @@ Memfile_LeaseMgr::getLeases6Internal(Lease::Type type,
     std::pair<Lease6StorageDuidIaidTypeIndex::const_iterator,
               Lease6StorageDuidIaidTypeIndex::const_iterator> l =
         idx.equal_range(boost::make_tuple(duid.getDuid(), iaid, type));
+
     for (Lease6StorageDuidIaidTypeIndex::const_iterator lease =
-            l.first; lease != l.second; ++lease) {
+         l.first; lease != l.second; ++lease) {
         // Filter out the leases which subnet id doesn't match.
         if ((*lease)->subnet_id_ == subnet_id) {
             collection.push_back(Lease6Ptr(new Lease6(**lease)));
@@ -1484,7 +1486,8 @@ Memfile_LeaseMgr::deleteLeaseInternal(const Lease4Ptr& lease) {
     Lease4Storage::iterator l = storage4_.find(addr);
     if (l == storage4_.end()) {
         // No such lease
-        return (false);
+        isc_throw(NoSuchLease, "unable to update lease for address " <<
+                  lease->addr_.toText() << " as it does not exist");
     } else {
         if (persistLeases(V4)) {
             // Copy the lease. The valid lifetime needs to be modified and
@@ -1523,7 +1526,8 @@ Memfile_LeaseMgr::deleteLeaseInternal(const Lease6Ptr& lease) {
     Lease6Storage::iterator l = storage6_.find(addr);
     if (l == storage6_.end()) {
         // No such lease
-        return (false);
+        isc_throw(NoSuchLease, "unable to update lease for address " <<
+                  lease->addr_.toText() << " as it does not exist");
     } else {
         if (persistLeases(V6)) {
             // Copy the lease. The lifetimes need to be modified and we
