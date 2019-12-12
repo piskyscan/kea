@@ -2713,8 +2713,12 @@ CqlLeaseMgr::deleteExpiredReclaimedLeases4(const uint32_t secs) {
     std::unique_ptr<CqlLease4Exchange> exchange4(new CqlLease4Exchange(dbconn_));
     exchange4->getLeaseCollection(CqlLease4Exchange::GET_LEASE4_EXPIRE, data, leases);
     for (Lease4Ptr &lease : leases) {
-        if (deleteLease(lease)) {
-            ++deleted;
+        try {
+            if (deleteLease(lease)) {
+                ++deleted;
+            }
+        } catch (NoSuchLease &ex) {
+            // catch exceptions related to concurrent deletes
         }
     }
     return (deleted);
@@ -2744,8 +2748,12 @@ CqlLeaseMgr::deleteExpiredReclaimedLeases6(const uint32_t secs) {
     std::unique_ptr<CqlLease6Exchange> exchange6(new CqlLease6Exchange(dbconn_));
     exchange6->getLeaseCollection(CqlLease6Exchange::GET_LEASE6_EXPIRE, data, leases);
     for (Lease6Ptr &lease : leases) {
-        if (deleteLease(lease)) {
-            ++deleted;
+        try {
+            if (deleteLease(lease)) {
+                ++deleted;
+            }
+        } catch (NoSuchLease &ex) {
+            // catch exceptions related to concurrent deletes
         }
     }
     return (deleted);
