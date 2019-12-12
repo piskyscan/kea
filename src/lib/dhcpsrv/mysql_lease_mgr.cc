@@ -2836,7 +2836,9 @@ MySqlLeaseMgr::deleteLeaseCommon(StatementIndex stindex, MYSQL_BIND* bind) {
 
     // See how many rows were affected.  Note that the statement may delete
     // multiple rows.
-    return (static_cast<uint64_t>(mysql_stmt_affected_rows(ctx->conn_.statements_[stindex])));
+    int affected_rows = mysql_stmt_affected_rows(ctx->conn_.statements_[stindex]);
+
+    return (affected_rows);
 }
 
 bool
@@ -2862,7 +2864,23 @@ MySqlLeaseMgr::deleteLease(const Lease4Ptr& lease) {
     inbind[1].buffer = reinterpret_cast<char*>(&expire);
     inbind[1].buffer_length = sizeof(expire);
 
-    return (deleteLeaseCommon(DELETE_LEASE4, inbind) > 0);
+    auto affected_rows = deleteLeaseCommon(DELETE_LEASE4, inbind);
+
+    // Check success case first as it is the most likely outcome.
+    if (affected_rows == 1) {
+        return (true);
+    }
+
+    // If no rows affected, lease doesn't exist.
+    if (affected_rows == 0) {
+        isc_throw(NoSuchLease, "unable to update lease for address " <<
+                  lease->addr_.toText() << " as it does not exist");
+    }
+
+    // Should not happen - primary key constraint should only have selected
+    // one row.
+    isc_throw(DbOperationError, "apparently updated more than one lease "
+              "that had the address " << lease->addr_.toText());
 }
 
 bool
@@ -2893,7 +2911,23 @@ MySqlLeaseMgr::deleteLease(const Lease6Ptr& lease) {
     inbind[1].buffer = reinterpret_cast<char*>(&expire);
     inbind[1].buffer_length = sizeof(expire);
 
-    return (deleteLeaseCommon(DELETE_LEASE6, inbind) > 0);
+    auto affected_rows =  deleteLeaseCommon(DELETE_LEASE6, inbind);
+
+    // Check success case first as it is the most likely outcome.
+    if (affected_rows == 1) {
+        return (true);
+    }
+
+    // If no rows affected, lease doesn't exist.
+    if (affected_rows == 0) {
+        isc_throw(NoSuchLease, "unable to update lease for address " <<
+                  lease->addr_.toText() << " as it does not exist");
+    }
+
+    // Should not happen - primary key constraint should only have selected
+    // one row.
+    isc_throw(DbOperationError, "apparently updated more than one lease "
+              "that had the address " << lease->addr_.toText());
 }
 
 uint64_t

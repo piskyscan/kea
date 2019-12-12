@@ -2660,7 +2660,7 @@ CqlLeaseMgr::deleteLease(const Lease4Ptr &lease) {
     } catch (const Exception &exception) {
         LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE_DETAIL, DHCPSRV_CQL_LEASE_EXCEPTION_THROWN)
             .arg(exception.what());
-        return false;
+        isc_throw(NoSuchLease, exception.what());
     }
     return true;
 }
@@ -2684,7 +2684,7 @@ CqlLeaseMgr::deleteLease(const Lease6Ptr &lease) {
     } catch (const Exception &exception) {
         LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE_DETAIL, DHCPSRV_CQL_LEASE_EXCEPTION_THROWN)
             .arg(exception.what());
-        return false;
+        isc_throw(NoSuchLease, exception.what());
     }
     return true;
 }

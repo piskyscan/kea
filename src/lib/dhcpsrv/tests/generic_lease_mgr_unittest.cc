@@ -528,7 +528,7 @@ GenericLeaseMgrTest::testLease4NullClientId() {
     EXPECT_TRUE(lmptr_->deleteLease(leases[1]));
     l_returned = lmptr_->getLease4(ioaddress4_[1]);
     EXPECT_FALSE(l_returned);
-    EXPECT_FALSE(lmptr_->deleteLease(leases[1]));
+    EXPECT_THROW(lmptr_->deleteLease(leases[1]), isc::dhcp::NoSuchLease);
 
     // Check that the second address is still there.
     l_returned = lmptr_->getLease4(ioaddress4_[2]);
@@ -708,7 +708,7 @@ GenericLeaseMgrTest::testAddGetDelete6() {
     Lease6Ptr non_existing_lease(new Lease6(Lease::TYPE_NA, IOAddress(addr789),
                                             duid, iaid, 100, 200,
                                             subnet_id));
-    EXPECT_FALSE(lmptr_->deleteLease(non_existing_lease));
+    EXPECT_THROW(lmptr_->deleteLease(non_existing_lease), isc::dhcp::NoSuchLease);
 
     // this one should succeed
     EXPECT_TRUE(lmptr_->deleteLease(x));
@@ -800,7 +800,7 @@ GenericLeaseMgrTest::testBasicLease4() {
     EXPECT_TRUE(lmptr_->deleteLease(leases[1]));
     l_returned = lmptr_->getLease4(ioaddress4_[1]);
     EXPECT_FALSE(l_returned);
-    EXPECT_FALSE(lmptr_->deleteLease(leases[1]));
+    EXPECT_THROW(lmptr_->deleteLease(leases[1]), isc::dhcp::NoSuchLease);
 
     // Check that the second address is still there.
     l_returned = lmptr_->getLease4(ioaddress4_[2]);
@@ -878,7 +878,7 @@ GenericLeaseMgrTest::testBasicLease6() {
     EXPECT_TRUE(lmptr_->deleteLease(leases[1]));
     l_returned = lmptr_->getLease6(leasetype6_[1], ioaddress6_[1]);
     EXPECT_FALSE(l_returned);
-    EXPECT_FALSE(lmptr_->deleteLease(leases[1]));
+    EXPECT_THROW(lmptr_->deleteLease(leases[1]), isc::dhcp::NoSuchLease);
 
     // Check that the second address is still there.
     l_returned = lmptr_->getLease6(leasetype6_[2], ioaddress6_[2]);
