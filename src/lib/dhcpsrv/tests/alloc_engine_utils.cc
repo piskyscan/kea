@@ -80,7 +80,11 @@ AllocEngine4Test::testReuseLease4(const AllocEnginePtr& engine,
         // If an existing lease was specified, we need to add it to the
         // database. Let's wipe any leases for that address (if any). We
         // ignore any errors (previous lease may not exist)
-        LeaseMgrFactory::instance().deleteLease(existing_lease);
+        try {
+            LeaseMgrFactory::instance().deleteLease(existing_lease);
+        } catch (...) {
+            // catch all exceptions
+        }
 
         // Let's add it.
         ASSERT_TRUE(LeaseMgrFactory::instance().addLease(existing_lease));
@@ -534,7 +538,11 @@ AllocEngine6Test::testReuseLease6(const AllocEnginePtr& engine,
         // If an existing lease was specified, we need to add it to the
         // database. Let's wipe any leases for that address (if any). We
         // ignore any errors (previous lease may not exist)
-        LeaseMgrFactory::instance().deleteLease(existing_lease);
+        try {
+            LeaseMgrFactory::instance().deleteLease(existing_lease);
+        } catch (...) {
+            // catch all exceptions
+        }
 
         // Let's add it.
         ASSERT_TRUE(LeaseMgrFactory::instance().addLease(existing_lease));
