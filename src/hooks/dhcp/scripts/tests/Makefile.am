@@ -4,6 +4,7 @@ AM_CPPFLAGS = -I$(top_builddir)/src/lib -I$(top_srcdir)/src/lib
 AM_CPPFLAGS += -I$(top_builddir)/src/bin -I$(top_srcdir)/src/bin
 AM_CPPFLAGS += -I$(top_builddir)/src/hooks/dhcp/scripts -I$(top_srcdir)/src/hooks/dhcp/scripts
 AM_CPPFLAGS += $(BOOST_INCLUDES)
+AM_CPPFLAGS += -DLIBDHCP_SCRIPTS_SO=\"$(abs_top_builddir)/src/hooks/dhcp/scripts/.libs/libdhcp_scripts.so\"
 AM_CPPFLAGS += -DTEST_DATA_BUILDDIR=\"$(abs_top_srcdir)/src/hooks/dhcp/scripts/tests\"
 AM_CPPFLAGS += -DINSTALL_PROG=\"$(abs_top_srcdir)/install-sh\"
 
@@ -31,6 +32,7 @@ TESTS += scripts_unittests
 scripts_unittests_SOURCES  =
 scripts_unittests_SOURCES += run_unittests.cc
 scripts_unittests_SOURCES += dhcp6_unittests.cc
+scripts_unittests_SOURCES += load_unload_unittests.cc
 scripts_unittests_SOURCES += scripts_unittests.cc
 
 
