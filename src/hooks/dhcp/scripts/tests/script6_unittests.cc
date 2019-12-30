@@ -28,7 +28,7 @@ namespace {
 ///
 /// - Configuration 0:
 ///   - only addresses (no prefixes)
-///   - 1 subnet with 2001:db8:1::/64 pool
+///   - 1 subnet with 2001:db8:1::/64 pool (with rapid-commit)
 ///
 /// - Configuration 1:
 ///   - only prefixes (no addresses)
@@ -39,7 +39,7 @@ namespace {
 ///   - 1 subnet with one address pool and one prefix pool
 ///   - address pool: 2001:db8:1::/64
 ///   - prefix pool: 3000::/72
-const char* RENEW_CONFIGS[] = {
+const char* CONFIGS[] = {
 // Configuration 0
     "{ \"interfaces-config\": {"
         "  \"interfaces\": [ \"*\" ]"
@@ -50,6 +50,7 @@ const char* RENEW_CONFIGS[] = {
         "\"subnet6\": [ { "
         "    \"pools\": [ { \"pool\": \"2001:db8:1::/64\" } ],"
         "    \"subnet\": \"2001:db8:1::/48\", "
+        "    \"rapid-commit\": true,"
         "    \"interface-id\": \"\","
         "    \"interface\": \"eth0\""
         " } ],"
@@ -96,13 +97,13 @@ const char* RENEW_CONFIGS[] = {
 };
 
 /// @brief Test fixture class for testing Renew.
-class RenewTest : public Dhcpv6MessageTest {
+class Script6Test : public Dhcpv6MessageTest {
 public:
 
     /// @brief Constructor.
     ///
     /// Sets up fake interfaces.
-    RenewTest()
+    Script6Test()
         : Dhcpv6MessageTest(), na_iaid_(1234), pd_iaid_(5678) {
     }
 
@@ -114,9 +115,60 @@ public:
 
 };
 
+// Check that when the client can complete normal SARR configuration,
+// get the lease and the script hooks is triggered in the process.
+TEST_F(Script6Test, basic) {
+
+    /// @TODO: Load the hook
+    
+    Dhcp6Client client;
+    // Configure client to request IA_NA
+    client.requestAddress();
+    configure(CONFIGS[0], *client.getServer());
+
+    // Make sure we ended-up having expected number of subnets configured.
+    ASSERT_NO_THROW(client.doSARR());
+    // Server should have committed a lease.
+    ASSERT_EQ(1, client.getLeaseNum());
+    Lease6 lease_client = client.getLease(0);
+
+    /// @TODO: Check if the script has been called properly.
+}
+
+
+// Check that when the client includes the Rapid Commit option and it is
+// enabled, the server responds with Reply and commits the lease and
+// also calls the scripts hooks in the process.
+TEST_F(Script6Test, rapidCommit) {
+    /// @TODO: Load the hook
+
+    Dhcp6Client client;
+    // Configure client to request IA_NA
+    client.requestAddress();
+    configure(CONFIGS[0], *client.getServer());
+
+    // Perform 2-way exchange.
+    client.useRapidCommit(true);
+
+    ASSERT_NO_THROW(client.doSolicit());
+    // Server should have committed a lease.
+    ASSERT_EQ(1, client.getLeaseNum());
+    Lease6 lease_client = client.getLease(0);
+
+    // Make sure that the address belongs to the subnet configured.
+    ASSERT_TRUE(CfgMgr::instance().getCurrentCfg()->getCfgSubnets6()->
+                selectSubnet(lease_client.addr_, ClientClasses()));
+    // Make sure that the server responded with Reply.
+    ASSERT_TRUE(client.getContext().response_);
+    EXPECT_EQ(DHCPV6_REPLY, client.getContext().response_->getType());
+
+    /// @TODO: Check if the script has been called properly.
+}
+
+
 // This test verifies that the client can request the prefix delegation
 // while it is renewing an address lease.
-TEST_F(RenewTest, requestPrefixInRenew) {
+TEST_F(Script6Test, requestPrefixInRenew) {
     Dhcp6Client client;
 
     // Configure client to request IA_NA and IA_PD.
@@ -124,7 +176,7 @@ TEST_F(RenewTest, requestPrefixInRenew) {
     client.requestPrefix(pd_iaid_);
 
     // Configure the server with NA pools only.
-    ASSERT_NO_THROW(configure(RENEW_CONFIGS[0], *client.getServer()));
+    ASSERT_NO_THROW(configure(CONFIGS[0], *client.getServer()));
 
     // Perform 4-way exchange.
     ASSERT_NO_THROW(client.doSARR());
@@ -154,7 +206,7 @@ TEST_F(RenewTest, requestPrefixInRenew) {
     EXPECT_EQ(STATUS_Success, client.getStatusCode(na_iaid_));
 
     // Reconfigure the server to use both NA and PD pools.
-    configure(RENEW_CONFIGS[2], *client.getServer());
+    configure(CONFIGS[2], *client.getServer());
 
     // Send Renew message to the server, including IA_NA and requesting IA_PD.
     ASSERT_NO_THROW(client.doRenew());
@@ -172,7 +224,7 @@ TEST_F(RenewTest, requestPrefixInRenew) {
 
 // This test verifies that the client can request a prefix delegation
 // with a hint, while it is renewing an address lease.
-TEST_F(RenewTest, requestPrefixInRenewUseHint) {
+TEST_F(Script6Test, requestPrefixInRenewUseHint) {
     Dhcp6Client client;
 
     // Configure client to request IA_NA and IA_PD.
@@ -180,7 +232,7 @@ TEST_F(RenewTest, requestPrefixInRenewUseHint) {
     client.requestPrefix(pd_iaid_);
 
     // Configure the server with NA pools only.
-    ASSERT_NO_THROW(configure(RENEW_CONFIGS[0], *client.getServer()));
+    ASSERT_NO_THROW(configure(CONFIGS[0], *client.getServer()));
 
     // Perform 4-way exchange.
     ASSERT_NO_THROW(client.doSARR());
@@ -224,7 +276,7 @@ TEST_F(RenewTest, requestPrefixInRenewUseHint) {
     ASSERT_EQ(STATUS_NoPrefixAvail, client.getStatusCode(pd_iaid_));
 
     // Reconfigure the server to use both NA and PD pools.
-    configure(RENEW_CONFIGS[2], *client.getServer());
+    configure(CONFIGS[2], *client.getServer());
 
     // Send Renew message to the server, including IA_NA and requesting IA_PD.
     ASSERT_NO_THROW(client.doRenew());
@@ -245,7 +297,7 @@ TEST_F(RenewTest, requestPrefixInRenewUseHint) {
 
 // This test verifies that the client can request the prefix delegation
 // while it is renewing an address lease.
-TEST_F(RenewTest, requestAddressInRenew) {
+TEST_F(Script6Test, requestAddressInRenew) {
     Dhcp6Client client;
 
     // Configure client to request IA_NA and IA_PD.
@@ -253,7 +305,7 @@ TEST_F(RenewTest, requestAddressInRenew) {
     client.requestPrefix(pd_iaid_);
 
     // Configure the server with PD pools only.
-    ASSERT_NO_THROW(configure(RENEW_CONFIGS[1], *client.getServer()));
+    ASSERT_NO_THROW(configure(CONFIGS[1], *client.getServer()));
 
     // Perform 4-way exchange.
     ASSERT_NO_THROW(client.doSARR());
@@ -286,7 +338,7 @@ TEST_F(RenewTest, requestAddressInRenew) {
     EXPECT_GE(leases_client_pd_renewed[0].cltt_ - leases_client_pd[0].cltt_, 1000);
 
     // Reconfigure the server to use both NA and PD pools.
-    configure(RENEW_CONFIGS[2], *client.getServer());
+    configure(CONFIGS[2], *client.getServer());
 
     // Send Renew message to the server, including IA_PD and requesting IA_NA.
     ASSERT_NO_THROW(client.doRenew());
@@ -302,5 +354,7 @@ TEST_F(RenewTest, requestAddressInRenew) {
     ASSERT_EQ(1, leases_client_na.size());
     EXPECT_EQ(STATUS_Success, client.getStatusCode(na_iaid_));
 }
+
+
 
 } // end of anonymous namespace

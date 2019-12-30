@@ -31,7 +31,7 @@ TESTS += scripts_unittests
 
 scripts_unittests_SOURCES  =
 scripts_unittests_SOURCES += run_unittests.cc
-scripts_unittests_SOURCES += dhcp6_unittests.cc
+scripts_unittests_SOURCES += script6_unittests.cc
 scripts_unittests_SOURCES += load_unload_unittests.cc
 scripts_unittests_SOURCES += scripts_unittests.cc
 
