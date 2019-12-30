@@ -74,4 +74,3 @@ messages scripts_messages.h scripts_messages.cc:
 	@echo Messages generation disabled. Configure with --enable-generate-messages to enable it.
 
 endif
-
