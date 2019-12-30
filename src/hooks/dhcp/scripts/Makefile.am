@@ -37,7 +37,6 @@ libdhcp_scripts_la_LDFLAGS  += -rpath /nowhere
 libdhcp_scripts_la_LIBADD  = libscripts.la
 libdhcp_scripts_la_LIBADD  += $(top_builddir)/src/lib/hooks/libkea-hooks.la
 libdhcp_scripts_la_LIBADD  += $(top_builddir)/src/lib/log/libkea-log.la
-libdhcp_scripts_la_LIBADD  += $(top_builddir)/src/lib/util/threads/libkea-threads.la
 libdhcp_scripts_la_LIBADD  += $(top_builddir)/src/lib/util/libkea-util.la
 libdhcp_scripts_la_LIBADD  += $(top_builddir)/src/lib/exceptions/libkea-exceptions.la
 libdhcp_scripts_la_LIBADD  += $(LOG4CPLUS_LIBS)
