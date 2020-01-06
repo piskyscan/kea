@@ -792,7 +792,7 @@ Dhcpv4Srv::run() {
         // Creating the process packet thread pool
         // The number of thread pool's threads should be read from configuration
         // file or it should be determined by the number of hardware threads.
-        pkt_thread_pool_.create(Dhcpv4Srv::threadCount());
+        pkt_thread_pool_.start(Dhcpv4Srv::threadCount());
     }
 
     while (!shutdown_) {
@@ -815,7 +815,7 @@ Dhcpv4Srv::run() {
 
     // destroying the thread pool
     if (run_multithreaded_) {
-        pkt_thread_pool_.destroy();
+        pkt_thread_pool_.reset();
     }
 
     return (true);
@@ -914,8 +914,9 @@ Dhcpv4Srv::run_one() {
         return;
     } else {
     if (run_multithreaded_) {
-        ThreadPool::WorkItemCallBack call_back =
-            std::bind(&Dhcpv4Srv::processPacketAndSendResponseNoThrow, this, query, rsp);
+        typedef function<void()> CallBack;
+        boost::shared_ptr<CallBack> call_back =
+            boost::make_shared<CallBack>(std::bind(&Dhcpv4Srv::processPacketAndSendResponseNoThrow, this, query, rsp));
         pkt_thread_pool_.add(call_back);
     } else {
         processPacketAndSendResponse(query, rsp);

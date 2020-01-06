@@ -624,8 +624,8 @@ ControlledDhcpv6Srv::processCommand(const string& command,
     }
 
     if (srv->run_multithreaded_) {
-        srv->pkt_thread_pool_.destroy();
-        srv->pkt_thread_pool_.create(Dhcpv6Srv::threadCount());
+        srv->pkt_thread_pool_.stop();
+        srv->pkt_thread_pool_.start(Dhcpv6Srv::threadCount());
     }
 
     try {

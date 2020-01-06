@@ -15,7 +15,7 @@
 #include <dhcp/option4_client_fqdn.h>
 #include <dhcp/option_custom.h>
 #include <dhcp_ddns/ncr_msg.h>
-#include <dhcpsrv/thread_pool.h>
+#include <util/thread_pool.h>
 #include <dhcpsrv/alloc_engine.h>
 #include <dhcpsrv/callout_handle_store.h>
 #include <dhcpsrv/cb_ctl_dhcp4.h>
@@ -1038,7 +1038,7 @@ protected:
     CBControlDHCPv4Ptr cb_control_;
 
     /// @brief Packet processing thread pool
-    ThreadPool pkt_thread_pool_;
+    isc::util::ThreadPool<std::function<void()>> pkt_thread_pool_;
 
     // Specifies if the application will use a thread pool or will process
     // received DHCP packets on the main thread.
