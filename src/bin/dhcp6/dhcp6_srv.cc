@@ -464,7 +464,7 @@ bool Dhcpv6Srv::run() {
         // Creating the process packet thread pool
         // The number of thread pool's threads should be read from configuration
         // file or it should be determined by the number of hardware threads.
-        pkt_thread_pool_.start(Dhcpv6Srv::threadCount());
+        // pkt_thread_pool_.start(Dhcpv6Srv::threadCount());
     }
 
     while (!shutdown_) {
