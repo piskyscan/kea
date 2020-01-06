@@ -85,37 +85,6 @@ namespace dhcp {
 
 ControlledDhcpv4Srv* ControlledDhcpv4Srv::server_ = NULL;
 
-void
-ControlledDhcpv4Srv::init(const std::string& file_name) {
-    // Keep the call timestamp.
-    start_ = boost::posix_time::second_clock::universal_time();
-
-    // Configure the server using JSON file.
-    ConstElementPtr result = loadConfigFile(file_name);
-    int rcode;
-    ConstElementPtr comment = isc::config::parseAnswer(rcode, result);
-    if (rcode != 0) {
-        string reason = comment ? comment->stringValue() :
-            "no details available";
-        isc_throw(isc::BadValue, reason);
-    }
-
-    // We don't need to call openActiveSockets() or startD2() as these
-    // methods are called in processConfig() which is called by
-    // processCommand("config-set", ...)
-
-    // Set signal handlers. When the SIGHUP is received by the process
-    // the server reconfiguration will be triggered. When SIGTERM or
-    // SIGINT will be received, the server will start shutting down.
-    signal_set_.reset(new isc::util::SignalSet(SIGINT, SIGHUP, SIGTERM));
-    // Set the pointer to the handler function.
-    signal_handler_ = signalHandler;
-}
-
-void ControlledDhcpv4Srv::cleanup() {
-    // Nothing to do here. No need to disconnect from anything.
-}
-
 /// @brief Configure DHCPv4 server using the configuration file specified.
 ///
 /// This function is used to both configure the DHCP server on its startup
@@ -195,6 +164,9 @@ ControlledDhcpv4Srv::loadConfigFile(const std::string& file_name) {
 
 void
 ControlledDhcpv4Srv::init(const std::string& file_name) {
+    // Keep the call timestamp.
+    start_ = boost::posix_time::second_clock::universal_time();
+
     // Configure the server using JSON file.
     ConstElementPtr result = loadConfigFile(file_name);
 

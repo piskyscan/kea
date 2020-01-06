@@ -7,7 +7,6 @@
 #define PGSQL_CONNECTION_H
 
 #include <database/database_connection.h>
-#include <util/thread_resource.h>
 
 #include <libpq-fe.h>
 #include <boost/scoped_ptr.hpp>
@@ -161,13 +160,11 @@ public:
     }
 
 private:
-    PGresult* result_;     ///< Result set to be freed
-    int rows_;             ///< Number of rows in the result set
-    int cols_;             ///< Number of columns in the result set
+    PGresult*     result_;     ///< Result set to be freed
+    int rows_;   ///< Number of rows in the result set
+    int cols_;   ///< Number of columns in the result set
 };
 
-/// @brief Forward declaration to @ref PgSqlConnection.
-class PgSqlConnection;
 
 /// @brief Postgresql connection handle Holder
 ///
@@ -182,70 +179,57 @@ class PgSqlConnection;
 /// For this reason, the class is declared noncopyable.
 class PgSqlHolder : public boost::noncopyable {
 public:
+
     /// @brief Constructor
     ///
-    /// Sets the PgSql API connector handle to NULL.
-    PgSqlHolder() : connected_(false), prepared_(false), pgsql_(NULL) {
+    /// Sets the Postgresql API connector handle to NULL.
+    ///
+    PgSqlHolder() : pgconn_(NULL) {
     }
 
     /// @brief Destructor
     ///
-    /// Frees up resources allocated by the connection holder.
+    /// Frees up resources allocated by the connection.
     ~PgSqlHolder() {
-        clear();
+        if (pgconn_ != NULL) {
+            PQfinish(pgconn_);
+        }
     }
-
-    /// @brief Clear all resources
-    ///
-    /// Clear all resources.
-    void clear() {
-        setConnection(NULL);
-    }
-
-    /// @brief Clear prepared statements
-    ///
-    /// Clear prepared statements.
-    void clearPrepared();
 
     /// @brief Sets the connection to the value given
     ///
-    /// Sets the database back-end object.
-    ///
-    /// @param connection - pointer to the PgSql connection instance
-    void setConnection(PGconn* connection);
+    /// @param connection - pointer to the Postgresql connection instance
+    void setConnection(PGconn* connection) {
+        if (pgconn_ != NULL) {
+            // Already set? Release the current connection first.
+            // Maybe this should be an error instead?
+            PQfinish(pgconn_);
+        }
 
-    /// @brief Open database
-    ///
-    /// Open database and apply PgSql connection parameters.
-    ///
-    /// @param connection - associated connection which holds connection properties.
-    void openDatabase(PgSqlConnection& connection);
-
-    /// @brief Prepare statements
-    ///
-    /// Prepare statements.
-    ///
-    /// @param connection - associated connection which holds the text statements.
-    void prepareStatements(PgSqlConnection& connection);
+        pgconn_ = connection;
+    }
 
     /// @brief Conversion Operator
     ///
     /// Allows the PgSqlHolder object to be passed as the context argument to
     /// PQxxxx functions.
     operator PGconn*() const {
-        return (pgsql_);
+        return (pgconn_);
     }
 
-    /// @brief The connected flag
-    bool connected_;     ///< Flag to indicate openDatabase has been called
+    /// @brief Boolean Operator
+    ///
+    /// Allows testing the connection for emptiness: "if (holder)"
+    operator bool() const {
+        return (pgconn_);
+    }
 
 private:
-    /// @brief The prepared flag
-    bool prepared_;      ///< Flag to indicate prepareStatements has been called
-
-    /// @brief The PgSql database back-end object associated to this holder
-    PGconn* pgsql_;     ///< Postgresql connection
+    PGconn* pgconn_;      ///< Postgresql connection
 };
+
+/// @brief Forward declaration to @ref PgSqlConnection.
+class PgSqlConnection;
 
 /// @brief RAII object representing a PostgreSQL transaction.
 ///
@@ -320,8 +304,8 @@ public:
     /// @brief Constructor
     ///
     /// Initialize PgSqlConnection object with parameters needed for connection.
-    PgSqlConnection(const ParameterMap& parameters) :
-        DatabaseConnection(parameters), connected_(false), prepared_(false) {
+    PgSqlConnection(const ParameterMap& parameters)
+        : DatabaseConnection(parameters) {
     }
 
     /// @brief Destructor
@@ -429,24 +413,30 @@ public:
     void checkStatementError(const PgSqlResult& r,
                              PgSqlTaggedStatement& statement) const;
 
-    /// @brief Raw statements
-    ///
-    /// This field is public, because it is used heavily from PgSqlConnection
-    /// and from PgSqlHostDataSource.
-    std::vector<const PgSqlTaggedStatement*> statements_;
-
     /// @brief PgSql connection handle
     ///
     /// This field is public, because it is used heavily from PgSqlLeaseMgr
     /// and from PgSqlHostDataSource.
-    PgSqlHolder& handle() const;
-private:
-    bool connected_;     ///< Flag to indicate openDatabase has been called
+    PgSqlHolder conn_;
 
-    bool prepared_;      ///< Flag to indicate prepareStatements has been called
+    /// @brief Conversion Operator
+    ///
+    /// Allows the PgConnection object to be passed as the context argument to
+    /// PQxxxx functions.
+    operator PGconn*() const {
+        return (conn_);
+    }
+
+    /// @brief Boolean Operator
+    ///
+    /// Allows testing the PgConnection for initialized connection
+    operator bool() const {
+        return (conn_);
+    }
+
 };
 
-}  // namespace db
-}  // namespace isc
+}; // end of isc::db namespace
+}; // end of isc namespace
 
 #endif // PGSQL_CONNECTION_H

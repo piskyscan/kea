@@ -299,7 +299,7 @@ public:
         // most recently added host is different than the host id of the
         // currently processed host.
         if (hosts.empty() || row_host_id != hosts.back()->getHostId()) {
-            HostPtr host(retrieveHost(r, row, row_host_id));
+            HostPtr host = retrieveHost(r, row, row_host_id);
             hosts.push_back(host);
         }
     }
@@ -1265,7 +1265,7 @@ private:
     OptionPtr option_;
 };
 
-}  // namespace
+} // end of anonymous namespace
 
 namespace isc {
 namespace dhcp {
@@ -1522,7 +1522,7 @@ public:
                          const uint8_t* identifier_begin,
                          const size_t identifier_len,
                          StatementIndex stindex,
-                         std::shared_ptr<PgSqlHostExchange> exchange) const;
+                         boost::shared_ptr<PgSqlHostExchange> exchange) const;
 
     /// @brief Throws exception if database is read only.
     ///
@@ -1938,7 +1938,7 @@ TaggedStatementArray tagged_statements = { {
     // Using fixed scope_id = 3, which associates an option with host.
     {7,
      { OID_INT2, OID_BYTEA, OID_TEXT,
-       OID_VARCHAR, OID_BOOL, OID_TEXT, OID_INT8 },
+       OID_VARCHAR, OID_BOOL, OID_TEXT, OID_INT8},
      "insert_v4_host_option",
      "INSERT INTO dhcp4_options(code, value, formatted_value, space, "
      "  persistent, user_context, host_id, scope_id) "
@@ -1950,7 +1950,7 @@ TaggedStatementArray tagged_statements = { {
     // Using fixed scope_id = 3, which associates an option with host.
     {7,
      { OID_INT2, OID_BYTEA, OID_TEXT,
-       OID_VARCHAR, OID_BOOL, OID_TEXT, OID_INT8 },
+       OID_VARCHAR, OID_BOOL, OID_TEXT, OID_INT8},
      "insert_v6_host_option",
      "INSERT INTO dhcp6_options(code, value, formatted_value, space, "
      "  persistent, user_context, host_id, scope_id) "
@@ -1987,7 +1987,7 @@ TaggedStatementArray tagged_statements = { {
 }
 };
 
-}  // namespace
+}; // end anonymous namespace
 
 // PgSqlHostContext Constructor
 
@@ -2042,7 +2042,7 @@ PgSqlHostDataSourceImpl::PgSqlHostDataSourceImpl(const PgSqlConnection::Paramete
         isc_throw(DbOpenError,
                   "PostgreSQL schema version mismatch: need version: "
                       << code_version.first << "." << code_version.second
-                      << " found version: " << db_version.first << "."
+                      << " found version:  " << db_version.first << "."
                       << db_version.second);
     }
 
@@ -2094,7 +2094,6 @@ PgSqlHostDataSourceImpl::addStatement(PgSqlHostContextPtr& ctx,
                                       StatementIndex stindex,
                                       PsqlBindArrayPtr& bind_array,
                                       const bool return_last_id) {
-    PgSqlHolder& holderHandle = conn_.handle();
     uint64_t last_id = 0;
     PgSqlResult r(PQexecPrepared(ctx->conn_, tagged_statements[stindex].name,
                                  tagged_statements[stindex].nbparams,
@@ -2250,9 +2249,8 @@ PgSqlHostDataSourceImpl::getHost(PgSqlHostContextPtr& ctx,
 
     // Return single record if present, else clear the host.
     ConstHostPtr result;
-    if (!collection.empty()) {
+    if (!collection.empty())
         result = *collection.begin();
-    }
 
     return (result);
 }
@@ -2261,7 +2259,6 @@ std::pair<uint32_t, uint32_t>
 PgSqlHostDataSourceImpl::getVersion() const {
     LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE_DETAIL,
               DHCPSRV_PGSQL_HOST_DB_GET_VERSION);
-
     return (PgSqlConnection::getVersion(parameters_));
 }
 
@@ -2290,9 +2287,6 @@ PgSqlHostDataSource::add(const HostPtr& host) {
 
     // If operating in read-only mode, throw exception.
     impl_->checkReadOnly(ctx);
-
-    thread_local std::shared_ptr<PgSqlHostWithOptionsExchange> host_ipv4_exchange(
-        std::make_shared<PgSqlHostWithOptionsExchange>(PgSqlHostWithOptionsExchange::DHCP4_ONLY));
 
     // Initiate PostgreSQL transaction as we will have to make multiple queries
     // to insert host information into multiple tables. If that fails on
@@ -2643,12 +2637,9 @@ PgSqlHostDataSource::get4(const SubnetID& subnet_id,
     PgSqlHostContextPtr ctx = get_context.ctx_;
 
     if (!address.isV4()) {
-        isc_throw(BadValue, "PgSqlHostDataSource::get4(id, address): "
-                  "wrong address type, address supplied is an IPv6 address");
+        isc_throw(BadValue, "PgSqlHostDataSource::get4(id, address) - "
+                  " wrong address type, address supplied is an IPv6 address");
     }
-
-    thread_local std::shared_ptr<PgSqlHostWithOptionsExchange> host_ipv4_exchange(
-        std::make_shared<PgSqlHostWithOptionsExchange>(PgSqlHostWithOptionsExchange::DHCP4_ONLY));
 
     // Set up the WHERE clause value
     PsqlBindArrayPtr bind_array(new PsqlBindArray());
@@ -2665,9 +2656,8 @@ PgSqlHostDataSource::get4(const SubnetID& subnet_id,
 
     // Return single record if present, else clear the host.
     ConstHostPtr result;
-    if (!collection.empty()) {
+    if (!collection.empty())
         result = *collection.begin();
-    }
 
     return (result);
 }
@@ -2756,8 +2746,7 @@ PgSqlHostDataSource::get6(const SubnetID& subnet_id,
 
 // Miscellaneous database methods.
 
-std::string
-PgSqlHostDataSource::getName() const {
+std::string PgSqlHostDataSource::getName() const {
     std::string name = "";
     // Get a context
     PgSqlHostContextAlloc get_context(*impl_);
@@ -2771,8 +2760,7 @@ PgSqlHostDataSource::getName() const {
     return (name);
 }
 
-std::string
-PgSqlHostDataSource::getDescription() const {
+std::string PgSqlHostDataSource::getDescription() const {
     return (std::string("Host data source that stores host information"
                         "in PostgreSQL database"));
 }
@@ -2804,5 +2792,5 @@ PgSqlHostDataSource::rollback() {
     ctx->conn_.rollback();
 }
 
-}  // namespace dhcp
-}  // namespace isc
+}; // end of isc::dhcp namespace
+}; // end of isc namespace

@@ -533,7 +533,7 @@ public:
                 bind_[2].buffer_length = client_id_length_;
                 bind_[2].length = &client_id_length_;
                 // bind_[2].is_null = &MLM_FALSE; // commented out for performance
-                                                  // reasons, see memset() above
+                                                 // reasons, see memset() above
             } else {
                 bind_[2].buffer_type = MYSQL_TYPE_NULL;
                 // According to http://dev.mysql.com/doc/refman/5.5/en/
@@ -604,7 +604,7 @@ public:
             // bind_[8].is_null = &MLM_FALSE; // commented out for performance
                                               // reasons, see memset() above
 
-            // state: uint32_t
+            // state: uint32_t.
             bind_[9].buffer_type = MYSQL_TYPE_LONG;
             bind_[9].buffer = reinterpret_cast<char*>(&lease_->state_);
             bind_[9].is_unsigned = MLM_TRUE;
@@ -729,7 +729,7 @@ public:
         // bind_[8].is_null = &MLM_FALSE; // commented out for performance
                                           // reasons, see memset() above
 
-        // state: uint32_t
+        // state:  uint32_t
         bind_[9].buffer_type = MYSQL_TYPE_LONG;
         bind_[9].buffer = reinterpret_cast<char*>(&state_);
         bind_[9].is_unsigned = MLM_TRUE;
@@ -1147,7 +1147,7 @@ public:
                 bind_[14].is_null = &hwaddr_null_;
             }
 
-            // state: uint32_t
+            // state:  uint32_t
             bind_[15].buffer_type = MYSQL_TYPE_LONG;
             bind_[15].buffer = reinterpret_cast<char*>(&lease_->state_);
             bind_[15].is_unsigned = MLM_TRUE;
@@ -1314,7 +1314,7 @@ public:
         bind_[14].buffer = reinterpret_cast<char*>(&hwaddr_source_);
         bind_[14].is_unsigned = MLM_TRUE;
 
-        // state: uint32_t
+        // state:  uint32_t
         bind_[15].buffer_type = MYSQL_TYPE_LONG;
         bind_[15].buffer = reinterpret_cast<char*>(&state_);
         bind_[15].is_unsigned = MLM_TRUE;
@@ -1519,7 +1519,7 @@ public:
           // Set the number of columns in the bind array based on fetch_type
           // This is the number of columns expected in the result set
           bind_(fetch_type_ ? 4 : 3),
-          subnet_id_(0), lease_type_(0), state_(0), state_count_(0) {
+          subnet_id_(0), lease_type_(0), lease_state_(0), state_count_(0) {
           validateStatement();
     }
 
@@ -1539,7 +1539,7 @@ public:
           // Set the number of columns in the bind array based on fetch_type
           // This is the number of columns expected in the result set
           bind_(fetch_type_ ? 4 : 3),
-          subnet_id_(0), lease_type_(0), state_(0), state_count_(0) {
+          subnet_id_(0), lease_type_(0), lease_state_(0), state_count_(0) {
           validateStatement();
     }
 
@@ -1563,7 +1563,7 @@ public:
           // Set the number of columns in the bind array based on fetch_type
           // This is the number of columns expected in the result set
           bind_(fetch_type_ ? 4 : 3),
-          subnet_id_(0), lease_type_(0), state_(0), state_count_(0) {
+          subnet_id_(0), lease_type_(0), lease_state_(0), state_count_(0) {
           validateStatement();
     }
 
@@ -1622,7 +1622,7 @@ public:
 
         // state: uint32_t
         bind_[col].buffer_type = MYSQL_TYPE_LONG;
-        bind_[col].buffer = reinterpret_cast<char*>(&state_);
+        bind_[col].buffer = reinterpret_cast<char*>(&lease_state_);
         bind_[col].is_unsigned = MLM_TRUE;
         ++col;
 
@@ -1663,7 +1663,7 @@ public:
         if (status == MLM_MYSQL_FETCH_SUCCESS) {
             row.subnet_id_ = static_cast<SubnetID>(subnet_id_);
             row.lease_type_ = static_cast<Lease::Type>(lease_type_);
-            row.lease_state_ = state_;
+            row.lease_state_ = lease_state_;
             row.state_count_ = state_count_;
             have_row = true;
         } else if (status != MYSQL_NO_DATA) {
@@ -1679,14 +1679,12 @@ private:
     /// Safely fetch the statement from the connection based on statement index
     /// @throw  BadValue if statement index is out of range
     void validateStatement() {
-        MySqlHolder& holderHandle = conn_.handle();
-
         if (statement_index_ >= MySqlLeaseMgr::NUM_STATEMENTS) {
             isc_throw(BadValue, "MySqlLeaseStatsQuery"
                       " - invalid statement index" << statement_index_);
         }
 
-        statement_ = holderHandle.statements_[statement_index_];
+        statement_ = conn_.statements_[statement_index_];
     }
 
     /// @brief Database connection to use to execute the query
@@ -1769,10 +1767,11 @@ MySqlLeaseMgr::MySqlLeaseMgr(const MySqlConnection::ParameterMap& parameters)
                                                MYSQL_SCHEMA_VERSION_MINOR);
     std::pair<uint32_t, uint32_t> db_version = getVersion();
     if (code_version != db_version) {
-        isc_throw(DbOpenError, "MySQL schema version mismatch: need version: "
-                  << code_version.first << "." << code_version.second
-                  << " found version:  " << db_version.first << "."
-                  << db_version.second);
+        isc_throw(DbOpenError,
+                  "MySQL schema version mismatch: need version: "
+                      << code_version.first << "." << code_version.second
+                      << " found version:  " << db_version.first << "."
+                      << db_version.second);
     }
 
     // Create an initial context.
@@ -1831,7 +1830,6 @@ bool
 MySqlLeaseMgr::addLeaseCommon(MySqlLeaseContextPtr& ctx,
                               StatementIndex stindex,
                               std::vector<MYSQL_BIND>& bind) {
-    MySqlHolder& holderHandle = conn_.handle();
 
     // Bind the parameters to the statement
     int status = mysql_stmt_bind_param(ctx->conn_.statements_[stindex], &bind[0]);
@@ -2700,7 +2698,6 @@ MySqlLeaseMgr::updateLeaseCommon(MySqlLeaseContextPtr& ctx,
                                  StatementIndex stindex,
                                  MYSQL_BIND* bind,
                                  const LeasePtr& lease) {
-    MySqlHolder& holderHandle = conn_.handle();
 
     // Bind the parameters to the statement
     int status = mysql_stmt_bind_param(ctx->conn_.statements_[stindex], bind);
@@ -2733,9 +2730,6 @@ MySqlLeaseMgr::updateLeaseCommon(MySqlLeaseContextPtr& ctx,
 
 void
 MySqlLeaseMgr::updateLease4(const Lease4Ptr& lease) {
-    thread_local std::shared_ptr<MySqlLease4Exchange> exchange4(
-        std::make_shared<MySqlLease4Exchange>());
-
     const StatementIndex stindex = UPDATE_LEASE4;
 
     LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE_DETAIL, DHCPSRV_MYSQL_UPDATE_ADDR4)
@@ -2777,9 +2771,6 @@ MySqlLeaseMgr::updateLease4(const Lease4Ptr& lease) {
 
 void
 MySqlLeaseMgr::updateLease6(const Lease6Ptr& lease) {
-    thread_local std::shared_ptr<MySqlLease6Exchange> exchange6(
-        std::make_shared<MySqlLease6Exchange>());
-
     const StatementIndex stindex = UPDATE_LEASE6;
 
     LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE_DETAIL, DHCPSRV_MYSQL_UPDATE_ADDR6)

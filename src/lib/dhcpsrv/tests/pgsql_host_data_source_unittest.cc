@@ -123,11 +123,9 @@ public:
         PgSqlConnection conn(params);
         conn.openDatabase();
 
-        PgSqlHolder& holderHandle = conn.handle();
-
-        PgSqlResult r(PQexec(holderHandle, query.c_str()));
+        PgSqlResult r(PQexec(conn, query.c_str()));
         if (PQresultStatus(r) != PGRES_TUPLES_OK) {
-            isc_throw(DbOperationError, "Query failed:" << PQerrorMessage(holderHandle));
+            isc_throw(DbOperationError, "Query failed:" << PQerrorMessage(conn));
         }
 
         int numrows = PQntuples(r);
@@ -1179,14 +1177,9 @@ TEST_F(PgSqlHostDataSourceTest, testAddRollback) {
     PgSqlConnection conn(params);
     ASSERT_NO_THROW(conn.openDatabase());
 
-    PgSqlHolder& holderHandle = conn.handle();
-
-    ConstHostCollection collection = hdsptr_->getAll4(0);
-    ASSERT_EQ(collection.size(), 0);
-
-    PgSqlResult r(PQexec(holderHandle, "DROP TABLE IF EXISTS ipv6_reservations"));
-    ASSERT_TRUE(PQresultStatus(r) == PGRES_COMMAND_OK)
-                << " drop command failed :" << PQerrorMessage(holderHandle);
+    PgSqlResult r(PQexec(conn, "DROP TABLE IF EXISTS ipv6_reservations"));
+    ASSERT_TRUE (PQresultStatus(r) == PGRES_COMMAND_OK)
+                 << " drop command failed :" << PQerrorMessage(conn);
 
     // Create a host with a reservation.
     HostPtr host = HostDataSourceUtils::initializeHost6("2001:db8:1::1",
