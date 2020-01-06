@@ -220,7 +220,7 @@ public:
                               in_bindings);
 
             // Let's first get the primary key of the global parameter.
-            uint64_t id = mysql_insert_id(conn_.handle());
+            uint64_t id = mysql_insert_id(conn_.mysql_);
 
             // Successfully inserted global parameter. Now, we have to associate it
             // with the server tag.
@@ -1101,7 +1101,7 @@ public:
         // Run INSERT.
         conn_.insertQuery(INSERT_POOL4, in_bindings);
 
-        uint64_t pool_id = mysql_insert_id(conn_.handle());
+        uint64_t pool_id = mysql_insert_id(conn_.mysql_);
         auto option_spaces = pool->getCfgOption()->getOptionSpaceNames();
         for (auto option_space : option_spaces) {
             OptionContainerPtr options = pool->getCfgOption()->getAll(option_space);
@@ -1686,7 +1686,7 @@ public:
 
         // Fetch primary key value of the inserted option. We will use it in the
         // next INSERT statement to associate this option with the server.
-        auto option_id = mysql_insert_id(conn_.handle());
+        auto option_id = mysql_insert_id(conn_.mysql_);
 
         // Timestamp is expected to be in this input binding.
         auto timestamp_binding = in_bindings[11];
