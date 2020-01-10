@@ -1486,7 +1486,7 @@ Memfile_LeaseMgr::deleteLeaseInternal(const Lease4Ptr& lease) {
     Lease4Storage::iterator l = storage4_.find(addr);
     if (l == storage4_.end()) {
         // No such lease
-        isc_throw(NoSuchLease, "unable to update lease for address " <<
+        isc_throw(NoSuchLease, "unable to delete lease for address " <<
                   lease->addr_.toText() << " as it does not exist");
     } else {
         if (persistLeases(V4)) {
@@ -1526,7 +1526,7 @@ Memfile_LeaseMgr::deleteLeaseInternal(const Lease6Ptr& lease) {
     Lease6Storage::iterator l = storage6_.find(addr);
     if (l == storage6_.end()) {
         // No such lease
-        isc_throw(NoSuchLease, "unable to update lease for address " <<
+        isc_throw(NoSuchLease, "unable to delete lease for address " <<
                   lease->addr_.toText() << " as it does not exist");
     } else {
         if (persistLeases(V6)) {

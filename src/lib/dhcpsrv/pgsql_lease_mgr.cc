@@ -2046,13 +2046,13 @@ PgSqlLeaseMgr::deleteLease(const Lease4Ptr& lease) {
 
     // If no rows affected, lease doesn't exist.
     if (affected_rows == 0) {
-        isc_throw(NoSuchLease, "unable to update lease for address " <<
+        isc_throw(NoSuchLease, "unable to delete lease for address " <<
                   lease->addr_.toText() << " as it does not exist");
     }
 
     // Should not happen - primary key constraint should only have selected
     // one row.
-    isc_throw(DbOperationError, "apparently updated more than one lease "
+    isc_throw(DbOperationError, "apparently deleted more than one lease "
               "that had the address " << lease->addr_.toText());
 }
 
@@ -2082,13 +2082,13 @@ PgSqlLeaseMgr::deleteLease(const Lease6Ptr& lease) {
 
     // If no rows affected, lease doesn't exist.
     if (affected_rows == 0) {
-        isc_throw(NoSuchLease, "unable to update lease for address " <<
+        isc_throw(NoSuchLease, "unable to delete lease for address " <<
                   lease->addr_.toText() << " as it does not exist");
     }
 
     // Should not happen - primary key constraint should only have selected
     // one row.
-    isc_throw(DbOperationError, "apparently updated more than one lease "
+    isc_throw(DbOperationError, "apparently deleted more than one lease "
               "that had the address " << lease->addr_.toText());
 }
 
