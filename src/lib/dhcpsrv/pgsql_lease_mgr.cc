@@ -616,9 +616,9 @@ private:
     Lease4Ptr              lease_;
 
     /// @brief Lease4 specific members for binding and conversion.
-    uint32_t        addr4_;
-    size_t          client_id_length_;
-    uint8_t         client_id_buffer_[ClientId::MAX_CLIENT_ID_LEN];
+    uint32_t addr4_;
+    size_t   client_id_length_;
+    uint8_t  client_id_buffer_[ClientId::MAX_CLIENT_ID_LEN];
 };
 
 /// @brief Supports exchanging IPv6 leases with PostgreSQL.
