@@ -753,7 +753,7 @@ public:
 
         // Add the data to the vector.  Note the end element is one after the
         // end of the array.
-        return(vector<MYSQL_BIND>(&bind_[0], &bind_[LEASE_COLUMNS]));
+        return (vector<MYSQL_BIND>(&bind_[0], &bind_[LEASE_COLUMNS]));
     }
 
     /// @brief Copy Received Data into Lease4 Object
@@ -1108,7 +1108,7 @@ public:
                 bind_[12].is_null = &hwaddr_null_;
             }
 
-            // hwtype
+            // hardware source: unsigned int (32 bits)
             if (hwaddr) {
                 hwtype_ = lease->hwaddr_->htype_;
                 bind_[13].buffer_type = MYSQL_TYPE_SHORT;
@@ -1127,7 +1127,7 @@ public:
                 bind_[13].is_null = &hwaddr_null_;
             }
 
-            // Hardware source
+            // hardware source: unsigned int (32 bits)
             if (hwaddr) {
                 hwaddr_source_ = lease->hwaddr_->source_;
                 bind_[14].buffer_type = MYSQL_TYPE_LONG;
@@ -1337,7 +1337,7 @@ public:
 
         // Add the data to the vector.  Note the end element is one after the
         // end of the array.
-        return(vector<MYSQL_BIND>(&bind_[0], &bind_[LEASE_COLUMNS]));
+        return (vector<MYSQL_BIND>(&bind_[0], &bind_[LEASE_COLUMNS]));
     }
 
     /// @brief Copy Received Data into Lease6 Object

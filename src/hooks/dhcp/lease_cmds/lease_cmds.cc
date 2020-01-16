@@ -303,11 +303,12 @@ public:
     ///
     /// @param parameters parameters extracted from the command.
     ///
-    /// @return Address of the lease to be deleted.
+    /// @return Lease of the lease to be deleted.
+    ///
     /// @throw InvalidParameter if the DUID is not found when needed to
     /// find the lease or if the query type is by HW address.
     /// @throw InvalidOperation if the query type is unknown.
-    Lease6Ptr getIPv6AddressForDelete(const Parameters& parameters) const;
+    Lease6Ptr getIPv6LeaseForDelete(const Parameters& parameters) const;
 
     /// @brief Returns a map holding brief information about a lease which
     /// failed to be deleted, updated or added.
@@ -1499,7 +1500,7 @@ LeaseCmdsImpl::lease6WipeHandler(CalloutHandle& handle) {
 }
 
 Lease6Ptr
-LeaseCmdsImpl::getIPv6AddressForDelete(const Parameters& parameters) const {
+LeaseCmdsImpl::getIPv6LeaseForDelete(const Parameters& parameters) const {
     Lease6Ptr lease6;
 
     switch (parameters.query_type) {

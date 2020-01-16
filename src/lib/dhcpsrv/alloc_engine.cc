@@ -3756,8 +3756,7 @@ AllocEngine::renewLease4(const Lease4Ptr& lease,
     if (skip) {
         // Rollback changes (really useful only for memfile)
         /// @todo: remove this?
-        Lease4Ptr revertedLease = boost::const_pointer_cast<Lease4>(lease);
-        revertedLease = old_values;
+        *lease = *old_values;
     }
 
     return (lease);
