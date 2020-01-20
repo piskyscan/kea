@@ -2911,7 +2911,7 @@ MySqlLeaseMgr::deleteLease(const Lease6Ptr& lease) {
     inbind[1].buffer = reinterpret_cast<char*>(&expire);
     inbind[1].buffer_length = sizeof(expire);
 
-    auto affected_rows =  deleteLeaseCommon(DELETE_LEASE6, inbind);
+    auto affected_rows = deleteLeaseCommon(DELETE_LEASE6, inbind);
 
     // Check success case first as it is the most likely outcome.
     if (affected_rows == 1) {
