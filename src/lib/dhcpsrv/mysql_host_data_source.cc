@@ -1030,10 +1030,26 @@ private:
             // start over with options processing.
             most_recent_option_id_ = 0;
 
+            option_id_ = 0;
+            code_ = 0;
+            persistent_ = false;
+            option_id_null_ = MLM_FALSE;
+            code_null_ = MLM_FALSE;
+            value_null_ = MLM_FALSE;
+            formatted_value_null_ = MLM_FALSE;
+            space_null_ = MLM_FALSE;
+            user_context_null_ = MLM_FALSE;
+
+            memset(value_, 0, sizeof(value_));
+            memset(formatted_value_, 0, sizeof(formatted_value_));
+            memset(space_, 0, sizeof(space_));
+            memset(user_context_, 0, sizeof(user_context_));
+
             // option_id : INT UNSIGNED NOT NULL AUTO_INCREMENT,
             bind[option_id_index_].buffer_type = MYSQL_TYPE_LONG;
             bind[option_id_index_].buffer = reinterpret_cast<char*>(&option_id_);
             bind[option_id_index_].is_unsigned = MLM_TRUE;
+            bind[option_id_index_].is_null = &option_id_null_;
 
             // code : TINYINT OR SHORT UNSIGNED NOT NULL
             bind[code_index_].buffer_type = MYSQL_TYPE_SHORT;
@@ -2336,7 +2352,6 @@ TaggedStatementArray tagged_statements = { {
                 "h.dhcp_identifier_type, h.dhcp4_subnet_id, "
                 "h.dhcp6_subnet_id, h.ipv4_address, h.hostname, "
                 "h.dhcp4_client_classes, h.dhcp6_client_classes, h.user_context, "
-
                 "h.dhcp4_next_server, h.dhcp4_server_hostname, "
                 "h.dhcp4_boot_file_name, h.auth_key, "
                 "o.option_id, o.code, o.value, o.formatted_value, o.space, "
@@ -2377,7 +2392,6 @@ TaggedStatementArray tagged_statements = { {
                 "h.dhcp_identifier_type, h.dhcp4_subnet_id, "
                 "h.dhcp6_subnet_id, h.ipv4_address, h.hostname, "
                 "h.dhcp4_client_classes, h.dhcp6_client_classes, h.user_context, "
-
                 "h.dhcp4_next_server, h.dhcp4_server_hostname, "
                 "h.dhcp4_boot_file_name, h.auth_key, "
                 "o.option_id, o.code, o.value, o.formatted_value, o.space, "
@@ -2489,7 +2503,6 @@ TaggedStatementArray tagged_statements = { {
                 "h.dhcp_identifier_type, h.dhcp4_subnet_id, "
                 "h.dhcp6_subnet_id, h.ipv4_address, h.hostname, "
                 "h.dhcp4_client_classes, h.dhcp6_client_classes, h.user_context, "
-
                 "h.dhcp4_next_server, h.dhcp4_server_hostname, "
                 "h.dhcp4_boot_file_name, h.auth_key, "
                 "o.option_id, o.code, o.value, o.formatted_value, o.space, "
@@ -2668,18 +2681,6 @@ MySqlHostDataSourceImpl::createContext() const {
 }
 
 MySqlHostDataSourceImpl::~MySqlHostDataSourceImpl() {
-    // Free up the prepared statements, ignoring errors. (What would we do
-    // about them? We're destroying this object and are not really concerned
-    // with errors on a database connection that is about to go away.)
-    for (int i = 0; i < conn_.statements_.size(); ++i) {
-        if (conn_.statements_[i] != NULL) {
-            (void) mysql_stmt_close(conn_.statements_[i]);
-            conn_.statements_[i] = NULL;
-        }
-    }
-
-    // There is no need to close the database in this destructor: it is
-    // closed in the destructor of the mysql_ member variable.
 }
 
 std::pair<uint32_t, uint32_t>
@@ -2886,8 +2887,9 @@ MySqlHostDataSourceImpl::getHost(MySqlHostContextPtr& ctx,
 
     // Return single record if present, else clear the host.
     ConstHostPtr result;
-    if (!collection.empty())
+    if (!collection.empty()) {
         result = *collection.begin();
+    }
 
     return (result);
 }
@@ -3363,10 +3365,9 @@ MySqlHostDataSource::get4(const SubnetID& subnet_id,
 ConstHostPtr
 MySqlHostDataSource::get4(const SubnetID& subnet_id,
                           const asiolink::IOAddress& address) const {
-    // Check that address is IPv4, not IPv6.
     if (!address.isV4()) {
-        isc_throw(BadValue, "MySqlHostDataSource::get4(2): wrong address type, "
-                            "address supplied is not an IPv4 address");
+        isc_throw(BadValue, "MySqlHostDataSource::get4(id, address): "
+                  "wrong address type, address supplied is an IPv6 address");
     }
 
     // Get a context
@@ -3392,8 +3393,9 @@ MySqlHostDataSource::get4(const SubnetID& subnet_id,
 
     // Return single record if present, else clear the host.
     ConstHostPtr result;
-    if (!collection.empty())
+    if (!collection.empty()) {
         result = *collection.begin();
+    }
 
     return (result);
 }
@@ -3500,7 +3502,8 @@ MySqlHostDataSource::get6(const SubnetID& subnet_id,
 
 // Miscellaneous database methods.
 
-std::string MySqlHostDataSource::getName() const {
+std::string
+MySqlHostDataSource::getName() const {
     std::string name = "";
     // Get a context
     MySqlHostContextAlloc get_context(*impl_);
@@ -3514,7 +3517,8 @@ std::string MySqlHostDataSource::getName() const {
     return (name);
 }
 
-std::string MySqlHostDataSource::getDescription() const {
+std::string
+MySqlHostDataSource::getDescription() const {
     return (std::string("Host data source that stores host information"
                         "in MySQL database"));
 }
