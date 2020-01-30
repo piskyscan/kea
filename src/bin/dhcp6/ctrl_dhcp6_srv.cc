@@ -23,6 +23,7 @@
 #include <hooks/hooks.h>
 #include <hooks/hooks_manager.h>
 #include <stats/stats_mgr.h>
+#include <util/multi_threading_mgr.h>
 #include <util/lock_guard.h>
 
 #include <signal.h>
@@ -627,7 +628,10 @@ ControlledDhcpv6Srv::processCommand(const string& command,
         if (srv->pkt_thread_pool_.size()) {
             srv->pkt_thread_pool_.stop();
         }
+        MultiThreadingMgr::instance().setMode(true);
         srv->pkt_thread_pool_.start(Dhcpv6Srv::threadCount());
+    } else {
+        MultiThreadingMgr::instance().setMode(false);
     }
 
     try {
