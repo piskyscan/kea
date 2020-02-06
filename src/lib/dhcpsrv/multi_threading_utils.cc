@@ -18,7 +18,7 @@ namespace dhcp {
 
 void
 MultiThreadingCriticalSection::stopPktProcessing() {
-    auto thread_pool = MultiThreadingMgr::instance().getPktThreadPool();
+    auto& thread_pool = MultiThreadingMgr::instance().getPktThreadPool();
     auto size = MultiThreadingMgr::instance().getPktThreadPoolSize();
     if (size) {
         thread_pool.stop();
@@ -27,7 +27,7 @@ MultiThreadingCriticalSection::stopPktProcessing() {
 
 void
 MultiThreadingCriticalSection::startPktProcessing() {
-    auto thread_pool = MultiThreadingMgr::instance().getPktThreadPool();
+    auto& thread_pool = MultiThreadingMgr::instance().getPktThreadPool();
     auto size = MultiThreadingMgr::instance().getPktThreadPoolSize();
     if (size) {
         thread_pool.start(size);
