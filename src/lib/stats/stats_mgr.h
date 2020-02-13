@@ -77,56 +77,56 @@ public:
     /// @param name name of the observation
     /// @param value integer value observed
     /// @throw InvalidStatType if statistic is not integer
-    void setValue(const std::string& name, const int64_t value, bool lock = true);
+    void setValue(const std::string& name, const int64_t value);
 
     /// @brief Records absolute floating point observation.
     ///
     /// @param name name of the observation
     /// @param value floating point value observed
     /// @throw InvalidStatType if statistic is not fp
-    void setValue(const std::string& name, const double value, bool lock = true);
+    void setValue(const std::string& name, const double value);
 
     /// @brief Records absolute duration observation.
     ///
     /// @param name name of the observation
     /// @param value duration value observed
     /// @throw InvalidStatType if statistic is not time duration
-    void setValue(const std::string& name, const StatsDuration& value, bool lock = true);
+    void setValue(const std::string& name, const StatsDuration& value);
 
     /// @brief Records absolute string observation.
     ///
     /// @param name name of the observation
     /// @param value string value observed
     /// @throw InvalidStatType if statistic is not a string
-    void setValue(const std::string& name, const std::string& value, bool lock = true);
+    void setValue(const std::string& name, const std::string& value);
 
     /// @brief Records incremental integer observation.
     ///
     /// @param name name of the observation
     /// @param value integer value observed
     /// @throw InvalidStatType if statistic is not integer
-    void addValue(const std::string& name, const int64_t value, bool lock = true);
+    void addValue(const std::string& name, const int64_t value);
 
     /// @brief Records incremental floating point observation.
     ///
     /// @param name name of the observation
     /// @param value floating point value observed
     /// @throw InvalidStatType if statistic is not fp
-    void addValue(const std::string& name, const double value, bool lock = true);
+    void addValue(const std::string& name, const double value);
 
     /// @brief Records incremental duration observation.
     ///
     /// @param name name of the observation
     /// @param value duration value observed
     /// @throw InvalidStatType if statistic is not time duration
-    void addValue(const std::string& name, const StatsDuration& value, bool lock = true);
+    void addValue(const std::string& name, const StatsDuration& value);
 
     /// @brief Records incremental string observation.
     ///
     /// @param name name of the observation
     /// @param value string value observed
     /// @throw InvalidStatType if statistic is not a string
-    void addValue(const std::string& name, const std::string& value, bool lock = true);
+    void addValue(const std::string& name, const std::string& value);
 
     /// @brief Determines maximum age of samples.
     ///
@@ -229,7 +229,7 @@ public:
     ///
     /// @param name name of the statistic
     /// @return Pointer to the Observation object
-    ObservationPtr getObservation(const std::string& name, bool lock = true) const;
+    ObservationPtr getObservation(const std::string& name) const;
 
     /// @brief Returns an observation in a thread safe context.
     ///
@@ -514,7 +514,7 @@ private:
     /// Calls @ref addObservationInternal() method in a thread safe context.
     ///
     /// @param stat observation
-    void addObservation(const ObservationPtr& stat, bool lock = true);
+    void addObservation(const ObservationPtr& stat);
 
     /// @private
 
@@ -535,7 +535,7 @@ private:
     ///
     /// @param name of the statistic to be deleted
     /// @return true if deleted, false if not found
-    bool deleteObservation(const std::string& name, bool lock = true);
+    bool deleteObservation(const std::string& name);
 
     /// @private
 

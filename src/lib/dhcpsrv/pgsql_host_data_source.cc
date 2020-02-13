@@ -1265,7 +1265,7 @@ private:
     OptionPtr option_;
 };
 
-} // end of anonymous namespace
+}  // namespace
 
 namespace isc {
 namespace dhcp {
@@ -1938,7 +1938,7 @@ TaggedStatementArray tagged_statements = { {
     // Using fixed scope_id = 3, which associates an option with host.
     {7,
      { OID_INT2, OID_BYTEA, OID_TEXT,
-       OID_VARCHAR, OID_BOOL, OID_TEXT, OID_INT8},
+       OID_VARCHAR, OID_BOOL, OID_TEXT, OID_INT8 },
      "insert_v4_host_option",
      "INSERT INTO dhcp4_options(code, value, formatted_value, space, "
      "  persistent, user_context, host_id, scope_id) "
@@ -1950,7 +1950,7 @@ TaggedStatementArray tagged_statements = { {
     // Using fixed scope_id = 3, which associates an option with host.
     {7,
      { OID_INT2, OID_BYTEA, OID_TEXT,
-       OID_VARCHAR, OID_BOOL, OID_TEXT, OID_INT8},
+       OID_VARCHAR, OID_BOOL, OID_TEXT, OID_INT8 },
      "insert_v6_host_option",
      "INSERT INTO dhcp6_options(code, value, formatted_value, space, "
      "  persistent, user_context, host_id, scope_id) "
@@ -1987,7 +1987,7 @@ TaggedStatementArray tagged_statements = { {
 }
 };
 
-}; // end anonymous namespace
+}  // namespace
 
 // PgSqlHostContext Constructor
 
@@ -2042,7 +2042,7 @@ PgSqlHostDataSourceImpl::PgSqlHostDataSourceImpl(const PgSqlConnection::Paramete
         isc_throw(DbOpenError,
                   "PostgreSQL schema version mismatch: need version: "
                       << code_version.first << "." << code_version.second
-                      << " found version:  " << db_version.first << "."
+                      << " found version: " << db_version.first << "."
                       << db_version.second);
     }
 
@@ -2249,8 +2249,9 @@ PgSqlHostDataSourceImpl::getHost(PgSqlHostContextPtr& ctx,
 
     // Return single record if present, else clear the host.
     ConstHostPtr result;
-    if (!collection.empty())
+    if (!collection.empty()) {
         result = *collection.begin();
+    }
 
     return (result);
 }
@@ -2656,8 +2657,9 @@ PgSqlHostDataSource::get4(const SubnetID& subnet_id,
 
     // Return single record if present, else clear the host.
     ConstHostPtr result;
-    if (!collection.empty())
+    if (!collection.empty()) {
         result = *collection.begin();
+    }
 
     return (result);
 }
@@ -2746,7 +2748,8 @@ PgSqlHostDataSource::get6(const SubnetID& subnet_id,
 
 // Miscellaneous database methods.
 
-std::string PgSqlHostDataSource::getName() const {
+std::string
+PgSqlHostDataSource::getName() const {
     std::string name = "";
     // Get a context
     PgSqlHostContextAlloc get_context(*impl_);
@@ -2760,7 +2763,8 @@ std::string PgSqlHostDataSource::getName() const {
     return (name);
 }
 
-std::string PgSqlHostDataSource::getDescription() const {
+std::string
+PgSqlHostDataSource::getDescription() const {
     return (std::string("Host data source that stores host information"
                         "in PostgreSQL database"));
 }
@@ -2792,5 +2796,5 @@ PgSqlHostDataSource::rollback() {
     ctx->conn_.rollback();
 }
 
-}; // end of isc::dhcp namespace
-}; // end of isc namespace
+}  // namespace dhcp
+}  // namespace isc
