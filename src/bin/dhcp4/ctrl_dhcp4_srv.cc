@@ -90,9 +90,10 @@ ControlledDhcpv4Srv::init(const std::string& file_name) {
 
     // Configure the server using JSON file.
     ConstElementPtr result = loadConfigFile(file_name);
+
     int rcode;
     ConstElementPtr comment = isc::config::parseAnswer(rcode, result);
-    if (rcode != 0) {
+    if (rcode != CONTROL_RESULT_SUCCESS) {
         string reason = comment ? comment->stringValue() :
             "no details available";
         isc_throw(isc::BadValue, reason);
@@ -176,7 +177,7 @@ ControlledDhcpv4Srv::loadConfigFile(const std::string& file_name) {
         // (see @ref isc::config::parseAnswer).
         int rcode;
         ConstElementPtr comment = isc::config::parseAnswer(rcode, result);
-        if (rcode != 0) {
+        if (rcode != CONTROL_RESULT_SUCCESS) {
             string reason = comment ? comment->stringValue() :
                 "no details available";
             isc_throw(isc::BadValue, reason);
@@ -192,9 +193,13 @@ ControlledDhcpv4Srv::loadConfigFile(const std::string& file_name) {
                   << file_name << "': " << ex.what());
     }
 
+    LOG_INFO(dhcp4_logger, DHCP4_MULTI_THREADING_INFO)
+        .arg(MultiThreadingMgr::instance().getMode())
+        .arg(MultiThreadingMgr::instance().getPktThreadPoolSize())
+        .arg(CfgMgr::instance().getCurrentCfg()->getServerMaxThreadQueueSize());
+
     return (result);
 }
-
 
 ConstElementPtr
 ControlledDhcpv4Srv::commandShutdownHandler(const string&, ConstElementPtr) {
@@ -202,11 +207,12 @@ ControlledDhcpv4Srv::commandShutdownHandler(const string&, ConstElementPtr) {
         ControlledDhcpv4Srv::getInstance()->shutdown();
     } else {
         LOG_WARN(dhcp4_logger, DHCP4_NOT_RUNNING);
-        ConstElementPtr answer = isc::config::createAnswer(1,
-                                              "Shutdown failure.");
+        ConstElementPtr answer = isc::config::createAnswer(CONTROL_RESULT_ERROR,
+                                                           "Shutdown failure.");
         return (answer);
     }
-    ConstElementPtr answer = isc::config::createAnswer(0, "Shutting down.");
+    ConstElementPtr answer = isc::config::createAnswer(CONTROL_RESULT_SUCCESS,
+                                                       "Shutting down.");
     return (answer);
 }
 
@@ -218,11 +224,11 @@ ControlledDhcpv4Srv::commandLibReloadHandler(const string&, ConstElementPtr) {
     bool status = HooksManager::loadLibraries(loaded);
     if (!status) {
         LOG_ERROR(dhcp4_logger, DHCP4_HOOKS_LIBS_RELOAD_FAIL);
-        ConstElementPtr answer = isc::config::createAnswer(1,
+        ConstElementPtr answer = isc::config::createAnswer(CONTROL_RESULT_ERROR,
                                  "Failed to reload hooks libraries.");
         return (answer);
     }
-    ConstElementPtr answer = isc::config::createAnswer(0,
+    ConstElementPtr answer = isc::config::createAnswer(CONTROL_RESULT_SUCCESS,
                              "Hooks libraries successfully reloaded.");
     return (answer);
 }
@@ -251,7 +257,7 @@ ControlledDhcpv4Srv::commandConfigGetHandler(const string&,
                                              ConstElementPtr /*args*/) {
     ConstElementPtr config = CfgMgr::instance().getCurrentCfg()->toElement();
 
-    return (createAnswer(0, config));
+    return (createAnswer(CONTROL_RESULT_SUCCESS, config));
 }
 
 ConstElementPtr
@@ -381,7 +387,7 @@ ControlledDhcpv4Srv::commandConfigSetHandler(const string&,
     // the logging first in case there's a configuration failure.
     int rcode = 0;
     isc::config::parseAnswer(rcode, result);
-    if (rcode == 0) {
+    if (rcode == CONTROL_RESULT_SUCCESS) {
         CfgMgr::instance().getStagingCfg()->applyLoggingCfg();
 
         // Use new configuration.
@@ -503,7 +509,7 @@ ControlledDhcpv4Srv::commandVersionGetHandler(const string&, ConstElementPtr) {
     ElementPtr extended = Element::create(Dhcpv4Srv::getVersion(true));
     ElementPtr arguments = Element::createMap();
     arguments->set("extended", extended);
-    ConstElementPtr answer = isc::config::createAnswer(0,
+    ConstElementPtr answer = isc::config::createAnswer(CONTROL_RESULT_SUCCESS,
                                 Dhcpv4Srv::getVersion(false),
                                 arguments);
     return (answer);
@@ -513,7 +519,7 @@ ConstElementPtr
 ControlledDhcpv4Srv::commandBuildReportHandler(const string&,
                                                ConstElementPtr) {
     ConstElementPtr answer =
-        isc::config::createAnswer(0, isc::detail::getConfigReport());
+        isc::config::createAnswer(CONTROL_RESULT_SUCCESS, isc::detail::getConfigReport());
     return (answer);
 }
 
@@ -605,7 +611,7 @@ ControlledDhcpv4Srv::commandStatusGetHandler(const string&,
 
     // todo: number of service threads.
 
-    return (createAnswer(0, status));
+    return (createAnswer(CONTROL_RESULT_SUCCESS, status));
 }
 
 ConstElementPtr
@@ -619,8 +625,8 @@ ControlledDhcpv4Srv::processCommand(const string& command,
     ControlledDhcpv4Srv* srv = ControlledDhcpv4Srv::getInstance();
 
     if (!srv) {
-        ConstElementPtr no_srv = isc::config::createAnswer(1,
-          "Server object not initialized, so can't process command '" +
+        ConstElementPtr no_srv = isc::config::createAnswer(CONTROL_RESULT_ERROR,
+          "Server object not initialized, can't process command '" +
           command + "', arguments: '" + txt + "'.");
         return (no_srv);
     }
@@ -671,11 +677,13 @@ ControlledDhcpv4Srv::processCommand(const string& command,
         } else if (command == "status-get") {
             return (srv->commandStatusGetHandler(command, args));
         }
-        ConstElementPtr answer = isc::config::createAnswer(1,
-                                 "Unrecognized command:" + command);
-        return (answer);
+
+        return (isc::config::createAnswer(CONTROL_RESULT_ERROR,
+                                          "Unrecognized command: "
+                                          + command));
     } catch (const Exception& ex) {
-        return (isc::config::createAnswer(1, "Error while processing command '"
+        return (isc::config::createAnswer(CONTROL_RESULT_ERROR,
+                                          "Error while processing command '"
                                           + command + "':" + ex.what() +
                                           ", params: '" + txt + "'"));
     }
@@ -694,7 +702,7 @@ ControlledDhcpv4Srv::processConfig(isc::data::ConstElementPtr config) {
 
     if (!srv) {
         err << "Server object not initialized, can't process config.";
-        return (isc::config::createAnswer(1, err.str()));
+        return (isc::config::createAnswer(CONTROL_RESULT_ERROR, err.str()));
     }
 
     ConstElementPtr answer = configureDhcp4Server(*srv, config);
@@ -704,12 +712,12 @@ ControlledDhcpv4Srv::processConfig(isc::data::ConstElementPtr config) {
     try {
         int rcode = 0;
         isc::config::parseAnswer(rcode, answer);
-        if (rcode != 0) {
+        if (rcode != CONTROL_RESULT_SUCCESS) {
             return (answer);
         }
     } catch (const std::exception& ex) {
         err << "Failed to process configuration:" << ex.what();
-        return (isc::config::createAnswer(1, err.str()));
+        return (isc::config::createAnswer(CONTROL_RESULT_ERROR, err.str()));
     }
 
     // Re-open lease and host database with new parameters.
@@ -721,7 +729,7 @@ ControlledDhcpv4Srv::processConfig(isc::data::ConstElementPtr config) {
         cfg_db->createManagers();
     } catch (const std::exception& ex) {
         err << "Unable to open database: " << ex.what();
-        return (isc::config::createAnswer(1, err.str()));
+        return (isc::config::createAnswer(CONTROL_RESULT_ERROR, err.str()));
     }
 
     // Server will start DDNS communications if its enabled.
@@ -730,7 +738,7 @@ ControlledDhcpv4Srv::processConfig(isc::data::ConstElementPtr config) {
     } catch (const std::exception& ex) {
         err << "Error starting DHCP_DDNS client after server reconfiguration: "
             << ex.what();
-        return (isc::config::createAnswer(1, err.str()));
+        return (isc::config::createAnswer(CONTROL_RESULT_ERROR, err.str()));
     }
 
     // Setup DHCPv4-over-DHCPv6 IPC
@@ -740,7 +748,7 @@ ControlledDhcpv4Srv::processConfig(isc::data::ConstElementPtr config) {
         std::ostringstream err;
         err << "error starting DHCPv4-over-DHCPv6 IPC "
                " after server reconfiguration: " << ex.what();
-        return (isc::config::createAnswer(1, err.str()));
+        return (isc::config::createAnswer(CONTROL_RESULT_ERROR, err.str()));
     }
 
     // Configure DHCP packet queueing
@@ -755,7 +763,7 @@ ControlledDhcpv4Srv::processConfig(isc::data::ConstElementPtr config) {
     } catch (const std::exception& ex) {
         err << "Error setting packet queue controls after server reconfiguration: "
             << ex.what();
-        return (isc::config::createAnswer(1, err.str()));
+        return (isc::config::createAnswer(CONTROL_RESULT_ERROR, err.str()));
     }
 
     // Configuration may change active interfaces. Therefore, we have to reopen
@@ -780,7 +788,7 @@ ControlledDhcpv4Srv::processConfig(isc::data::ConstElementPtr config) {
         err << "unable to setup timers for periodically running the"
             " reclamation of the expired leases: "
             << ex.what() << ".";
-        return (isc::config::createAnswer(1, err.str()));
+        return (isc::config::createAnswer(CONTROL_RESULT_ERROR, err.str()));
     }
 
     // Setup config backend polling, if configured for it.
@@ -851,7 +859,7 @@ ControlledDhcpv4Srv::checkConfig(isc::data::ConstElementPtr config) {
 
     if (!srv) {
         err << "Server object not initialized, can't process config.";
-        return (isc::config::createAnswer(1, err.str()));
+        return (isc::config::createAnswer(CONTROL_RESULT_ERROR, err.str()));
     }
 
     return (configureDhcp4Server(*srv, config, true));
