@@ -908,6 +908,9 @@ ControlledDhcpv6Srv::ControlledDhcpv6Srv(uint16_t server_port,
     CommandMgr::instance().registerCommand("config-reload",
         boost::bind(&ControlledDhcpv6Srv::commandConfigReloadHandler, this, _1, _2));
 
+    CommandMgr::instance().registerCommand("config-set",
+        boost::bind(&ControlledDhcpv6Srv::commandConfigSetHandler, this, _1, _2));
+
     CommandMgr::instance().registerCommand("config-test",
         boost::bind(&ControlledDhcpv6Srv::commandConfigTestHandler, this, _1, _2));
 
@@ -923,14 +926,11 @@ ControlledDhcpv6Srv::ControlledDhcpv6Srv(uint16_t server_port,
     CommandMgr::instance().registerCommand("leases-reclaim",
         boost::bind(&ControlledDhcpv6Srv::commandLeasesReclaimHandler, this, _1, _2));
 
-    CommandMgr::instance().registerCommand("server-tag-get",
-        boost::bind(&ControlledDhcpv6Srv::commandServerTagGetHandler, this, _1, _2));
-
     CommandMgr::instance().registerCommand("libreload",
         boost::bind(&ControlledDhcpv6Srv::commandLibReloadHandler, this, _1, _2));
 
-    CommandMgr::instance().registerCommand("config-set",
-        boost::bind(&ControlledDhcpv6Srv::commandConfigSetHandler, this, _1, _2));
+    CommandMgr::instance().registerCommand("server-tag-get",
+        boost::bind(&ControlledDhcpv6Srv::commandServerTagGetHandler, this, _1, _2));
 
     CommandMgr::instance().registerCommand("shutdown",
         boost::bind(&ControlledDhcpv6Srv::commandShutdownHandler, this, _1, _2));
@@ -995,8 +995,8 @@ ControlledDhcpv6Srv::~ControlledDhcpv6Srv() {
         CommandMgr::instance().deregisterCommand("build-report");
         CommandMgr::instance().deregisterCommand("config-backend-pull");
         CommandMgr::instance().deregisterCommand("config-get");
-        CommandMgr::instance().deregisterCommand("config-set");
         CommandMgr::instance().deregisterCommand("config-reload");
+        CommandMgr::instance().deregisterCommand("config-set");
         CommandMgr::instance().deregisterCommand("config-test");
         CommandMgr::instance().deregisterCommand("config-write");
         CommandMgr::instance().deregisterCommand("dhcp-disable");
