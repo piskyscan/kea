@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2012-2020 Internet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -22,7 +22,8 @@ Pool::Pool(Lease::Type type, const isc::asiolink::IOAddress& first,
            const isc::asiolink::IOAddress& last)
     :id_(getNextID()), first_(first), last_(last), type_(type),
      capacity_(0), cfg_option_(new CfgOption()), client_class_(""),
-     last_allocated_(first), last_allocated_valid_(false) {
+     last_allocated_(first), last_allocated_valid_(false),
+     last_valid_leases_count_(-1) {
 }
 
 bool Pool::inRange(const isc::asiolink::IOAddress& addr) const {
@@ -43,6 +44,15 @@ Pool::toText() const {
     tmp << "type=" << Lease::typeToText(type_) << ", " << first_
         << "-" << last_;
     return (tmp.str());
+}
+
+bool
+Pool::exhausted() const {
+    if (last_valid_leases_count_ < 0) {
+        return (false);
+    }
+
+    return (last_valid_leases_count_ >= static_cast<int64_t>(getCapacity()));
 }
 
 Pool4::Pool4(const isc::asiolink::IOAddress& first,

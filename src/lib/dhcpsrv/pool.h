@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2012-2020 Internet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -161,6 +161,32 @@ public:
         last_allocated_valid_ = false;
     }
 
+    /// @brief Returns last pool utilization.
+    ///
+    /// @return Number of leases allocated in this pool or a negative value
+    /// if this number hasn't been gathered.
+    int64_t getLastValidLeasesCount() const {
+        return (last_valid_leases_count_);
+    }
+
+    /// @brief Sets new pool utilization.
+    ///
+    /// @param new_count Number of valid leases allocated in this pool.
+    /// Set to negative value to indicate that the pool utilization is
+    /// not set.
+    void setLastValidLeasesCount(int64_t new_count) {
+        last_valid_leases_count_ = new_count;
+    }
+
+    /// @brief Checks if the pool is exhausted.
+    ///
+    /// This method checks if the last number of leases recorded for this
+    /// pool exceeds the pool's capacity.
+    ///
+    /// @return false if the last number of valid leases is not set or this
+    /// number exceeds the pool's capacity.
+    bool exhausted() const;
+
     /// @brief Unparse a pool object.
     ///
     /// @return A pointer to unparsed pool configuration.
@@ -234,6 +260,11 @@ protected:
 
     /// @brief Status of last allocated address
     bool last_allocated_valid_;
+
+    /// @brief Number of valid leases recorded for this pool.
+    ///
+    /// Negative number indicates that the number wasn't gathered.
+    int64_t last_valid_leases_count_;
 };
 
 class Pool4;

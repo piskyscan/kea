@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2012-2020 Internet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -92,6 +92,24 @@ TEST(Pool4Test, leasesCount) {
 
     Pool4 pool4(IOAddress("10.0.0.0"), IOAddress("10.255.255.255"));
     EXPECT_EQ(16777216, pool4.getCapacity());
+}
+
+// Tests that pool utilization can be set and retrieved.
+TEST(Pool4Test, poolUtilization) {
+    Pool4 pool(IOAddress("192.0.2.10"), IOAddress("192.0.2.20"));
+    auto count = pool.getLastValidLeasesCount();
+    EXPECT_EQ(-1, count);
+    EXPECT_FALSE(pool.exhausted());
+
+    pool.setLastValidLeasesCount(5);
+    count = pool.getLastValidLeasesCount();
+    EXPECT_EQ(5, count);
+    EXPECT_FALSE(pool.exhausted());
+
+    pool.setLastValidLeasesCount(11);
+    count = pool.getLastValidLeasesCount();
+    EXPECT_EQ(11, count);
+    EXPECT_TRUE(pool.exhausted());
 }
 
 // This test creates 100 pools and verifies that their IDs are unique.
