@@ -178,19 +178,67 @@ AllocEngine::IterativeAllocator::pickAddressInternal(const SubnetPtr& subnet,
         isc_throw(AllocFailed, "No pools defined in selected subnet");
     }
 
-    // first we need to find a pool the last address belongs to.
-    PoolCollection::const_iterator it;
+    // This is a handy lambda called multiple times in this function which checks if
+    // the pool is exhausted. If the pool was already checked, it returns the
+    // recorded status. That way we avoid checking the same pool multiple times
+    // as it may be expensive.
+    auto exhaustion_check = [this](PoolCollection::const_iterator pool_it) -> bool {
+        if (pool_type_ != Lease::TYPE_V4) {
+            return (false);
+        }
+
+        auto pool = *pool_it;
+
+        // If it was already checked, return the status.
+        if (pool->getLastValidLeasesCount() >= 0) {
+            return (pool->exhausted());
+        }
+        // Get the count of non-expired leases in this pool.
+        auto lease_count = static_cast<int64_t>
+            (LeaseMgrFactory::instance().getValidLeases4Count((*pool_it)->getFirstAddress(),
+                                                             (*pool_it)->getLastAddress()));
+        pool->setLastValidLeasesCount(lease_count);
+        return (pool->exhausted());
+    };
+
+    // Go over all the pools to check if there is at least one that matches
+    // the client classification and is not exhausted.
+    PoolCollection::const_iterator it = pools.end();
+    if (pool_type_ == Lease::TYPE_V4) {
+        bool exhausted = true;
+        for (it = pools.begin(); it != pools.end(); ++it) {
+            if (!(*it)->clientSupported(client_classes)) {
+                continue;
+            }
+            exhausted = exhaustion_check(it);
+            if (!exhausted) {
+                break;
+            }
+        }
+        // None of the candidate pools have available addresses. Return 0 IP address
+        // to cause the allcation engine to stop trying.
+        if (exhausted) {
+            return (IOAddress::IPV4_ZERO_ADDRESS());
+        }
+    }
+
+    // It is time to identify the last pool from which we have allocated addresses.
     PoolCollection::const_iterator first = pools.end();
     PoolPtr first_pool;
     for (it = pools.begin(); it != pools.end(); ++it) {
-        if (!(*it)->clientSupported(client_classes)) {
+        if (!(*it)->clientSupported(client_classes) ||
+            exhaustion_check(it)) {
             continue;
         }
         if (first == pools.end()) {
             first = it;
         }
         if ((*it)->inRange(last)) {
-            break;
+            // We found the pool from which the last address was allocated. Let's
+            // make sure it is not exhausted.
+            if (!exhaustion_check(it)) {
+                break;
+            }
         }
     }
 
@@ -204,6 +252,7 @@ AllocEngine::IterativeAllocator::pickAddressInternal(const SubnetPtr& subnet,
     // - a subnet was removed or other reconfiguration just completed
     // - perhaps allocation algorithm was changed
     // - last pool does not allow this client
+    // - last pool is exhausted
     if (it == pools.end()) {
         it = first;
     }
@@ -212,7 +261,8 @@ AllocEngine::IterativeAllocator::pickAddressInternal(const SubnetPtr& subnet,
         // Trying next pool
         if (retrying) {
             for (; it != pools.end(); ++it) {
-                if ((*it)->clientSupported(client_classes)) {
+                if ((*it)->clientSupported(client_classes) &&
+                    !exhaustion_check(it)) {
                     break;
                 }
             }
@@ -3923,11 +3973,38 @@ AllocEngine::allocateUnreservedLease4(ClientContext4& ctx) {
 
         CalloutHandle::CalloutNextStep callout_status = CalloutHandle::NEXT_STEP_CONTINUE;
 
+        const PoolCollection& pools = subnet->getPools(Lease::TYPE_V4);
+        for (auto pool : pools) {
+            if (pool->exhausted()) {
+//                pool->setLastValidLeasesCount(-1);
+            } else {
+                pool->setLastValidLeasesCount(pool->getLastValidLeasesCount()+1);
+            }
+        }
+
+        // Here we're going to keep the first candidate address picked.
+        IOAddress first_candidate = IOAddress::IPV4_ZERO_ADDRESS();
         for (uint64_t i = 0; i < max_attempts; ++i) {
             IOAddress candidate = allocator->pickAddress(subnet,
                                                          ctx.query_->getClasses(),
                                                          client_id,
                                                          ctx.requested_address_);
+            // Allocator found that all pools are exhausted. There is nothing more
+            // to do here.
+            if (candidate.isV4Zero()) {
+                break;
+            }
+
+            if (first_candidate.isV4Zero()) {
+                // Remember the first candidate address.
+                first_candidate = candidate;
+
+            } else if (candidate == first_candidate) {
+                // We made a loop around all pools already and got back to the
+                // first address. There is no sense to continue.
+                break;
+            }
+
             // If address is not reserved for another client, try to allocate it.
             if (!addressReserved(candidate, ctx)) {
 
