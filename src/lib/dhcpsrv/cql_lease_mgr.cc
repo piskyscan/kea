@@ -2393,6 +2393,12 @@ CqlLeaseMgr::getLeases4(const asiolink::IOAddress& lower_bound_address,
     return (result);
 }
 
+uint64_t
+CqlLeaseMgr::getValidLeases4Count(const asiolink::IOAddress& lower_bound_address,
+                                  const asiolink::IOAddress& upper_bound_address) const {
+    return (0);
+}
+
 Lease6Ptr
 CqlLeaseMgr::getLease6(Lease::Type lease_type, const IOAddress &addr) const {
     std::string addr_data = addr.toText();

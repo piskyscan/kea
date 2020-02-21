@@ -1190,6 +1190,13 @@ TEST_F(MemfileLeaseMgrTest, getExpiredLeases4MultiThread) {
     testGetExpiredLeases4();
 }
 
+/// @brief Check that the number of non-expired leases within an
+/// IPv4 address range is returned correctly.
+TEST_F(MemfileLeaseMgrTest, getValidLeases4Count) {
+    startBackend(V4);
+    testGetValidLeases4Count();
+}
+
 /// @brief Check that the expired DHCPv6 leases can be retrieved.
 ///
 /// This test adds a number of leases to the lease database and marks

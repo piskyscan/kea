@@ -219,6 +219,10 @@ public:
     /// @brief Test method which returns range of IPv4 leases with paging.
     void testGetLeases4Paged();
 
+    /// @brief Test method which returns the count of valid IPv4 leases
+    /// in the address range.
+    void testGetValidLeases4Count();
+
     /// @brief Test method which returns all IPv6 leases for Subnet ID.
     void testGetLeases6SubnetId();
 

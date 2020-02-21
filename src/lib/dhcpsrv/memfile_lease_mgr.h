@@ -277,6 +277,18 @@ public:
     getLeases4(const asiolink::IOAddress& lower_bound_address,
                const LeasePageSize& page_size) const;
 
+    /// @brief Returns the number of valid IPv4 leases in the address range.
+    ///
+    /// @param lower_bound_address The first address in the address range,
+    /// e.g. a beginning of the pool.
+    /// @param upper_bound_address The last address in the address range,
+    /// e.g. the last address in the pool.
+    ///
+    /// @return Number of valid, i.e. non-expired leases in the range.
+    virtual uint64_t
+    getValidLeases4Count(const asiolink::IOAddress& lower_bound_address,
+                         const asiolink::IOAddress& upper_bound_address) const;
+
     /// @brief Returns existing IPv6 lease for a given IPv6 address.
     ///
     /// This function returns a copy of the lease. The modification in the
@@ -567,6 +579,18 @@ private:
     void getLeases4Internal(const asiolink::IOAddress& lower_bound_address,
                             const LeasePageSize& page_size,
                             Lease4Collection& collection) const;
+
+    /// @brief Returns the number of valid IPv4 leases in the address range.
+    ///
+    /// @param lower_bound_address The first address in the address range,
+    /// e.g. a beginning of the pool.
+    /// @param upper_bound_address The last address in the address range,
+    /// e.g. the last address in the pool.
+    ///
+    /// @return Number of valid, i.e. non-expired leases in the range.
+    uint64_t
+    getValidLeases4CountInternal(const asiolink::IOAddress& lower_bound_address,
+                                 const asiolink::IOAddress& upper_bound_address) const;
 
     /// @brief Returns existing IPv6 lease for a given IPv6 address.
     ///

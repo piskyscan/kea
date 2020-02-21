@@ -1067,6 +1067,34 @@ Memfile_LeaseMgr::getLeases4(const asiolink::IOAddress& lower_bound_address,
     return (collection);
 }
 
+uint64_t
+Memfile_LeaseMgr::getValidLeases4Count(const asiolink::IOAddress& lower_bound_address,
+                                       const asiolink::IOAddress& upper_bound_address) const {
+    if (MultiThreadingMgr::instance().getMode()) {
+        std::lock_guard<std::mutex> lock(*mutex_);
+        return getValidLeases4CountInternal(lower_bound_address, upper_bound_address);
+    }
+
+    return getValidLeases4CountInternal(lower_bound_address, upper_bound_address);
+}
+
+uint64_t
+Memfile_LeaseMgr::getValidLeases4CountInternal(const asiolink::IOAddress& lower_bound_address,
+                                               const asiolink::IOAddress& upper_bound_address) const {
+    const auto& idx = storage4_.get<AddressIndexTag>();
+    auto lb = idx.lower_bound(lower_bound_address);
+    auto ub = idx.upper_bound(upper_bound_address);
+
+    uint64_t count = 0;
+    for (auto it = lb; it != ub; ++it) {
+        if (!(*it)->expired()) {
+            ++count;
+        }
+    }
+
+    return (count);
+}
+
 Lease6Ptr
 Memfile_LeaseMgr::getLease6Internal(Lease::Type type,
                                     const isc::asiolink::IOAddress& addr) const {

@@ -1632,6 +1632,12 @@ PgSqlLeaseMgr::getLeases4(const IOAddress& lower_bound_address,
     return (result);
 }
 
+uint64_t
+PgSqlLeaseMgr::getValidLeases4Count(const asiolink::IOAddress& lower_bound_address,
+                                  const asiolink::IOAddress& upper_bound_address) const {
+    return (0);
+}
+
 Lease6Ptr
 PgSqlLeaseMgr::getLease6(Lease::Type lease_type,
                          const IOAddress& addr) const {

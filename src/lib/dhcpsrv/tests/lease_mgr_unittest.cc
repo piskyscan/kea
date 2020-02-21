@@ -185,6 +185,12 @@ public:
         return (Lease4Collection());
     }
 
+    virtual uint64_t
+    getValidLeases4Count(const asiolink::IOAddress& lower_bound_address,
+                         const asiolink::IOAddress& upper_bound_address) const {
+        return (0);
+    }
+
     /// @brief Returns existing IPv6 lease for a given IPv6 address.
     ///
     /// @param addr address of the searched lease

@@ -1414,6 +1414,47 @@ GenericLeaseMgrTest::testGetLeases4Paged() {
 }
 
 void
+GenericLeaseMgrTest::testGetValidLeases4Count() {
+    vector<Lease4Ptr> leases = createLeases4();
+
+    time_t current_time = time(NULL);
+
+    // Insert valid leases into the database.
+    for (size_t i = 0; i < leases.size(); ++i) {
+        leases[i]->cltt_ = current_time;
+        EXPECT_TRUE(lmptr_->addLease(leases[i]));
+    }
+
+    // There are no expired leases in the range of 192.0.2.1-192.0.2.6. All should
+    // be counted.
+    auto count = lmptr_->getValidLeases4Count(IOAddress("192.0.2.1"), IOAddress("192.0.2.6"));
+    EXPECT_EQ(6, count);
+
+    // If the range begins and ends at the same address, this single address
+    // should be counted.
+    count = lmptr_->getValidLeases4Count(IOAddress("192.0.2.6"), IOAddress("192.0.2.6"));
+    EXPECT_EQ(1, count);
+
+    // If we go out of range the value of 0 should be returned.
+    count = lmptr_->getValidLeases4Count(IOAddress("192.0.2.100"), IOAddress("192.0.2.100"));
+    EXPECT_EQ(0, count);
+
+    // Expire two of the valid leases.
+    leases[1]->cltt_ = current_time - leases[1]->valid_lft_ - 10;
+    leases[3]->cltt_ = current_time - leases[3]->valid_lft_ - 10;
+    ASSERT_NO_THROW(lmptr_->updateLease4(leases[1]));
+    ASSERT_NO_THROW(lmptr_->updateLease4(leases[3]));
+
+    // These leases should not count.
+    count = lmptr_->getValidLeases4Count(IOAddress("192.0.2.0"), IOAddress("192.0.2.7"));
+    EXPECT_EQ(6, count);
+
+    // If there is a single expired lease in the range the count is 0.
+    count = lmptr_->getValidLeases4Count(IOAddress("192.0.2.1"), IOAddress("192.0.2.1"));
+    EXPECT_EQ(0, count);
+}
+
+void
 GenericLeaseMgrTest::testGetLeases6SubnetId() {
     // Get the leases to be used for the test and add to the database.
     vector<Lease6Ptr> leases = createLeases6();
