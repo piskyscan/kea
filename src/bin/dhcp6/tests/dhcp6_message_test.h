@@ -55,7 +55,7 @@ public:
     /// different subnet than the input address. It is achieved by increasing
     /// the first byte of the input address.
     ///
-    /// @param input_addr An input addres.
+    /// @param input_addr An input address.
     ///
     /// @return New address.
     asiolink::IOAddress bumpSubnet(const asiolink::IOAddress& input_addr);

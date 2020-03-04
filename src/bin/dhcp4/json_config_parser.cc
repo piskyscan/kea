@@ -61,6 +61,7 @@ using namespace isc::process;
 using namespace isc::config;
 using namespace isc::db;
 
+
 namespace {
 
 /// @brief Parser that takes care of global DHCPv4 parameters and utility

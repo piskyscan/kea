@@ -465,7 +465,7 @@ configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
         // Relocate dhcp-ddns parameters that have moved to global scope.
         // Rule is that a global value overrides the dhcp-ddns value, so
         // we need to do this before we apply global defaults.
-        // Note this is done for backward compatibilty.
+        // Note this is done for backward compatibility.
         srv_config->moveDdnsParams(mutable_cfg);
 
         // Set all default values if not specified by the user.

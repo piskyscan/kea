@@ -443,7 +443,7 @@ Lease4::fromElement(const ConstElementPtr& element) {
         isc_throw(BadValue, "address " << lease->addr_ << " it not an IPv4 address");
     }
 
-    // Make sure the hw-addres is present.
+    // Make sure the hw-address is present.
     if (!lease->hwaddr_) {
         isc_throw(BadValue, "hw-address not present in the parsed lease");
     }

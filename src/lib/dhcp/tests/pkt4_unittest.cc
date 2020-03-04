@@ -875,7 +875,7 @@ TEST_F(Pkt4Test, hwaddrSrcRemote) {
     EXPECT_NO_THROW(pkt->setRemoteHWAddr(src_hwaddr));
     EXPECT_TRUE(src_hwaddr == pkt->getRemoteHWAddr());
 
-    // Can't set the NULL addres.
+    // Can't set the NULL address.
     EXPECT_THROW(pkt->setRemoteHWAddr(HWAddrPtr()), BadValue);
     EXPECT_THROW(pkt->setLocalHWAddr(HWAddrPtr()), BadValue);
 
