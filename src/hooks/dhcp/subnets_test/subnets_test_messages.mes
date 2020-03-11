@@ -3,11 +3,17 @@
 % SUBNETS_TEST_LOAD Subnets test hooks library has been loaded
 This info message indicates that the subnets test hooks library has been loaded.
 
+% SUBNETS_TEST_SUBNET4_SELECT Subnets test hooks library subnet4 selected subnet id %1
+This info message indicates the selected subnet id
+
+% SUBNETS_TEST_SUBNET4_SELECT_ERROR Subnets test hooks library subnet4 select error %1
+This error message indicates the reason subnet selection failed
+
+% SUBNETS_TEST_SUBNET6_SELECT Subnets test hooks library subnet6 selected subnet id %1
+This info message indicates the selected subnet id
+
+% SUBNETS_TEST_SUBNET6_SELECT_ERROR Subnets test hooks library subnet6 select error %1
+This error message indicates the reason subnet selection failed
+
 % SUBNETS_TEST_UNLOAD Subnets test hooks library has been unloaded
-This info message indicates that the subnets test  hooks library has been unloaded.
-
-% SUBNETS_TEST_SUBNET4_SELECT_ERROR Subnets test hooks library subnet4 select error
-This error message indicates the reason subnet selection failed
-
-% SUBNETS_TEST_SUBNET6_SELECT_ERROR Subnets test hooks library subnet6 select error
-This error message indicates the reason subnet selection failed
+This info message indicates that the subnets test hooks library has been unloaded.
