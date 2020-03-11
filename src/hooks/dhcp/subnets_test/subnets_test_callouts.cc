@@ -116,6 +116,7 @@ int subnet6_select(CalloutHandle& handle) {
         if (subnets->empty()) {
             return (0);
         }
+
         Subnet6Ptr subnet;
         if (query->getType() == DHCPV6_SOLICIT) {
             subnet = (*subnets)[rand() % subnets->size()];
