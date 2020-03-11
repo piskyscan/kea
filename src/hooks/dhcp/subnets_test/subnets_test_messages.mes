@@ -1,0 +1,13 @@
+# Copyright (C) 2019-2020 Internet Systems Consortium, Inc. ("ISC")
+
+% SUBNETS_TEST_LOAD Subnets test hooks library has been loaded
+This info message indicates that the subnets test hooks library has been loaded.
+
+% SUBNETS_TEST_UNLOAD Subnets test hooks library has been unloaded
+This info message indicates that the subnets test  hooks library has been unloaded.
+
+% SUBNETS_TEST_SUBNET4_SELECT_ERROR Subnets test hooks library subnet4 select error
+This error message indicates the reason subnet selection failed
+
+% SUBNETS_TEST_SUBNET6_SELECT_ERROR Subnets test hooks library subnet6 select error
+This error message indicates the reason subnet selection failed

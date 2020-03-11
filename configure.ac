@@ -1592,6 +1592,8 @@ AC_CONFIG_FILES([Makefile
                  src/hooks/dhcp/mysql_cb/tests/Makefile
                  src/hooks/dhcp/stat_cmds/Makefile
                  src/hooks/dhcp/stat_cmds/tests/Makefile
+                 src/hooks/dhcp/subnets_test/Makefile
+                 src/hooks/dhcp/subnets_test/tests/Makefile
                  src/hooks/dhcp/user_chk/Makefile
                  src/hooks/dhcp/user_chk/tests/Makefile
                  src/hooks/dhcp/user_chk/tests/test_data_files_config.h
