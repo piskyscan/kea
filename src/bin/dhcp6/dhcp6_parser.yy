@@ -1032,7 +1032,7 @@ hw_address_id : HW_ADDRESS {
     ctx.stack_.back()->add(hwaddr);
 };
 
-flex_id : FLEX_ID {
+flex_id: FLEX_ID {
     ElementPtr flex_id(new StringElement("flex-id", ctx.loc2pos(@1)));
     ctx.stack_.back()->add(flex_id);
 };
@@ -1393,8 +1393,8 @@ shared_networks: SHARED_NETWORKS {
 
 // This allows 0 or more shared network definitions.
 shared_networks_content: %empty
-                    | shared_networks_list
-                    ;
+                       | shared_networks_list
+                       ;
 
 // This allows 1 or more shared network definitions.
 shared_networks_list: shared_network
@@ -2186,14 +2186,14 @@ control_socket_params: control_socket_param
                      | control_socket_params COMMA control_socket_param
                      ;
 
-control_socket_param: socket_type
-                    | socket_name
+control_socket_param: control_socket_type
+                    | control_socket_name
                     | user_context
                     | comment
                     | unknown_map_entry
                     ;
 
-socket_type: SOCKET_TYPE {
+control_socket_type: SOCKET_TYPE {
     ctx.enter(ctx.NO_KEYWORD);
 } COLON STRING {
     ElementPtr stype(new StringElement($4, ctx.loc2pos(@4)));
@@ -2201,7 +2201,7 @@ socket_type: SOCKET_TYPE {
     ctx.leave();
 };
 
-socket_name: SOCKET_NAME {
+control_socket_name: SOCKET_NAME {
     ctx.enter(ctx.NO_KEYWORD);
 } COLON STRING {
     ElementPtr name(new StringElement($4, ctx.loc2pos(@4)));

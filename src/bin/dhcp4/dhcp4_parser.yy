@@ -746,7 +746,6 @@ re_detect: RE_DETECT COLON BOOLEAN {
     ctx.stack_.back()->set("re-detect", b);
 };
 
-
 lease_database: LEASE_DATABASE {
     ElementPtr i(new MapElement(ctx.loc2pos(@1)));
     ctx.stack_.back()->set("lease-database", i);

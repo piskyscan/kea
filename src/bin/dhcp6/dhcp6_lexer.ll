@@ -36,7 +36,7 @@ unsigned int comment_start_line = 0;
 
 using namespace isc::dhcp;
 
-};
+}  // namespace
 
 /* To avoid the call to exit... oops! */
 #define YY_FATAL_ERROR(msg) isc::dhcp::Parser6Context::fatal(msg)
@@ -187,7 +187,6 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
     driver.loc_.lines(yyleng);
     driver.loc_.step();
 }
-
 
 \"enable-updates\" {
     switch(driver.ctx_) {
@@ -429,7 +428,7 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
     return isc::dhcp::Dhcp6Parser::make_STRING(tmp, driver.loc_);
 }
 
-\"Dhcp6\"  {
+\"Dhcp6\" {
     switch(driver.ctx_) {
     case isc::dhcp::Parser6Context::CONFIG:
         return isc::dhcp::Dhcp6Parser::make_DHCP6(driver.loc_);
@@ -450,7 +449,7 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
 \"interfaces-config\" {
     switch(driver.ctx_) {
     case isc::dhcp::Parser6Context::DHCP6:
-        return  isc::dhcp::Dhcp6Parser::make_INTERFACES_CONFIG(driver.loc_);
+        return isc::dhcp::Dhcp6Parser::make_INTERFACES_CONFIG(driver.loc_);
     default:
         return isc::dhcp::Dhcp6Parser::make_STRING("interfaces-config", driver.loc_);
     }
@@ -459,7 +458,7 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
 \"interfaces\" {
     switch(driver.ctx_) {
     case isc::dhcp::Parser6Context::INTERFACES_CONFIG:
-        return  isc::dhcp::Dhcp6Parser::make_INTERFACES(driver.loc_);
+        return isc::dhcp::Dhcp6Parser::make_INTERFACES(driver.loc_);
     default:
         return isc::dhcp::Dhcp6Parser::make_STRING("interfaces", driver.loc_);
     }
@@ -468,7 +467,7 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
 \"re-detect\" {
     switch(driver.ctx_) {
     case isc::dhcp::Parser6Context::INTERFACES_CONFIG:
-        return  isc::dhcp::Dhcp6Parser::make_RE_DETECT(driver.loc_);
+        return isc::dhcp::Dhcp6Parser::make_RE_DETECT(driver.loc_);
     default:
         return isc::dhcp::Dhcp6Parser::make_STRING("re-detect", driver.loc_);
     }
@@ -477,7 +476,7 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
 \"sanity-checks\" {
     switch(driver.ctx_) {
     case isc::dhcp::Parser6Context::DHCP6:
-        return  isc::dhcp::Dhcp6Parser::make_SANITY_CHECKS(driver.loc_);
+        return isc::dhcp::Dhcp6Parser::make_SANITY_CHECKS(driver.loc_);
     default:
         return isc::dhcp::Dhcp6Parser::make_STRING("sanity-checks", driver.loc_);
     }
@@ -486,7 +485,7 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
 \"lease-checks\" {
     switch(driver.ctx_) {
     case isc::dhcp::Parser6Context::SANITY_CHECKS:
-        return  isc::dhcp::Dhcp6Parser::make_LEASE_CHECKS(driver.loc_);
+        return isc::dhcp::Dhcp6Parser::make_LEASE_CHECKS(driver.loc_);
     default:
         return isc::dhcp::Dhcp6Parser::make_STRING("lease-checks", driver.loc_);
     }
@@ -1004,9 +1003,9 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
 \"shared-networks\" {
     switch (driver.ctx_) {
     case isc::dhcp::Parser6Context::DHCP6:
-        return Dhcp6Parser::make_SHARED_NETWORKS(driver.loc_);
+        return isc::dhcp::Dhcp6Parser::make_SHARED_NETWORKS(driver.loc_);
     default:
-        return Dhcp6Parser::make_STRING("shared-networks", driver.loc_);
+        return isc::dhcp::Dhcp6Parser::make_STRING("shared-networks", driver.loc_);
     }
 }
 
@@ -1023,11 +1022,11 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
     switch(driver.ctx_) {
     case isc::dhcp::Parser6Context::DHCP6:
     case isc::dhcp::Parser6Context::SUBNET6:
+    case isc::dhcp::Parser6Context::SHARED_NETWORK:
     case isc::dhcp::Parser6Context::POOLS:
     case isc::dhcp::Parser6Context::PD_POOLS:
     case isc::dhcp::Parser6Context::RESERVATIONS:
     case isc::dhcp::Parser6Context::CLIENT_CLASSES:
-    case isc::dhcp::Parser6Context::SHARED_NETWORK:
         return isc::dhcp::Dhcp6Parser::make_OPTION_DATA(driver.loc_);
     default:
         return isc::dhcp::Dhcp6Parser::make_STRING("option-data", driver.loc_);
@@ -1038,12 +1037,12 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
     switch(driver.ctx_) {
     case isc::dhcp::Parser6Context::LEASE_DATABASE:
     case isc::dhcp::Parser6Context::HOSTS_DATABASE:
+    case isc::dhcp::Parser6Context::CONFIG_DATABASE:
     case isc::dhcp::Parser6Context::OPTION_DEF:
     case isc::dhcp::Parser6Context::OPTION_DATA:
     case isc::dhcp::Parser6Context::CLIENT_CLASSES:
-    case isc::dhcp::Parser6Context::LOGGERS:
     case isc::dhcp::Parser6Context::SHARED_NETWORK:
-    case isc::dhcp::Parser6Context::CONFIG_DATABASE:
+    case isc::dhcp::Parser6Context::LOGGERS:
         return isc::dhcp::Dhcp6Parser::make_NAME(driver.loc_);
     default:
         return isc::dhcp::Dhcp6Parser::make_STRING("name", driver.loc_);
@@ -2104,7 +2103,7 @@ true|false {
 }
 
 null {
-   return isc::dhcp::Dhcp6Parser::make_NULL_TYPE(driver.loc_);
+    return isc::dhcp::Dhcp6Parser::make_NULL_TYPE(driver.loc_);
 }
 
 (?i:true) driver.error (driver.loc_, "JSON true reserved keyword is lower case only");
@@ -2238,5 +2237,5 @@ class Dummy {
     /* cppcheck-suppress unusedPrivateFunction */
     void dummy() { yy_fatal_error("Fix me: how to disable its definition?"); }
 };
-}
+}  // namespace
 #endif /* !__clang_analyzer__ */

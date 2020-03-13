@@ -7,6 +7,7 @@
 #include <config.h>
 
 #include <cc/command_interpreter.h>
+#include <config/command_mgr.h>
 #include <database/dbaccess_parser.h>
 #include <database/backend_selector.h>
 #include <database/server_selector.h>
@@ -34,9 +35,10 @@
 #include <dhcpsrv/parsers/sanity_checks_parser.h>
 #include <dhcpsrv/host_data_source_factory.h>
 #include <dhcpsrv/timer_mgr.h>
-#include <process/config_ctl_parser.h>
 #include <hooks/hooks_parser.h>
-#include <config/command_mgr.h>
+#include <log/logger_support.h>
+#include <process/config_ctl_parser.h>
+
 #include <util/encode/hex.h>
 #include <util/strutil.h>
 
@@ -60,7 +62,6 @@ using namespace isc::hooks;
 using namespace isc::process;
 using namespace isc::config;
 using namespace isc::db;
-
 
 namespace {
 
@@ -89,21 +90,29 @@ public:
     ///
     /// @throw DhcpConfigError if parameters are missing or
     /// or having incorrect values.
-    void parse(const SrvConfigPtr& cfg, const ConstElementPtr& global) {
+    void parse(const SrvConfigPtr& srv_config, const ConstElementPtr& global) {
 
         // Set whether v4 server is supposed to echo back client-id
         // (yes = RFC6842 compatible, no = backward compatibility)
         bool echo_client_id = getBoolean(global, "echo-client-id");
-        cfg->setEchoClientId(echo_client_id);
+        srv_config->setEchoClientId(echo_client_id);
 
         // Set the probation period for decline handling.
         uint32_t probation_period =
             getUint32(global, "decline-probation-period");
-        cfg->setDeclinePeriod(probation_period);
+        srv_config->setDeclinePeriod(probation_period);
 
         // Set the DHCPv4-over-DHCPv6 interserver port.
         uint16_t dhcp4o6_port = getUint16(global, "dhcp4o6-port");
-        cfg->setDhcp4o6Port(dhcp4o6_port);
+        srv_config->setDhcp4o6Port(dhcp4o6_port);
+
+        // Set packet thread pool size.
+        uint32_t packet_thread_pool_size = getUint32(global, "packet-thread-pool-size");
+        srv_config->setServerThreadCount(packet_thread_pool_size);
+
+        // Set packet thread queue size.
+        uint32_t packet_thread_queue_size = getUint32(global, "packet-thread-queue-size");
+        srv_config->setServerMaxThreadQueueSize(packet_thread_queue_size);
 
         // Set enable multi threading flag.
         bool enable_multi_threading = getBoolean(global, "enable-multi-threading");
@@ -120,12 +129,12 @@ public:
         // Set the global user context.
         ConstElementPtr user_context = global->get("user-context");
         if (user_context) {
-            cfg->setContext(user_context);
+            srv_config->setContext(user_context);
         }
 
         // Set the server's logical name
         std::string server_tag = getString(global, "server-tag");
-        cfg->setServerTag(server_tag);
+        srv_config->setServerTag(server_tag);
     }
 
     /// @brief Copies subnets from shared networks to regular subnets container
@@ -265,7 +274,7 @@ public:
     }
 };
 
-} // anonymous namespace
+}  // namespace
 
 namespace isc {
 namespace dhcp {
@@ -375,6 +384,10 @@ configureDhcp4Server(Dhcpv4Srv& server, isc::data::ConstElementPtr config_set,
         // And now derive (inherit) global parameters to subnets, if not specified.
         SimpleParser4::deriveParameters(mutable_cfg);
 
+        // Make parsers grouping.
+        const std::map<std::string, ConstElementPtr>& values_map =
+            mutable_cfg->mapValue();
+
         // We need definitions first
         ConstElementPtr option_defs = mutable_cfg->get("option-def");
         if (option_defs) {
@@ -390,9 +403,6 @@ configureDhcp4Server(Dhcpv4Srv& server, isc::data::ConstElementPtr config_set,
         // D2 client configuration.
         D2ClientConfigPtr d2_client_cfg;
 
-        // Make parsers grouping.
-        const std::map<std::string, ConstElementPtr>& values_map =
-                                                        mutable_cfg->mapValue();
         BOOST_FOREACH(config_pair, values_map) {
             // In principle we could have the following code structured as a series
             // of long if else if clauses. That would give a marginal performance
@@ -487,7 +497,7 @@ configureDhcp4Server(Dhcpv4Srv& server, isc::data::ConstElementPtr config_set,
 
             // Please move at the end when migration will be finished.
             if (config_pair.first == "lease-database") {
-                db::DbAccessParser parser;
+                DbAccessParser parser;
                 std::string access_string;
                 parser.parse(access_string, config_pair.second);
                 CfgDbAccessPtr cfg_db_access = srv_cfg->getCfgDbAccess();
@@ -496,7 +506,7 @@ configureDhcp4Server(Dhcpv4Srv& server, isc::data::ConstElementPtr config_set,
             }
 
             if (config_pair.first == "hosts-database") {
-                db::DbAccessParser parser;
+                DbAccessParser parser;
                 std::string access_string;
                 parser.parse(access_string, config_pair.second);
                 CfgDbAccessPtr cfg_db_access = srv_cfg->getCfgDbAccess();
@@ -506,7 +516,7 @@ configureDhcp4Server(Dhcpv4Srv& server, isc::data::ConstElementPtr config_set,
 
             if (config_pair.first == "hosts-databases") {
                 CfgDbAccessPtr cfg_db_access = srv_cfg->getCfgDbAccess();
-                db::DbAccessParser parser;
+                DbAccessParser parser;
                 auto list = config_pair.second->listValue();
                 for (auto it : list) {
                     std::string access_string;

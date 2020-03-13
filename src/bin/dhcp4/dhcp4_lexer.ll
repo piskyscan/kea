@@ -36,7 +36,7 @@ unsigned int comment_start_line = 0;
 
 using namespace isc::dhcp;
 
-};
+}  // namespace
 
 /* To avoid the call to exit... oops! */
 #define YY_FATAL_ERROR(msg) isc::dhcp::Parser4Context::fatal(msg)
@@ -226,7 +226,7 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
 \"dhcp-socket-type\" {
     switch(driver.ctx_) {
     case isc::dhcp::Parser4Context::INTERFACES_CONFIG:
-        return  isc::dhcp::Dhcp4Parser::make_DHCP_SOCKET_TYPE(driver.loc_);
+        return isc::dhcp::Dhcp4Parser::make_DHCP_SOCKET_TYPE(driver.loc_);
     default:
         return isc::dhcp::Dhcp4Parser::make_STRING("dhcp-socket-type", driver.loc_);
     }
@@ -235,7 +235,7 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
 \"raw\" {
     switch(driver.ctx_) {
     case isc::dhcp::Parser4Context::DHCP_SOCKET_TYPE:
-        return  isc::dhcp::Dhcp4Parser::make_RAW(driver.loc_);
+        return isc::dhcp::Dhcp4Parser::make_RAW(driver.loc_);
     default:
         return isc::dhcp::Dhcp4Parser::make_STRING("raw", driver.loc_);
     }
@@ -245,7 +245,7 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
     switch(driver.ctx_) {
     case isc::dhcp::Parser4Context::DHCP_SOCKET_TYPE:
     case isc::dhcp::Parser4Context::NCR_PROTOCOL:
-        return  isc::dhcp::Dhcp4Parser::make_UDP(driver.loc_);
+        return isc::dhcp::Dhcp4Parser::make_UDP(driver.loc_);
     default:
         return isc::dhcp::Dhcp4Parser::make_STRING("udp", driver.loc_);
     }
@@ -254,7 +254,7 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
 \"outbound-interface\" {
     switch(driver.ctx_) {
     case Parser4Context::INTERFACES_CONFIG:
-        return  isc::dhcp::Dhcp4Parser::make_OUTBOUND_INTERFACE(driver.loc_);
+        return isc::dhcp::Dhcp4Parser::make_OUTBOUND_INTERFACE(driver.loc_);
     default:
         return isc::dhcp::Dhcp4Parser::make_STRING("outbound-interface", driver.loc_);
     }
@@ -281,7 +281,7 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
 \"interfaces\" {
     switch(driver.ctx_) {
     case isc::dhcp::Parser4Context::INTERFACES_CONFIG:
-        return  isc::dhcp::Dhcp4Parser::make_INTERFACES(driver.loc_);
+        return isc::dhcp::Dhcp4Parser::make_INTERFACES(driver.loc_);
     default:
         return isc::dhcp::Dhcp4Parser::make_STRING("interfaces", driver.loc_);
     }
@@ -1305,7 +1305,7 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
     switch(driver.ctx_) {
     case isc::dhcp::Parser4Context::RELAY:
     case isc::dhcp::Parser4Context::RESERVATIONS:
-    return isc::dhcp::Dhcp4Parser::make_IP_ADDRESS(driver.loc_);
+        return isc::dhcp::Dhcp4Parser::make_IP_ADDRESS(driver.loc_);
     default:
         return isc::dhcp::Dhcp4Parser::make_STRING("ip-address", driver.loc_);
     }
@@ -1314,7 +1314,7 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
 \"ip-addresses\" {
     switch(driver.ctx_) {
     case isc::dhcp::Parser4Context::RELAY:
-    return isc::dhcp::Dhcp4Parser::make_IP_ADDRESSES(driver.loc_);
+        return isc::dhcp::Dhcp4Parser::make_IP_ADDRESSES(driver.loc_);
     default:
         return isc::dhcp::Dhcp4Parser::make_STRING("ip-addresses", driver.loc_);
     }
@@ -1328,7 +1328,6 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
         return isc::dhcp::Dhcp4Parser::make_STRING("hooks-libraries", driver.loc_);
     }
 }
-
 
 \"parameters\" {
     switch(driver.ctx_) {
@@ -1759,7 +1758,7 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
     return isc::dhcp::Dhcp4Parser::make_STRING(tmp, driver.loc_);
 }
 
-\"Dhcp6\"  {
+\"Dhcp6\" {
     switch(driver.ctx_) {
     case isc::dhcp::Parser4Context::CONFIG:
         return isc::dhcp::Dhcp4Parser::make_DHCP6(driver.loc_);
@@ -2041,7 +2040,7 @@ true|false {
 }
 
 null {
-   return isc::dhcp::Dhcp4Parser::make_NULL_TYPE(driver.loc_);
+    return isc::dhcp::Dhcp4Parser::make_NULL_TYPE(driver.loc_);
 }
 
 (?i:true) driver.error (driver.loc_, "JSON true reserved keyword is lower case only");
@@ -2175,5 +2174,5 @@ class Dummy {
     /* cppcheck-suppress unusedPrivateFunction */
     void dummy() { yy_fatal_error("Fix me: how to disable its definition?"); }
 };
-}
+}  // namespace
 #endif /* !__clang_analyzer__ */
