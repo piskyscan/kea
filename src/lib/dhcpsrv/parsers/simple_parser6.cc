@@ -99,6 +99,9 @@ const SimpleDefaults SimpleParser6::GLOBAL6_DEFAULTS = {
     { "preferred-lifetime",             Element::integer, "3600" },
     { "valid-lifetime",                 Element::integer, "7200" },
     { "decline-probation-period",       Element::integer, "86400" }, // 24h
+    { "packet-thread-pool-size",        Element::integer, 0 },
+    { "packet-thread-queue-size",       Element::integer, 4 },
+    { "enable-multi-threading",         Element::boolean, 'false' },
     { "dhcp4o6-port",                   Element::integer, "0" },
     { "server-tag",                     Element::string,  "" },
     { "reservation-mode",               Element::string,  "all" },
