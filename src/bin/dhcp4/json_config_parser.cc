@@ -108,11 +108,15 @@ public:
 
         // Set packet thread pool size.
         uint32_t packet_thread_pool_size = getUint32(global, "packet-thread-pool-size");
-        srv_config->setServerThreadCount(packet_thread_pool_size);
+        srv_config->setPacketThreadPoolSize(packet_thread_pool_size);
 
         // Set packet thread queue size.
         uint32_t packet_thread_queue_size = getUint32(global, "packet-thread-queue-size");
-        srv_config->setServerMaxThreadQueueSize(packet_thread_queue_size);
+        srv_config->setPacketThreadQueueSize(packet_thread_queue_size);
+
+        // Set enable multi threading flag.
+        bool enable_multi_threading = getBoolean(global, "enable-multi-threading");
+        srv_config->setEnableMultiThreading(enable_multi_threading);
 
         // Set enable multi threading flag.
         bool enable_multi_threading = getBoolean(global, "enable-multi-threading");
