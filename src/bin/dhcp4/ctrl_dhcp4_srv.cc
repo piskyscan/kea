@@ -788,7 +788,7 @@ ControlledDhcpv4Srv::processConfig(isc::data::ConstElementPtr config) {
     // Configure DHCP packet queueing
     try {
         data::ConstElementPtr qc;
-        qc  = CfgMgr::instance().getStagingCfg()->getDHCPQueueControl();
+        qc = CfgMgr::instance().getStagingCfg()->getDHCPQueueControl();
         if (IfaceMgr::instance().configureDHCPPacketQueue(AF_INET, qc)) {
             LOG_INFO(dhcp4_logger, DHCP4_CONFIG_PACKET_QUEUE)
                      .arg(IfaceMgr::instance().getPacketQueue4()->getInfoStr());

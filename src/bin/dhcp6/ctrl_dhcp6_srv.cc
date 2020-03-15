@@ -810,7 +810,7 @@ ControlledDhcpv6Srv::processConfig(isc::data::ConstElementPtr config) {
     // Configure DHCP packet queueing
     try {
         data::ConstElementPtr qc;
-        qc  = CfgMgr::instance().getStagingCfg()->getDHCPQueueControl();
+        qc = CfgMgr::instance().getStagingCfg()->getDHCPQueueControl();
         if (IfaceMgr::instance().configureDHCPPacketQueue(AF_INET6, qc)) {
             LOG_INFO(dhcp6_logger, DHCP6_CONFIG_PACKET_QUEUE)
                      .arg(IfaceMgr::instance().getPacketQueue6()->getInfoStr());
