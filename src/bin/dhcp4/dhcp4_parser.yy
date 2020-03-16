@@ -758,39 +758,6 @@ lease_database: LEASE_DATABASE {
     ctx.leave();
 };
 
-sanity_checks: SANITY_CHECKS {
-    ElementPtr m(new MapElement(ctx.loc2pos(@1)));
-    ctx.stack_.back()->set("sanity-checks", m);
-    ctx.stack_.push_back(m);
-    ctx.enter(ctx.SANITY_CHECKS);
-} COLON LCURLY_BRACKET sanity_checks_params RCURLY_BRACKET {
-    ctx.stack_.pop_back();
-    ctx.leave();
-};
-
-sanity_checks_params: sanity_checks_param
-                    | sanity_checks_params COMMA sanity_checks_param;
-
-sanity_checks_param: lease_checks;
-
-lease_checks: LEASE_CHECKS {
-    ctx.enter(ctx.NO_KEYWORD);
-} COLON STRING {
-
-    if ( (string($4) == "none") ||
-         (string($4) == "warn") ||
-         (string($4) == "fix") ||
-         (string($4) == "fix-del") ||
-         (string($4) == "del")) {
-        ElementPtr user(new StringElement($4, ctx.loc2pos(@4)));
-        ctx.stack_.back()->set("lease-checks", user);
-        ctx.leave();
-    } else {
-        error(@4, "Unsupported 'lease-checks value: " + string($4) +
-              ", supported values are: none, warn, fix, fix-del, del");
-    }
-}
-
 hosts_database: HOSTS_DATABASE {
     ElementPtr i(new MapElement(ctx.loc2pos(@1)));
     ctx.stack_.back()->set("hosts-database", i);
@@ -928,6 +895,16 @@ connect_timeout: CONNECT_TIMEOUT COLON INTEGER {
     ctx.stack_.back()->set("connect-timeout", n);
 };
 
+reconnect_wait_time: RECONNECT_WAIT_TIME COLON INTEGER {
+    ElementPtr n(new IntElement($3, ctx.loc2pos(@3)));
+    ctx.stack_.back()->set("reconnect-wait-time", n);
+};
+
+max_row_errors: MAX_ROW_ERRORS COLON INTEGER {
+    ElementPtr n(new IntElement($3, ctx.loc2pos(@3)));
+    ctx.stack_.back()->set("max-row-errors", n);
+};
+
 request_timeout: REQUEST_TIMEOUT COLON INTEGER {
     ElementPtr n(new IntElement($3, ctx.loc2pos(@3)));
     ctx.stack_.back()->set("request-timeout", n);
@@ -980,16 +957,38 @@ max_reconnect_tries: MAX_RECONNECT_TRIES COLON INTEGER {
     ctx.stack_.back()->set("max-reconnect-tries", n);
 };
 
-reconnect_wait_time: RECONNECT_WAIT_TIME COLON INTEGER {
-    ElementPtr n(new IntElement($3, ctx.loc2pos(@3)));
-    ctx.stack_.back()->set("reconnect-wait-time", n);
+sanity_checks: SANITY_CHECKS {
+    ElementPtr m(new MapElement(ctx.loc2pos(@1)));
+    ctx.stack_.back()->set("sanity-checks", m);
+    ctx.stack_.push_back(m);
+    ctx.enter(ctx.SANITY_CHECKS);
+} COLON LCURLY_BRACKET sanity_checks_params RCURLY_BRACKET {
+    ctx.stack_.pop_back();
+    ctx.leave();
 };
 
-max_row_errors: MAX_ROW_ERRORS COLON INTEGER {
-    ElementPtr n(new IntElement($3, ctx.loc2pos(@3)));
-    ctx.stack_.back()->set("max-row-errors", n);
-};
+sanity_checks_params: sanity_checks_param
+                    | sanity_checks_params COMMA sanity_checks_param;
 
+sanity_checks_param: lease_checks;
+
+lease_checks: LEASE_CHECKS {
+    ctx.enter(ctx.NO_KEYWORD);
+} COLON STRING {
+
+    if ( (string($4) == "none") ||
+         (string($4) == "warn") ||
+         (string($4) == "fix") ||
+         (string($4) == "fix-del") ||
+         (string($4) == "del")) {
+        ElementPtr user(new StringElement($4, ctx.loc2pos(@4)));
+        ctx.stack_.back()->set("lease-checks", user);
+        ctx.leave();
+    } else {
+        error(@4, "Unsupported 'lease-checks value: " + string($4) +
+              ", supported values are: none, warn, fix, fix-del, del");
+    }
+}
 
 host_reservation_identifiers: HOST_RESERVATION_IDENTIFIERS {
     ElementPtr l(new ListElement(ctx.loc2pos(@1)));
@@ -1849,10 +1848,10 @@ reservation_param: duid
                  | reservation_client_classes
                  | client_id_value
                  | circuit_id_value
-                 | flex_id_value
                  | ip_address
                  | hw_address
                  | hostname
+                 | flex_id_value
                  | option_data_list
                  | next_server
                  | server_hostname
@@ -1883,14 +1882,6 @@ boot_file_name: BOOT_FILE_NAME {
 } COLON STRING {
     ElementPtr bootfile(new StringElement($4, ctx.loc2pos(@4)));
     ctx.stack_.back()->set("boot-file-name", bootfile);
-    ctx.leave();
-};
-
-ip_address: IP_ADDRESS {
-    ctx.enter(ctx.NO_KEYWORD);
-} COLON STRING {
-    ElementPtr addr(new StringElement($4, ctx.loc2pos(@4)));
-    ctx.stack_.back()->set("ip-address", addr);
     ctx.leave();
 };
 
@@ -1978,6 +1969,14 @@ relay: RELAY {
 relay_map: ip_address
          | ip_addresses
          ;
+
+ip_address: IP_ADDRESS {
+    ctx.enter(ctx.NO_KEYWORD);
+} COLON STRING {
+    ElementPtr addr(new StringElement($4, ctx.loc2pos(@4)));
+    ctx.stack_.back()->set("ip-address", addr);
+    ctx.leave();
+};
 
 // --- end of relay definitions ------------------------------
 

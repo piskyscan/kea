@@ -595,6 +595,14 @@ decline_probation_period: DECLINE_PROBATION_PERIOD COLON INTEGER {
     ctx.stack_.back()->set("decline-probation-period", dpp);
 };
 
+server_tag: SERVER_TAG {
+    ctx.enter(ctx.NO_KEYWORD);
+} COLON STRING {
+    ElementPtr stag(new StringElement($4, ctx.loc2pos(@4)));
+    ctx.stack_.back()->set("server-tag", stag);
+    ctx.leave();
+};
+
 ddns_send_updates: DDNS_SEND_UPDATES COLON BOOLEAN {
     ElementPtr b(new BoolElement($3, ctx.loc2pos(@3)));
     ctx.stack_.back()->set("ddns-send-updates", b);
@@ -683,14 +691,6 @@ statistic_default_sample_age: STATISTIC_DEFAULT_SAMPLE_AGE COLON INTEGER {
     ctx.stack_.back()->set("statistic-default-sample-age", age);
 };
 
-server_tag: SERVER_TAG {
-    ctx.enter(ctx.NO_KEYWORD);
-} COLON STRING {
-    ElementPtr stag(new StringElement($4, ctx.loc2pos(@4)));
-    ctx.stack_.back()->set("server-tag", stag);
-    ctx.leave();
-};
-
 interfaces_config: INTERFACES_CONFIG {
     ElementPtr i(new MapElement(ctx.loc2pos(@1)));
     ctx.stack_.back()->set("interfaces-config", i);
@@ -700,15 +700,6 @@ interfaces_config: INTERFACES_CONFIG {
     // No interfaces config param is required
     ctx.stack_.pop_back();
     ctx.leave();
-};
-
-sub_interfaces6: LCURLY_BRACKET {
-    // Parse the interfaces-config map
-    ElementPtr m(new MapElement(ctx.loc2pos(@1)));
-    ctx.stack_.push_back(m);
-} interfaces_config_params RCURLY_BRACKET {
-    // No interfaces config param is required
-    // parsing completed
 };
 
 interfaces_config_params: interfaces_config_param
@@ -721,6 +712,15 @@ interfaces_config_param: interfaces_list
                        | comment
                        | unknown_map_entry
                        ;
+
+sub_interfaces6: LCURLY_BRACKET {
+    // Parse the interfaces-config map
+    ElementPtr m(new MapElement(ctx.loc2pos(@1)));
+    ctx.stack_.push_back(m);
+} interfaces_config_params RCURLY_BRACKET {
+    // No interfaces config param is required
+    // parsing completed
+};
 
 interfaces_list: INTERFACES {
     ElementPtr l(new ListElement(ctx.loc2pos(@1)));
@@ -919,11 +919,6 @@ contact_points: CONTACT_POINTS {
     ctx.leave();
 };
 
-max_reconnect_tries: MAX_RECONNECT_TRIES COLON INTEGER {
-    ElementPtr n(new IntElement($3, ctx.loc2pos(@3)));
-    ctx.stack_.back()->set("max-reconnect-tries", n);
-};
-
 keyspace: KEYSPACE {
     ctx.enter(ctx.NO_KEYWORD);
 } COLON STRING {
@@ -946,6 +941,11 @@ serial_consistency: SERIAL_CONSISTENCY {
     ElementPtr c(new StringElement($4, ctx.loc2pos(@4)));
     ctx.stack_.back()->set("serial-consistency", c);
     ctx.leave();
+};
+
+max_reconnect_tries: MAX_RECONNECT_TRIES COLON INTEGER {
+    ElementPtr n(new IntElement($3, ctx.loc2pos(@3)));
+    ctx.stack_.back()->set("max-reconnect-tries", n);
 };
 
 sanity_checks: SANITY_CHECKS {
@@ -999,11 +999,6 @@ mac_sources_value: duid_id
                  | string_id
                  ;
 
-duid_id : DUID {
-    ElementPtr duid(new StringElement("duid", ctx.loc2pos(@1)));
-    ctx.stack_.back()->add(duid);
-};
-
 string_id : STRING {
     ElementPtr duid(new StringElement($1, ctx.loc2pos(@1)));
     ctx.stack_.back()->add(duid);
@@ -1027,6 +1022,11 @@ host_reservation_identifier: duid_id
                            | hw_address_id
                            | flex_id
                            ;
+
+duid_id : DUID {
+    ElementPtr duid(new StringElement("duid", ctx.loc2pos(@1)));
+    ctx.stack_.back()->add(duid);
+};
 
 hw_address_id : HW_ADDRESS {
     ElementPtr hwaddr(new StringElement("hw-address", ctx.loc2pos(@1)));
@@ -1989,19 +1989,19 @@ hw_address: HW_ADDRESS {
     ctx.leave();
 };
 
-hostname: HOSTNAME {
-    ctx.enter(ctx.NO_KEYWORD);
-} COLON STRING {
-    ElementPtr host(new StringElement($4, ctx.loc2pos(@4)));
-    ctx.stack_.back()->set("hostname", host);
-    ctx.leave();
-};
-
 flex_id_value: FLEX_ID {
     ctx.enter(ctx.NO_KEYWORD);
 } COLON STRING {
     ElementPtr hw(new StringElement($4, ctx.loc2pos(@4)));
     ctx.stack_.back()->set("flex-id", hw);
+    ctx.leave();
+};
+
+hostname: HOSTNAME {
+    ctx.enter(ctx.NO_KEYWORD);
+} COLON STRING {
+    ElementPtr host(new StringElement($4, ctx.loc2pos(@4)));
+    ctx.stack_.back()->set("hostname", host);
     ctx.leave();
 };
 
@@ -2291,7 +2291,6 @@ dhcp_ddns_params: dhcp_ddns_param
                 ;
 
 dhcp_ddns_param: enable_updates
-               | qualifying_suffix
                | server_ip
                | server_port
                | sender_ip
@@ -2303,6 +2302,7 @@ dhcp_ddns_param: enable_updates
                | dep_override_client_update
                | dep_replace_client_name
                | dep_generated_prefix
+               | dep_qualifying_suffix
                | dep_hostname_char_set
                | dep_hostname_char_replacement
                | user_context
@@ -2313,14 +2313,6 @@ dhcp_ddns_param: enable_updates
 enable_updates: ENABLE_UPDATES COLON BOOLEAN {
     ElementPtr b(new BoolElement($3, ctx.loc2pos(@3)));
     ctx.stack_.back()->set("enable-updates", b);
-};
-
-qualifying_suffix: QUALIFYING_SUFFIX {
-    ctx.enter(ctx.NO_KEYWORD);
-} COLON STRING {
-    ElementPtr s(new StringElement($4, ctx.loc2pos(@4)));
-    ctx.stack_.back()->set("qualifying-suffix", s);
-    ctx.leave();
 };
 
 server_ip: SERVER_IP {
@@ -2371,6 +2363,15 @@ ncr_format: NCR_FORMAT {
 } COLON JSON {
     ElementPtr json(new StringElement("JSON", ctx.loc2pos(@4)));
     ctx.stack_.back()->set("ncr-format", json);
+    ctx.leave();
+};
+
+// Deprecated, moved to global/network scopes. Eventually it should be removed.
+dep_qualifying_suffix: QUALIFYING_SUFFIX {
+    ctx.enter(ctx.NO_KEYWORD);
+} COLON STRING {
+    ElementPtr s(new StringElement($4, ctx.loc2pos(@4)));
+    ctx.stack_.back()->set("qualifying-suffix", s);
     ctx.leave();
 };
 
