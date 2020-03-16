@@ -186,7 +186,6 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
     driver.loc_.step();
 }
 
-
 \"Dhcp4\" {
     switch(driver.ctx_) {
     case isc::dhcp::Parser4Context::CONFIG:
@@ -205,21 +204,21 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
     }
 }
 
-\"sanity-checks\" {
+\"interfaces\" {
     switch(driver.ctx_) {
-    case isc::dhcp::Parser4Context::DHCP4:
-        return isc::dhcp::Dhcp4Parser::make_SANITY_CHECKS(driver.loc_);
+    case isc::dhcp::Parser4Context::INTERFACES_CONFIG:
+        return isc::dhcp::Dhcp4Parser::make_INTERFACES(driver.loc_);
     default:
-        return isc::dhcp::Dhcp4Parser::make_STRING("sanity-checks", driver.loc_);
+        return isc::dhcp::Dhcp4Parser::make_STRING("interfaces", driver.loc_);
     }
 }
 
-\"lease-checks\" {
+\"re-detect\" {
     switch(driver.ctx_) {
-    case isc::dhcp::Parser4Context::SANITY_CHECKS:
-        return isc::dhcp::Dhcp4Parser::make_LEASE_CHECKS(driver.loc_);
+    case isc::dhcp::Parser4Context::INTERFACES_CONFIG:
+        return isc::dhcp::Dhcp4Parser::make_RE_DETECT(driver.loc_);
     default:
-        return isc::dhcp::Dhcp4Parser::make_STRING("lease-checks", driver.loc_);
+        return isc::dhcp::Dhcp4Parser::make_STRING("re-detect", driver.loc_);
     }
 }
 
@@ -278,21 +277,21 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
     }
 }
 
-\"interfaces\" {
+\"sanity-checks\" {
     switch(driver.ctx_) {
-    case isc::dhcp::Parser4Context::INTERFACES_CONFIG:
-        return isc::dhcp::Dhcp4Parser::make_INTERFACES(driver.loc_);
+    case isc::dhcp::Parser4Context::DHCP4:
+        return isc::dhcp::Dhcp4Parser::make_SANITY_CHECKS(driver.loc_);
     default:
-        return isc::dhcp::Dhcp4Parser::make_STRING("interfaces", driver.loc_);
+        return isc::dhcp::Dhcp4Parser::make_STRING("sanity-checks", driver.loc_);
     }
 }
 
-\"re-detect\" {
+\"lease-checks\" {
     switch(driver.ctx_) {
-    case isc::dhcp::Parser4Context::INTERFACES_CONFIG:
-        return isc::dhcp::Dhcp4Parser::make_RE_DETECT(driver.loc_);
+    case isc::dhcp::Parser4Context::SANITY_CHECKS:
+        return isc::dhcp::Dhcp4Parser::make_LEASE_CHECKS(driver.loc_);
     default:
-        return isc::dhcp::Dhcp4Parser::make_STRING("re-detect", driver.loc_);
+        return isc::dhcp::Dhcp4Parser::make_STRING("lease-checks", driver.loc_);
     }
 }
 
@@ -1072,15 +1071,6 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
     }
 }
 
-\"debuglevel\" {
-    switch(driver.ctx_) {
-    case isc::dhcp::Parser4Context::LOGGERS:
-        return isc::dhcp::Dhcp4Parser::make_DEBUGLEVEL(driver.loc_);
-    default:
-        return isc::dhcp::Dhcp4Parser::make_STRING("debuglevel", driver.loc_);
-    }
-}
-
 \"flush\" {
     switch(driver.ctx_) {
     case isc::dhcp::Parser4Context::OUTPUT_OPTIONS:
@@ -1114,6 +1104,15 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
         return isc::dhcp::Dhcp4Parser::make_PATTERN(driver.loc_);
     default:
         return isc::dhcp::Dhcp4Parser::make_STRING("pattern", driver.loc_);
+    }
+}
+
+\"debuglevel\" {
+    switch(driver.ctx_) {
+    case isc::dhcp::Parser4Context::LOGGERS:
+        return isc::dhcp::Dhcp4Parser::make_DEBUGLEVEL(driver.loc_);
+    default:
+        return isc::dhcp::Dhcp4Parser::make_STRING("debuglevel", driver.loc_);
     }
 }
 

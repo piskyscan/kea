@@ -188,246 +188,6 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
     driver.loc_.step();
 }
 
-\"enable-updates\" {
-    switch(driver.ctx_) {
-    case isc::dhcp::Parser6Context::DHCP_DDNS:
-        return isc::dhcp::Dhcp6Parser::make_ENABLE_UPDATES(driver.loc_);
-    default:
-        return isc::dhcp::Dhcp6Parser::make_STRING("enable-updates", driver.loc_);
-    }
-}
-
-\"qualifying-suffix\" {
-    switch(driver.ctx_) {
-    case isc::dhcp::Parser6Context::DHCP_DDNS:
-        return isc::dhcp::Dhcp6Parser::make_QUALIFYING_SUFFIX(driver.loc_);
-    default:
-        return isc::dhcp::Dhcp6Parser::make_STRING("qualifying-suffix", driver.loc_);
-    }
-}
-
-\"server-ip\" {
-    switch(driver.ctx_) {
-    case isc::dhcp::Parser6Context::DHCP_DDNS:
-        return isc::dhcp::Dhcp6Parser::make_SERVER_IP(driver.loc_);
-    default:
-        return isc::dhcp::Dhcp6Parser::make_STRING("server-ip", driver.loc_);
-    }
-}
-
-\"server-port\" {
-    switch(driver.ctx_) {
-    case isc::dhcp::Parser6Context::DHCP_DDNS:
-        return isc::dhcp::Dhcp6Parser::make_SERVER_PORT(driver.loc_);
-    default:
-        return isc::dhcp::Dhcp6Parser::make_STRING("server-port", driver.loc_);
-    }
-}
-
-\"sender-ip\" {
-    switch(driver.ctx_) {
-    case isc::dhcp::Parser6Context::DHCP_DDNS:
-        return isc::dhcp::Dhcp6Parser::make_SENDER_IP(driver.loc_);
-    default:
-        return isc::dhcp::Dhcp6Parser::make_STRING("sender-ip", driver.loc_);
-    }
-}
-
-\"sender-port\" {
-    switch(driver.ctx_) {
-    case isc::dhcp::Parser6Context::DHCP_DDNS:
-        return isc::dhcp::Dhcp6Parser::make_SENDER_PORT(driver.loc_);
-    default:
-        return isc::dhcp::Dhcp6Parser::make_STRING("sender-port", driver.loc_);
-    }
-}
-
-\"max-queue-size\" {
-    switch(driver.ctx_) {
-    case isc::dhcp::Parser6Context::DHCP_DDNS:
-        return isc::dhcp::Dhcp6Parser::make_MAX_QUEUE_SIZE(driver.loc_);
-    default:
-        return isc::dhcp::Dhcp6Parser::make_STRING("max-queue-size", driver.loc_);
-    }
-}
-
-\"ncr-protocol\" {
-    switch(driver.ctx_) {
-    case isc::dhcp::Parser6Context::DHCP_DDNS:
-        return isc::dhcp::Dhcp6Parser::make_NCR_PROTOCOL(driver.loc_);
-    default:
-        return isc::dhcp::Dhcp6Parser::make_STRING("ncr-protocol", driver.loc_);
-    }
-}
-
-\"ncr-format\" {
-    switch(driver.ctx_) {
-    case isc::dhcp::Parser6Context::DHCP_DDNS:
-        return isc::dhcp::Dhcp6Parser::make_NCR_FORMAT(driver.loc_);
-    default:
-        return isc::dhcp::Dhcp6Parser::make_STRING("ncr-format", driver.loc_);
-    }
-}
-
-\"override-no-update\" {
-    switch(driver.ctx_) {
-    case isc::dhcp::Parser6Context::DHCP_DDNS:
-        return isc::dhcp::Dhcp6Parser::make_OVERRIDE_NO_UPDATE(driver.loc_);
-    default:
-        return isc::dhcp::Dhcp6Parser::make_STRING("override-no-update", driver.loc_);
-    }
-}
-
-\"override-client-update\" {
-    switch(driver.ctx_) {
-    case isc::dhcp::Parser6Context::DHCP_DDNS:
-        return isc::dhcp::Dhcp6Parser::make_OVERRIDE_CLIENT_UPDATE(driver.loc_);
-    default:
-        return isc::dhcp::Dhcp6Parser::make_STRING("override-client-update", driver.loc_);
-    }
-}
-
-\"replace-client-name\" {
-    switch(driver.ctx_) {
-    case isc::dhcp::Parser6Context::DHCP_DDNS:
-        return isc::dhcp::Dhcp6Parser::make_REPLACE_CLIENT_NAME(driver.loc_);
-    default:
-        return isc::dhcp::Dhcp6Parser::make_STRING("replace-client-name", driver.loc_);
-    }
-}
-
-\"generated-prefix\" {
-    switch(driver.ctx_) {
-    case isc::dhcp::Parser6Context::DHCP_DDNS:
-        return isc::dhcp::Dhcp6Parser::make_GENERATED_PREFIX(driver.loc_);
-    default:
-        return isc::dhcp::Dhcp6Parser::make_STRING("generated-prefix", driver.loc_);
-    }
-}
-
-\"hostname-char-set\" {
-    switch(driver.ctx_) {
-    case isc::dhcp::Parser6Context::DHCP6:
-    case isc::dhcp::Parser6Context::DHCP_DDNS:
-    case isc::dhcp::Parser6Context::SUBNET6:
-    case isc::dhcp::Parser6Context::SHARED_NETWORK:
-        return isc::dhcp::Dhcp6Parser::make_HOSTNAME_CHAR_SET(driver.loc_);
-    default:
-        return isc::dhcp::Dhcp6Parser::make_STRING("hostname-char-set", driver.loc_);
-    }
-}
-
-\"hostname-char-replacement\" {
-    switch(driver.ctx_) {
-    case isc::dhcp::Parser6Context::DHCP6:
-    case isc::dhcp::Parser6Context::DHCP_DDNS:
-    case isc::dhcp::Parser6Context::SUBNET6:
-    case isc::dhcp::Parser6Context::SHARED_NETWORK:
-        return isc::dhcp::Dhcp6Parser::make_HOSTNAME_CHAR_REPLACEMENT(driver.loc_);
-    default:
-        return isc::dhcp::Dhcp6Parser::make_STRING("hostname-char-replacement", driver.loc_);
-    }
-}
-
-(?i:\"UDP\") {
-    /* dhcp-ddns value keywords are case insensitive */
-    if (driver.ctx_ == isc::dhcp::Parser6Context::NCR_PROTOCOL) {
-        return isc::dhcp::Dhcp6Parser::make_UDP(driver.loc_);
-    }
-    std::string tmp(yytext+1);
-    tmp.resize(tmp.size() - 1);
-    return isc::dhcp::Dhcp6Parser::make_STRING(tmp, driver.loc_);
-}
-
-(?i:\"TCP\") {
-    /* dhcp-ddns value keywords are case insensitive */
-    if (driver.ctx_ == isc::dhcp::Parser6Context::NCR_PROTOCOL) {
-        return isc::dhcp::Dhcp6Parser::make_TCP(driver.loc_);
-    }
-    std::string tmp(yytext+1);
-    tmp.resize(tmp.size() - 1);
-    return isc::dhcp::Dhcp6Parser::make_STRING(tmp, driver.loc_);
-}
-
-(?i:\"JSON\") {
-    /* dhcp-ddns value keywords are case insensitive */
-    if (driver.ctx_ == isc::dhcp::Parser6Context::NCR_FORMAT) {
-        return isc::dhcp::Dhcp6Parser::make_JSON(driver.loc_);
-    }
-    std::string tmp(yytext+1);
-    tmp.resize(tmp.size() - 1);
-    return isc::dhcp::Dhcp6Parser::make_STRING(tmp, driver.loc_);
-}
-
-(?i:\"when-present\") {
-    /* dhcp-ddns value keywords are case insensitive */
-    if (driver.ctx_ == isc::dhcp::Parser6Context::REPLACE_CLIENT_NAME) {
-        return isc::dhcp::Dhcp6Parser::make_WHEN_PRESENT(driver.loc_);
-    }
-    std::string tmp(yytext+1);
-    tmp.resize(tmp.size() - 1);
-    return isc::dhcp::Dhcp6Parser::make_STRING(tmp, driver.loc_);
-}
-
-(?i:\"true\") {
-    /* dhcp-ddns value keywords are case insensitive */
-    if (driver.ctx_ == isc::dhcp::Parser6Context::REPLACE_CLIENT_NAME) {
-        return isc::dhcp::Dhcp6Parser::make_WHEN_PRESENT(driver.loc_);
-    }
-    std::string tmp(yytext+1);
-    tmp.resize(tmp.size() - 1);
-    return isc::dhcp::Dhcp6Parser::make_STRING(tmp, driver.loc_);
-}
-
-\"never\" {
-    switch(driver.ctx_) {
-    case isc::dhcp::Parser6Context::REPLACE_CLIENT_NAME:
-        return isc::dhcp::Dhcp6Parser::make_NEVER(driver.loc_);
-    default:
-        return isc::dhcp::Dhcp6Parser::make_STRING("never", driver.loc_);
-    }
-}
-
-(?i:\"never\") {
-    /* dhcp-ddns value keywords are case insensitive */
-    if (driver.ctx_ == isc::dhcp::Parser6Context::REPLACE_CLIENT_NAME) {
-        return isc::dhcp::Dhcp6Parser::make_NEVER(driver.loc_);
-    }
-    std::string tmp(yytext+1);
-    tmp.resize(tmp.size() - 1);
-    return isc::dhcp::Dhcp6Parser::make_STRING(tmp, driver.loc_);
-}
-
-(?i:\"false\") {
-    /* dhcp-ddns value keywords are case insensitive */
-    if (driver.ctx_ == isc::dhcp::Parser6Context::REPLACE_CLIENT_NAME) {
-        return isc::dhcp::Dhcp6Parser::make_NEVER(driver.loc_);
-    }
-    std::string tmp(yytext+1);
-    tmp.resize(tmp.size() - 1);
-    return isc::dhcp::Dhcp6Parser::make_STRING(tmp, driver.loc_);
-}
-
-(?i:\"always\") {
-    /* dhcp-ddns value keywords are case insensitive */
-    if (driver.ctx_ == isc::dhcp::Parser6Context::REPLACE_CLIENT_NAME) {
-        return isc::dhcp::Dhcp6Parser::make_ALWAYS(driver.loc_);
-    }
-    std::string tmp(yytext+1);
-    tmp.resize(tmp.size() - 1);
-    return isc::dhcp::Dhcp6Parser::make_STRING(tmp, driver.loc_);
-}
-
-(?i:\"when-not-present\") {
-    /* dhcp-ddns value keywords are case insensitive */
-    if (driver.ctx_ == isc::dhcp::Parser6Context::REPLACE_CLIENT_NAME) {
-        return isc::dhcp::Dhcp6Parser::make_WHEN_NOT_PRESENT(driver.loc_);
-    }
-    std::string tmp(yytext+1);
-    tmp.resize(tmp.size() - 1);
-    return isc::dhcp::Dhcp6Parser::make_STRING(tmp, driver.loc_);
-}
-
 \"Dhcp6\" {
     switch(driver.ctx_) {
     case isc::dhcp::Parser6Context::CONFIG:
@@ -1555,15 +1315,6 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
     }
 }
 
-\"hostname\" {
-    switch(driver.ctx_) {
-    case isc::dhcp::Parser6Context::RESERVATIONS:
-        return isc::dhcp::Dhcp6Parser::make_HOSTNAME(driver.loc_);
-    default:
-        return isc::dhcp::Dhcp6Parser::make_STRING("hostname", driver.loc_);
-    }
-}
-
 \"flex-id\" {
     switch(driver.ctx_) {
     case isc::dhcp::Parser6Context::HOST_RESERVATION_IDENTIFIERS:
@@ -1571,6 +1322,15 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
         return isc::dhcp::Dhcp6Parser::make_FLEX_ID(driver.loc_);
     default:
         return isc::dhcp::Dhcp6Parser::make_STRING("flex-id", driver.loc_);
+    }
+}
+
+\"hostname\" {
+    switch(driver.ctx_) {
+    case isc::dhcp::Parser6Context::RESERVATIONS:
+        return isc::dhcp::Dhcp6Parser::make_HOSTNAME(driver.loc_);
+    default:
+        return isc::dhcp::Dhcp6Parser::make_STRING("hostname", driver.loc_);
     }
 }
 
@@ -1916,6 +1676,246 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
     default:
         return isc::dhcp::Dhcp6Parser::make_STRING("dhcp-ddns", driver.loc_);
     }
+}
+
+\"enable-updates\" {
+    switch(driver.ctx_) {
+    case isc::dhcp::Parser6Context::DHCP_DDNS:
+        return isc::dhcp::Dhcp6Parser::make_ENABLE_UPDATES(driver.loc_);
+    default:
+        return isc::dhcp::Dhcp6Parser::make_STRING("enable-updates", driver.loc_);
+    }
+}
+
+\"qualifying-suffix\" {
+    switch(driver.ctx_) {
+    case isc::dhcp::Parser6Context::DHCP_DDNS:
+        return isc::dhcp::Dhcp6Parser::make_QUALIFYING_SUFFIX(driver.loc_);
+    default:
+        return isc::dhcp::Dhcp6Parser::make_STRING("qualifying-suffix", driver.loc_);
+    }
+}
+
+\"server-ip\" {
+    switch(driver.ctx_) {
+    case isc::dhcp::Parser6Context::DHCP_DDNS:
+        return isc::dhcp::Dhcp6Parser::make_SERVER_IP(driver.loc_);
+    default:
+        return isc::dhcp::Dhcp6Parser::make_STRING("server-ip", driver.loc_);
+    }
+}
+
+\"server-port\" {
+    switch(driver.ctx_) {
+    case isc::dhcp::Parser6Context::DHCP_DDNS:
+        return isc::dhcp::Dhcp6Parser::make_SERVER_PORT(driver.loc_);
+    default:
+        return isc::dhcp::Dhcp6Parser::make_STRING("server-port", driver.loc_);
+    }
+}
+
+\"sender-ip\" {
+    switch(driver.ctx_) {
+    case isc::dhcp::Parser6Context::DHCP_DDNS:
+        return isc::dhcp::Dhcp6Parser::make_SENDER_IP(driver.loc_);
+    default:
+        return isc::dhcp::Dhcp6Parser::make_STRING("sender-ip", driver.loc_);
+    }
+}
+
+\"sender-port\" {
+    switch(driver.ctx_) {
+    case isc::dhcp::Parser6Context::DHCP_DDNS:
+        return isc::dhcp::Dhcp6Parser::make_SENDER_PORT(driver.loc_);
+    default:
+        return isc::dhcp::Dhcp6Parser::make_STRING("sender-port", driver.loc_);
+    }
+}
+
+\"max-queue-size\" {
+    switch(driver.ctx_) {
+    case isc::dhcp::Parser6Context::DHCP_DDNS:
+        return isc::dhcp::Dhcp6Parser::make_MAX_QUEUE_SIZE(driver.loc_);
+    default:
+        return isc::dhcp::Dhcp6Parser::make_STRING("max-queue-size", driver.loc_);
+    }
+}
+
+\"ncr-protocol\" {
+    switch(driver.ctx_) {
+    case isc::dhcp::Parser6Context::DHCP_DDNS:
+        return isc::dhcp::Dhcp6Parser::make_NCR_PROTOCOL(driver.loc_);
+    default:
+        return isc::dhcp::Dhcp6Parser::make_STRING("ncr-protocol", driver.loc_);
+    }
+}
+
+\"ncr-format\" {
+    switch(driver.ctx_) {
+    case isc::dhcp::Parser6Context::DHCP_DDNS:
+        return isc::dhcp::Dhcp6Parser::make_NCR_FORMAT(driver.loc_);
+    default:
+        return isc::dhcp::Dhcp6Parser::make_STRING("ncr-format", driver.loc_);
+    }
+}
+
+\"override-no-update\" {
+    switch(driver.ctx_) {
+    case isc::dhcp::Parser6Context::DHCP_DDNS:
+        return isc::dhcp::Dhcp6Parser::make_OVERRIDE_NO_UPDATE(driver.loc_);
+    default:
+        return isc::dhcp::Dhcp6Parser::make_STRING("override-no-update", driver.loc_);
+    }
+}
+
+\"override-client-update\" {
+    switch(driver.ctx_) {
+    case isc::dhcp::Parser6Context::DHCP_DDNS:
+        return isc::dhcp::Dhcp6Parser::make_OVERRIDE_CLIENT_UPDATE(driver.loc_);
+    default:
+        return isc::dhcp::Dhcp6Parser::make_STRING("override-client-update", driver.loc_);
+    }
+}
+
+\"replace-client-name\" {
+    switch(driver.ctx_) {
+    case isc::dhcp::Parser6Context::DHCP_DDNS:
+        return isc::dhcp::Dhcp6Parser::make_REPLACE_CLIENT_NAME(driver.loc_);
+    default:
+        return isc::dhcp::Dhcp6Parser::make_STRING("replace-client-name", driver.loc_);
+    }
+}
+
+\"generated-prefix\" {
+    switch(driver.ctx_) {
+    case isc::dhcp::Parser6Context::DHCP_DDNS:
+        return isc::dhcp::Dhcp6Parser::make_GENERATED_PREFIX(driver.loc_);
+    default:
+        return isc::dhcp::Dhcp6Parser::make_STRING("generated-prefix", driver.loc_);
+    }
+}
+
+\"hostname-char-set\" {
+    switch(driver.ctx_) {
+    case isc::dhcp::Parser6Context::DHCP6:
+    case isc::dhcp::Parser6Context::DHCP_DDNS:
+    case isc::dhcp::Parser6Context::SUBNET6:
+    case isc::dhcp::Parser6Context::SHARED_NETWORK:
+        return isc::dhcp::Dhcp6Parser::make_HOSTNAME_CHAR_SET(driver.loc_);
+    default:
+        return isc::dhcp::Dhcp6Parser::make_STRING("hostname-char-set", driver.loc_);
+    }
+}
+
+\"hostname-char-replacement\" {
+    switch(driver.ctx_) {
+    case isc::dhcp::Parser6Context::DHCP6:
+    case isc::dhcp::Parser6Context::DHCP_DDNS:
+    case isc::dhcp::Parser6Context::SUBNET6:
+    case isc::dhcp::Parser6Context::SHARED_NETWORK:
+        return isc::dhcp::Dhcp6Parser::make_HOSTNAME_CHAR_REPLACEMENT(driver.loc_);
+    default:
+        return isc::dhcp::Dhcp6Parser::make_STRING("hostname-char-replacement", driver.loc_);
+    }
+}
+
+(?i:\"UDP\") {
+    /* dhcp-ddns value keywords are case insensitive */
+    if (driver.ctx_ == isc::dhcp::Parser6Context::NCR_PROTOCOL) {
+        return isc::dhcp::Dhcp6Parser::make_UDP(driver.loc_);
+    }
+    std::string tmp(yytext+1);
+    tmp.resize(tmp.size() - 1);
+    return isc::dhcp::Dhcp6Parser::make_STRING(tmp, driver.loc_);
+}
+
+(?i:\"TCP\") {
+    /* dhcp-ddns value keywords are case insensitive */
+    if (driver.ctx_ == isc::dhcp::Parser6Context::NCR_PROTOCOL) {
+        return isc::dhcp::Dhcp6Parser::make_TCP(driver.loc_);
+    }
+    std::string tmp(yytext+1);
+    tmp.resize(tmp.size() - 1);
+    return isc::dhcp::Dhcp6Parser::make_STRING(tmp, driver.loc_);
+}
+
+(?i:\"JSON\") {
+    /* dhcp-ddns value keywords are case insensitive */
+    if (driver.ctx_ == isc::dhcp::Parser6Context::NCR_FORMAT) {
+        return isc::dhcp::Dhcp6Parser::make_JSON(driver.loc_);
+    }
+    std::string tmp(yytext+1);
+    tmp.resize(tmp.size() - 1);
+    return isc::dhcp::Dhcp6Parser::make_STRING(tmp, driver.loc_);
+}
+
+(?i:\"when-present\") {
+    /* dhcp-ddns value keywords are case insensitive */
+    if (driver.ctx_ == isc::dhcp::Parser6Context::REPLACE_CLIENT_NAME) {
+        return isc::dhcp::Dhcp6Parser::make_WHEN_PRESENT(driver.loc_);
+    }
+    std::string tmp(yytext+1);
+    tmp.resize(tmp.size() - 1);
+    return isc::dhcp::Dhcp6Parser::make_STRING(tmp, driver.loc_);
+}
+
+(?i:\"true\") {
+    /* dhcp-ddns value keywords are case insensitive */
+    if (driver.ctx_ == isc::dhcp::Parser6Context::REPLACE_CLIENT_NAME) {
+        return isc::dhcp::Dhcp6Parser::make_WHEN_PRESENT(driver.loc_);
+    }
+    std::string tmp(yytext+1);
+    tmp.resize(tmp.size() - 1);
+    return isc::dhcp::Dhcp6Parser::make_STRING(tmp, driver.loc_);
+}
+
+\"never\" {
+    switch(driver.ctx_) {
+    case isc::dhcp::Parser6Context::REPLACE_CLIENT_NAME:
+        return isc::dhcp::Dhcp6Parser::make_NEVER(driver.loc_);
+    default:
+        return isc::dhcp::Dhcp6Parser::make_STRING("never", driver.loc_);
+    }
+}
+
+(?i:\"never\") {
+    /* dhcp-ddns value keywords are case insensitive */
+    if (driver.ctx_ == isc::dhcp::Parser6Context::REPLACE_CLIENT_NAME) {
+        return isc::dhcp::Dhcp6Parser::make_NEVER(driver.loc_);
+    }
+    std::string tmp(yytext+1);
+    tmp.resize(tmp.size() - 1);
+    return isc::dhcp::Dhcp6Parser::make_STRING(tmp, driver.loc_);
+}
+
+(?i:\"false\") {
+    /* dhcp-ddns value keywords are case insensitive */
+    if (driver.ctx_ == isc::dhcp::Parser6Context::REPLACE_CLIENT_NAME) {
+        return isc::dhcp::Dhcp6Parser::make_NEVER(driver.loc_);
+    }
+    std::string tmp(yytext+1);
+    tmp.resize(tmp.size() - 1);
+    return isc::dhcp::Dhcp6Parser::make_STRING(tmp, driver.loc_);
+}
+
+(?i:\"always\") {
+    /* dhcp-ddns value keywords are case insensitive */
+    if (driver.ctx_ == isc::dhcp::Parser6Context::REPLACE_CLIENT_NAME) {
+        return isc::dhcp::Dhcp6Parser::make_ALWAYS(driver.loc_);
+    }
+    std::string tmp(yytext+1);
+    tmp.resize(tmp.size() - 1);
+    return isc::dhcp::Dhcp6Parser::make_STRING(tmp, driver.loc_);
+}
+
+(?i:\"when-not-present\") {
+    /* dhcp-ddns value keywords are case insensitive */
+    if (driver.ctx_ == isc::dhcp::Parser6Context::REPLACE_CLIENT_NAME) {
+        return isc::dhcp::Dhcp6Parser::make_WHEN_NOT_PRESENT(driver.loc_);
+    }
+    std::string tmp(yytext+1);
+    tmp.resize(tmp.size() - 1);
+    return isc::dhcp::Dhcp6Parser::make_STRING(tmp, driver.loc_);
 }
 
 \"Dhcp4\" {
