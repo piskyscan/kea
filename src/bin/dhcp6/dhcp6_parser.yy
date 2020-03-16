@@ -77,11 +77,11 @@ using namespace std;
   READONLY "readonly"
   CONNECT_TIMEOUT "connect-timeout"
   CONTACT_POINTS "contact-points"
-  MAX_RECONNECT_TRIES "max-reconnect-tries"
-  RECONNECT_WAIT_TIME "reconnect-wait-time"
   KEYSPACE "keyspace"
   CONSISTENCY "consistency"
   SERIAL_CONSISTENCY "serial-consistency"
+  MAX_RECONNECT_TRIES "max-reconnect-tries"
+  RECONNECT_WAIT_TIME "reconnect-wait-time"
   REQUEST_TIMEOUT "request-timeout"
   TCP_KEEPALIVE "tcp-keepalive"
   TCP_NODELAY "tcp-nodelay"
@@ -122,6 +122,8 @@ using namespace std;
   ENCAPSULATE "encapsulate"
   ARRAY "array"
 
+  SHARED_NETWORKS "shared-networks"
+
   POOLS "pools"
   POOL "pool"
   PD_POOLS "pd-pools"
@@ -143,7 +145,6 @@ using namespace std;
   OUT_OF_POOL "out-of-pool"
   GLOBAL "global"
   ALL "all"
-  SHARED_NETWORKS "shared-networks"
 
   MAC_SOURCES "mac-sources"
   RELAY_SUPPLIED_OPTIONS "relay-supplied-options"

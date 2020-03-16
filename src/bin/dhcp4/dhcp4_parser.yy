@@ -65,9 +65,6 @@ using namespace std;
   USE_ROUTING "use-routing"
   RE_DETECT "re-detect"
 
-  SANITY_CHECKS "sanity-checks"
-  LEASE_CHECKS "lease-checks"
-
   ECHO_CLIENT_ID "echo-client-id"
   MATCH_CLIENT_ID "match-client-id"
   AUTHORITATIVE "authoritative"
@@ -154,6 +151,9 @@ using namespace std;
   ALL "all"
 
   HOST_RESERVATION_IDENTIFIERS "host-reservation-identifiers"
+
+  SANITY_CHECKS "sanity-checks"
+  LEASE_CHECKS "lease-checks"
 
   CLIENT_CLASSES "client-classes"
   REQUIRE_CLIENT_CLASSES "require-client-classes"
@@ -739,7 +739,7 @@ outbound_interface_value: SAME_AS_INBOUND {
     $$ = ElementPtr(new StringElement("same-as-inbound", ctx.loc2pos(@1)));
 } | USE_ROUTING {
     $$ = ElementPtr(new StringElement("use-routing", ctx.loc2pos(@1)));
-    } ;
+    };
 
 re_detect: RE_DETECT COLON BOOLEAN {
     ElementPtr b(new BoolElement($3, ctx.loc2pos(@3)));
@@ -1292,14 +1292,14 @@ subnet4_param: valid_lifetime
              | calculate_tee_times
              | t1_percent
              | t2_percent
+             | hostname_char_set
+             | hostname_char_replacement
              | ddns_send_updates
              | ddns_override_no_update
              | ddns_override_client_update
              | ddns_replace_client_name
              | ddns_generated_prefix
              | ddns_qualifying_suffix
-             | hostname_char_set
-             | hostname_char_replacement
              | store_extended_info
              | unknown_map_entry
              ;

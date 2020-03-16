@@ -651,8 +651,8 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
     switch(driver.ctx_) {
     case isc::dhcp::Parser6Context::LEASE_DATABASE:
     case isc::dhcp::Parser6Context::HOSTS_DATABASE:
-    case isc::dhcp::Parser6Context::SERVER_ID:
     case isc::dhcp::Parser6Context::CONFIG_DATABASE:
+    case isc::dhcp::Parser6Context::SERVER_ID:
         return isc::dhcp::Dhcp6Parser::make_PERSIST(driver.loc_);
     default:
         return isc::dhcp::Dhcp6Parser::make_STRING("persist", driver.loc_);
@@ -1479,8 +1479,8 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
     case isc::dhcp::Parser6Context::SUBNET6:
     case isc::dhcp::Parser6Context::POOLS:
     case isc::dhcp::Parser6Context::PD_POOLS:
-    case isc::dhcp::Parser6Context::CLIENT_CLASSES:
     case isc::dhcp::Parser6Context::SHARED_NETWORK:
+    case isc::dhcp::Parser6Context::CLIENT_CLASSES:
         return isc::dhcp::Dhcp6Parser::make_CLIENT_CLASS(driver.loc_);
     default:
         return isc::dhcp::Dhcp6Parser::make_STRING("client-class", driver.loc_);

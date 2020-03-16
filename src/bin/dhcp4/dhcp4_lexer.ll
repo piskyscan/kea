@@ -199,7 +199,7 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
 \"interfaces-config\" {
     switch(driver.ctx_) {
     case isc::dhcp::Parser4Context::DHCP4:
-        return  isc::dhcp::Dhcp4Parser::make_INTERFACES_CONFIG(driver.loc_);
+        return isc::dhcp::Dhcp4Parser::make_INTERFACES_CONFIG(driver.loc_);
     default:
         return isc::dhcp::Dhcp4Parser::make_STRING("interfaces-config", driver.loc_);
     }
@@ -208,7 +208,7 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
 \"sanity-checks\" {
     switch(driver.ctx_) {
     case isc::dhcp::Parser4Context::DHCP4:
-        return  isc::dhcp::Dhcp4Parser::make_SANITY_CHECKS(driver.loc_);
+        return isc::dhcp::Dhcp4Parser::make_SANITY_CHECKS(driver.loc_);
     default:
         return isc::dhcp::Dhcp4Parser::make_STRING("sanity-checks", driver.loc_);
     }
@@ -217,7 +217,7 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
 \"lease-checks\" {
     switch(driver.ctx_) {
     case isc::dhcp::Parser4Context::SANITY_CHECKS:
-        return  isc::dhcp::Dhcp4Parser::make_LEASE_CHECKS(driver.loc_);
+        return isc::dhcp::Dhcp4Parser::make_LEASE_CHECKS(driver.loc_);
     default:
         return isc::dhcp::Dhcp4Parser::make_STRING("lease-checks", driver.loc_);
     }
@@ -253,7 +253,7 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
 
 \"outbound-interface\" {
     switch(driver.ctx_) {
-    case Parser4Context::INTERFACES_CONFIG:
+    case isc::dhcp::Parser4Context::INTERFACES_CONFIG:
         return isc::dhcp::Dhcp4Parser::make_OUTBOUND_INTERFACE(driver.loc_);
     default:
         return isc::dhcp::Dhcp4Parser::make_STRING("outbound-interface", driver.loc_);
@@ -262,19 +262,19 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
 
 \"same-as-inbound\" {
     switch(driver.ctx_) {
-    case Parser4Context::OUTBOUND_INTERFACE:
-        return Dhcp4Parser::make_SAME_AS_INBOUND(driver.loc_);
+    case isc::dhcp::Parser4Context::OUTBOUND_INTERFACE:
+        return isc::dhcp::Dhcp4Parser::make_SAME_AS_INBOUND(driver.loc_);
     default:
-        return Dhcp4Parser::make_STRING("same-as-inbound", driver.loc_);
+        return isc::dhcp::Dhcp4Parser::make_STRING("same-as-inbound", driver.loc_);
     }
 }
 
 \"use-routing\" {
     switch(driver.ctx_) {
-    case Parser4Context::OUTBOUND_INTERFACE:
-        return Dhcp4Parser::make_USE_ROUTING(driver.loc_);
+    case isc::dhcp::Parser4Context::OUTBOUND_INTERFACE:
+        return isc::dhcp::Dhcp4Parser::make_USE_ROUTING(driver.loc_);
     default:
-        return Dhcp4Parser::make_STRING("use-routing", driver.loc_);
+        return isc::dhcp::Dhcp4Parser::make_STRING("use-routing", driver.loc_);
     }
 }
 
@@ -290,7 +290,7 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
 \"re-detect\" {
     switch(driver.ctx_) {
     case isc::dhcp::Parser4Context::INTERFACES_CONFIG:
-        return  isc::dhcp::Dhcp4Parser::make_RE_DETECT(driver.loc_);
+        return isc::dhcp::Dhcp4Parser::make_RE_DETECT(driver.loc_);
     default:
         return isc::dhcp::Dhcp4Parser::make_STRING("re-detect", driver.loc_);
     }
@@ -455,6 +455,7 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
     switch(driver.ctx_) {
     case isc::dhcp::Parser4Context::LEASE_DATABASE:
     case isc::dhcp::Parser4Context::HOSTS_DATABASE:
+    case isc::dhcp::Parser4Context::CONFIG_DATABASE:
         return isc::dhcp::Dhcp4Parser::make_PERSIST(driver.loc_);
     default:
         return isc::dhcp::Dhcp4Parser::make_STRING("persist", driver.loc_);
@@ -465,6 +466,7 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
     switch(driver.ctx_) {
     case isc::dhcp::Parser4Context::LEASE_DATABASE:
     case isc::dhcp::Parser4Context::HOSTS_DATABASE:
+    case isc::dhcp::Parser4Context::CONFIG_DATABASE:
         return isc::dhcp::Dhcp4Parser::make_LFC_INTERVAL(driver.loc_);
     default:
         return isc::dhcp::Dhcp4Parser::make_STRING("lfc-interval", driver.loc_);
@@ -1032,7 +1034,6 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
         return isc::dhcp::Dhcp4Parser::make_STRING("t2-percent", driver.loc_);
     }
 }
-
 
 \"Logging\" {
     switch(driver.ctx_) {
@@ -1671,7 +1672,7 @@ ControlCharacterFill            [^"\\]|\\{JSONEscapeSequence}
 (?i:\"UDP\") {
     /* dhcp-ddns value keywords are case insensitive */
     if (driver.ctx_ == isc::dhcp::Parser4Context::NCR_PROTOCOL) {
-         return isc::dhcp::Dhcp4Parser::make_UDP(driver.loc_);
+        return isc::dhcp::Dhcp4Parser::make_UDP(driver.loc_);
     }
     std::string tmp(yytext+1);
     tmp.resize(tmp.size() - 1);
