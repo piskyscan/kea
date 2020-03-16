@@ -6,8 +6,6 @@
 
 #include <config.h>
 
-#include <asiolink/io_address.h>
-#include <cc/data.h>
 #include <cc/command_interpreter.h>
 #include <config/command_mgr.h>
 #include <database/dbaccess_parser.h>
@@ -20,10 +18,7 @@
 #include <dhcpsrv/cfg_option.h>
 #include <dhcpsrv/cfgmgr.h>
 #include <dhcpsrv/db_type.h>
-#include <dhcpsrv/pool.h>
-#include <dhcpsrv/subnet.h>
-#include <dhcpsrv/timer_mgr.h>
-#include <dhcpsrv/triplet.h>
+#include <dhcpsrv/host_data_source_factory.h>
 #include <dhcpsrv/parsers/client_class_def_parser.h>
 #include <dhcpsrv/parsers/dhcp_parsers.h>
 #include <dhcpsrv/parsers/duid_config_parser.h>
@@ -37,7 +32,10 @@
 #include <dhcpsrv/parsers/simple_parser6.h>
 #include <dhcpsrv/parsers/shared_networks_list_parser.h>
 #include <dhcpsrv/parsers/sanity_checks_parser.h>
-#include <dhcpsrv/host_data_source_factory.h>
+#include <dhcpsrv/pool.h>
+#include <dhcpsrv/subnet.h>
+#include <dhcpsrv/timer_mgr.h>
+#include <dhcpsrv/triplet.h>
 #include <hooks/hooks_parser.h>
 #include <log/logger_support.h>
 #include <process/config_ctl_parser.h>
