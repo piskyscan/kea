@@ -4628,7 +4628,7 @@ TEST_F(Dhcp6ParserTest, classifyPools) {
     EXPECT_TRUE (pools.at(3)->clientSupported(classes));
 
     // Let's check if client belonging to beta class is supported in pool[1]
-    // and not supported in any other pool  (except pool[3], which allows
+    // and not supported in any other pool  (except pools[3], which allows
     // everyone).
     classes.clear();
     classes.insert("beta");

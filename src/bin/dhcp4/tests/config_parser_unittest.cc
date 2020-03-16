@@ -442,7 +442,7 @@ public:
             } else if (param.first == "space") {
                 stream << "\"space\": \"" << param.second << "\"";
             } else if (param.first == "code") {
-                stream << "\"code\": " << param.second << "";
+                stream << "\"code\": " << param.second;
             } else if (param.first == "data") {
                 stream << "\"data\": \"" << param.second << "\"";
             } else if (param.first == "csv-format") {
@@ -4746,10 +4746,10 @@ TEST_F(Dhcp4ParserTest, classifyPools) {
     // everyone).
     ClientClasses classes;
     classes.insert("alpha");
-    EXPECT_TRUE(pools.at(0)->clientSupported(classes));
+    EXPECT_TRUE (pools.at(0)->clientSupported(classes));
     EXPECT_FALSE(pools.at(1)->clientSupported(classes));
     EXPECT_FALSE(pools.at(2)->clientSupported(classes));
-    EXPECT_TRUE(pools.at(3)->clientSupported(classes));
+    EXPECT_TRUE (pools.at(3)->clientSupported(classes));
 
     // Let's check if client belonging to beta class is supported in pool[1]
     // and not supported in any other pool  (except pools[3], which allows
@@ -4757,9 +4757,9 @@ TEST_F(Dhcp4ParserTest, classifyPools) {
     classes.clear();
     classes.insert("beta");
     EXPECT_FALSE(pools.at(0)->clientSupported(classes));
-    EXPECT_TRUE(pools.at(1)->clientSupported(classes));
+    EXPECT_TRUE (pools.at(1)->clientSupported(classes));
     EXPECT_FALSE(pools.at(2)->clientSupported(classes));
-    EXPECT_TRUE(pools.at(3)->clientSupported(classes));
+    EXPECT_TRUE (pools.at(3)->clientSupported(classes));
 
     // Let's check if client belonging to gamma class is supported in pool[2]
     // and not supported in any other pool  (except pool[3], which allows
@@ -4768,8 +4768,8 @@ TEST_F(Dhcp4ParserTest, classifyPools) {
     classes.insert("gamma");
     EXPECT_FALSE(pools.at(0)->clientSupported(classes));
     EXPECT_FALSE(pools.at(1)->clientSupported(classes));
-    EXPECT_TRUE(pools.at(2)->clientSupported(classes));
-    EXPECT_TRUE(pools.at(3)->clientSupported(classes));
+    EXPECT_TRUE (pools.at(2)->clientSupported(classes));
+    EXPECT_TRUE (pools.at(3)->clientSupported(classes));
 
     // Let's check if client belonging to some other class (not mentioned in
     // the config) is supported only in pool[3], which allows everyone.
@@ -4778,7 +4778,7 @@ TEST_F(Dhcp4ParserTest, classifyPools) {
     EXPECT_FALSE(pools.at(0)->clientSupported(classes));
     EXPECT_FALSE(pools.at(1)->clientSupported(classes));
     EXPECT_FALSE(pools.at(2)->clientSupported(classes));
-    EXPECT_TRUE(pools.at(3)->clientSupported(classes));
+    EXPECT_TRUE (pools.at(3)->clientSupported(classes));
 
     // Finally, let's check class-less client. He should be allowed only in
     // the last pool, which does not have any class restrictions.
@@ -4786,7 +4786,7 @@ TEST_F(Dhcp4ParserTest, classifyPools) {
     EXPECT_FALSE(pools.at(0)->clientSupported(classes));
     EXPECT_FALSE(pools.at(1)->clientSupported(classes));
     EXPECT_FALSE(pools.at(2)->clientSupported(classes));
-    EXPECT_TRUE(pools.at(3)->clientSupported(classes));
+    EXPECT_TRUE (pools.at(3)->clientSupported(classes));
 }
 
 // This test verifies that the host reservations can be specified for
@@ -6638,7 +6638,7 @@ TEST_F(Dhcp4ParserTest, comments) {
 #endif
 }
 
-// This test verifies that the global host reservations can be specified
+// This test verifies that the global host reservations can be specified.
 TEST_F(Dhcp4ParserTest, globalReservations) {
     ConstElementPtr x;
     string config = "{ " + genIfaceConfig() + "," +
