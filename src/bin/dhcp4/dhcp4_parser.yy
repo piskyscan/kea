@@ -1885,16 +1885,6 @@ boot_file_name: BOOT_FILE_NAME {
     ctx.leave();
 };
 
-ip_addresses: IP_ADDRESSES {
-    ElementPtr l(new ListElement(ctx.loc2pos(@1)));
-    ctx.stack_.back()->set("ip-addresses", l);
-    ctx.stack_.push_back(l);
-    ctx.enter(ctx.NO_KEYWORD);
-} COLON list_strings {
-    ctx.stack_.pop_back();
-    ctx.leave();
-};
-
 duid: DUID {
     ctx.enter(ctx.NO_KEYWORD);
 } COLON STRING {
@@ -1975,6 +1965,16 @@ ip_address: IP_ADDRESS {
 } COLON STRING {
     ElementPtr addr(new StringElement($4, ctx.loc2pos(@4)));
     ctx.stack_.back()->set("ip-address", addr);
+    ctx.leave();
+};
+
+ip_addresses: IP_ADDRESSES {
+    ElementPtr l(new ListElement(ctx.loc2pos(@1)));
+    ctx.stack_.back()->set("ip-addresses", l);
+    ctx.stack_.push_back(l);
+    ctx.enter(ctx.NO_KEYWORD);
+} COLON list_strings {
+    ctx.stack_.pop_back();
     ctx.leave();
 };
 

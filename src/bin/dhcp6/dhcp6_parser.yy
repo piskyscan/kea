@@ -160,7 +160,6 @@ using namespace std;
   CLIENT_CLASS "client-class"
 
   RESERVATIONS "reservations"
-  IP_ADDRESSES "ip-addresses"
   PREFIXES "prefixes"
   DUID "duid"
   HW_ADDRESS "hw-address"
@@ -169,6 +168,7 @@ using namespace std;
 
   RELAY "relay"
   IP_ADDRESS "ip-address"
+  IP_ADDRESSES "ip-addresses"
 
   HOOKS_LIBRARIES "hooks-libraries"
   LIBRARY "library"
@@ -1953,16 +1953,6 @@ reservation_param: duid
                  | unknown_map_entry
                  ;
 
-ip_addresses: IP_ADDRESSES {
-    ElementPtr l(new ListElement(ctx.loc2pos(@1)));
-    ctx.stack_.back()->set("ip-addresses", l);
-    ctx.stack_.push_back(l);
-    ctx.enter(ctx.NO_KEYWORD);
-} COLON list_strings {
-    ctx.stack_.pop_back();
-    ctx.leave();
-};
-
 prefixes: PREFIXES  {
     ElementPtr l(new ListElement(ctx.loc2pos(@1)));
     ctx.stack_.back()->set("prefixes", l);
@@ -2037,6 +2027,16 @@ ip_address: IP_ADDRESS {
 } COLON STRING {
     ElementPtr addr(new StringElement($4, ctx.loc2pos(@4)));
     ctx.stack_.back()->set("ip-address", addr);
+    ctx.leave();
+};
+
+ip_addresses: IP_ADDRESSES {
+    ElementPtr l(new ListElement(ctx.loc2pos(@1)));
+    ctx.stack_.back()->set("ip-addresses", l);
+    ctx.stack_.push_back(l);
+    ctx.enter(ctx.NO_KEYWORD);
+} COLON list_strings {
+    ctx.stack_.pop_back();
     ctx.leave();
 };
 
