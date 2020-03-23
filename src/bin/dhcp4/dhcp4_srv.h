@@ -742,7 +742,6 @@ public:
     static const std::string VENDOR_CLASS_PREFIX;
 
 private:
-
     /// @brief Process Client FQDN %Option sent by a client.
     ///
     /// This function is called by the @c Dhcpv4Srv::processClientName when
