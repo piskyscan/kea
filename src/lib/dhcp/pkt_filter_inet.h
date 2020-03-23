@@ -84,7 +84,7 @@ private:
     static const size_t CONTROL_BUF_LEN;
 };
 
-} // namespace isc::dhcp
-} // namespace isc
+}  // namespace dhcp
+}  // namespace isc
 
 #endif // PKT_FILTER_INET_H

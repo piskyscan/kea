@@ -206,8 +206,7 @@ PktFilterInet::receive(Iface& iface, const SocketInfo& socket_info) {
 }
 
 int
-PktFilterInet::send(const Iface&, uint16_t sockfd,
-                    const Pkt4Ptr& pkt) {
+PktFilterInet::send(const Iface&, uint16_t sockfd, const Pkt4Ptr& pkt) {
     uint8_t control_buf[CONTROL_BUF_LEN];
     memset(&control_buf[0], 0, CONTROL_BUF_LEN);
 
@@ -282,7 +281,5 @@ PktFilterInet::send(const Iface&, uint16_t sockfd,
     return (0);
 }
 
-
-
-} // end of isc::dhcp namespace
-} // end of isc namespace
+}  // namepsace dhcp
+}  // namespace isc
