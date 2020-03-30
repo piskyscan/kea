@@ -106,6 +106,10 @@ public:
         uint16_t dhcp4o6_port = getUint16(global, "dhcp4o6-port");
         srv_config->setDhcp4o6Port(dhcp4o6_port);
 
+        // Set enable multi threading flag.
+        bool enable_multi_threading = getBoolean(global, "enable-multi-threading");
+        srv_config->setEnableMultiThreading(enable_multi_threading);
+
         // Set packet thread pool size.
         uint32_t packet_thread_pool_size = getUint32(global, "packet-thread-pool-size");
         srv_config->setPktThreadPoolSize(packet_thread_pool_size);
@@ -113,22 +117,6 @@ public:
         // Set packet thread queue size.
         uint32_t packet_thread_queue_size = getUint32(global, "packet-thread-queue-size");
         srv_config->setPktThreadQueueSize(packet_thread_queue_size);
-
-        // Set enable multi threading flag.
-        bool enable_multi_threading = getBoolean(global, "enable-multi-threading");
-        srv_config->setEnableMultiThreading(enable_multi_threading);
-
-        // Set enable multi threading flag.
-        bool enable_multi_threading = getBoolean(global, "enable-multi-threading");
-        cfg->setEnableMultiThreading(enable_multi_threading);
-
-        // Set packet thread pool size.
-        uint32_t packet_thread_pool_size = getUint32(global, "packet-thread-pool-size");
-        cfg->setPktThreadPoolSize(packet_thread_pool_size);
-
-        // Set packet thread queue size.
-        uint32_t packet_thread_queue_size = getUint32(global, "packet-thread-queue-size");
-        cfg->setPktThreadQueueSize(packet_thread_queue_size);
 
         // Set the global user context.
         ConstElementPtr user_context = global->get("user-context");
