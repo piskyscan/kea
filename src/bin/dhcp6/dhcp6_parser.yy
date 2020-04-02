@@ -521,6 +521,9 @@ global_param: data_directory
             | statistic_default_sample_age
             | dhcp_multi_threading
             | unknown_map_entry
+            | enable_multi_threading
+            | packet_thread_pool_size
+            | packet_thread_queue_size
             ;
 
 data_directory: DATA_DIRECTORY {
