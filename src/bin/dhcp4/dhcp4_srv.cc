@@ -892,7 +892,7 @@ Dhcpv4Srv::sendPacket(const Pkt4Ptr& packet) {
 }
 
 int
-Dhcpv4Srv::run() {
+Dhcpv4Srv::run(bool test_mode) {
 #ifdef ENABLE_AFL
     // Set up structures needed for fuzzing.
     Fuzz fuzzer(4, server_port_);
@@ -904,10 +904,11 @@ Dhcpv4Srv::run() {
         // Kea is listening, read for Kea to read it via asynchronous I/O.
         fuzzer.transfer();
 #else
+
     while (!shutdown_) {
 #endif // ENABLE_AFL
         try {
-            run_one();
+            run_one(test_mode);
             getIOService()->poll();
         } catch (const std::exception& e) {
             // General catch-all exception that are not caught by more specific
@@ -929,7 +930,7 @@ Dhcpv4Srv::run() {
 }
 
 void
-Dhcpv4Srv::run_one() {
+Dhcpv4Srv::run_one(bool test_mode) {
     // client's message and server's response
     Pkt4Ptr query;
     Pkt4Ptr rsp;
@@ -1025,18 +1026,18 @@ Dhcpv4Srv::run_one() {
             typedef function<void()> CallBack;
             boost::shared_ptr<CallBack> call_back =
                 boost::make_shared<CallBack>(std::bind(&Dhcpv4Srv::processPacketAndSendResponseNoThrow,
-                                                       this, query, rsp));
+                                                       this, query, rsp, test_mode));
             MultiThreadingMgr::instance().getPktThreadPool().add(call_back);
         } else {
-            processPacketAndSendResponse(query, rsp);
+            processPacketAndSendResponse(query, rsp, test_mode);
         }
     }
 }
 
 void
-Dhcpv4Srv::processPacketAndSendResponseNoThrow(Pkt4Ptr& query, Pkt4Ptr& rsp) {
+Dhcpv4Srv::processPacketAndSendResponseNoThrow(Pkt4Ptr& query, Pkt4Ptr& rsp, bool test_mode) {
     try {
-        processPacketAndSendResponse(query, rsp);
+        processPacketAndSendResponse(query, rsp, test_mode);
     } catch (const std::exception& e) {
         LOG_ERROR(packet4_logger, DHCP4_PACKET_PROCESS_STD_EXCEPTION)
             .arg(e.what());
@@ -1046,8 +1047,8 @@ Dhcpv4Srv::processPacketAndSendResponseNoThrow(Pkt4Ptr& query, Pkt4Ptr& rsp) {
 }
 
 void
-Dhcpv4Srv::processPacketAndSendResponse(Pkt4Ptr& query, Pkt4Ptr& rsp) {
-    processPacket(query, rsp);
+Dhcpv4Srv::processPacketAndSendResponse(Pkt4Ptr& query, Pkt4Ptr& rsp, bool test_mode) {
+    processPacket(query, rsp, test_mode);
     if (!rsp) {
         return;
     }
@@ -1057,7 +1058,7 @@ Dhcpv4Srv::processPacketAndSendResponse(Pkt4Ptr& query, Pkt4Ptr& rsp) {
 }
 
 void
-Dhcpv4Srv::processPacket(Pkt4Ptr& query, Pkt4Ptr& rsp, bool allow_packet_park) {
+Dhcpv4Srv::processPacket(Pkt4Ptr& query, Pkt4Ptr& rsp, bool test_mode, bool allow_packet_park) {
     // Log reception of the packet. We need to increase it early, as any
     // failures in unpacking will cause the packet to be dropped. We
     // will increase type specific statistic further down the road.
@@ -1231,14 +1232,14 @@ Dhcpv4Srv::processPacket(Pkt4Ptr& query, Pkt4Ptr& rsp, bool allow_packet_park) {
     try {
         switch (query->getType()) {
         case DHCPDISCOVER:
-            rsp = processDiscover(query);
+            rsp = processDiscover(query, test_mode);
             break;
 
         case DHCPREQUEST:
             // Note that REQUEST is used for many things in DHCPv4: for
             // requesting new leases, renewing existing ones and even
             // for rebinding.
-            rsp = processRequest(query, ctx);
+            rsp = processRequest(query, ctx, test_mode);
             break;
 
         case DHCPRELEASE:
@@ -1250,7 +1251,7 @@ Dhcpv4Srv::processPacket(Pkt4Ptr& query, Pkt4Ptr& rsp, bool allow_packet_park) {
             break;
 
         case DHCPINFORM:
-            rsp = processInform(query);
+            rsp = processInform(query, test_mode);
             break;
 
         default:
@@ -2589,8 +2590,8 @@ Dhcpv4Srv::checkRelayPort(const Dhcpv4Exchange& ex) {
 }
 
 void
-Dhcpv4Srv::adjustIfaceData(Dhcpv4Exchange& ex) {
-    adjustRemoteAddr(ex);
+Dhcpv4Srv::adjustIfaceData(Dhcpv4Exchange& ex, bool test_mode) {
+    adjustRemoteAddr(ex, test_mode);
 
     // Initialize the pointers to the client's message and the server's
     // response.
@@ -2678,9 +2679,10 @@ Dhcpv4Srv::adjustIfaceData(Dhcpv4Exchange& ex) {
 }
 
 void
-Dhcpv4Srv::adjustRemoteAddr(Dhcpv4Exchange& ex) {
+Dhcpv4Srv::adjustRemoteAddr(Dhcpv4Exchange& ex, bool test_mode) {
     // Initialize the pointers to the client's message and the server's
     // response.
+    //bool test_mode = true;
     Pkt4Ptr query = ex.getQuery();
     Pkt4Ptr response = ex.getResponse();
 
@@ -2713,6 +2715,11 @@ Dhcpv4Srv::adjustRemoteAddr(Dhcpv4Exchange& ex) {
         // If there is no ciaddr and no giaddr the only thing we can do is
         // to use the source address of the packet.
         } else {
+            response->setRemoteAddr(query->getRemoteAddr());
+        }
+        // if test mode enabled, send packet to source address of incoming
+        // dhcp inform packet.
+        if (test_mode) {
             response->setRemoteAddr(query->getRemoteAddr());
         }
         // Remote address is now set so return.
@@ -2771,6 +2778,11 @@ Dhcpv4Srv::adjustRemoteAddr(Dhcpv4Exchange& ex) {
     } else {
         response->setRemoteAddr(query->getRemoteAddr());
 
+    }
+    // If test mode enabled we want to override any result of this function
+    // and send packet to source address of incoming packet.
+    if (test_mode) {
+        response->setRemoteAddr(query->getRemoteAddr());
     }
 }
 
@@ -2878,7 +2890,7 @@ Dhcpv4Srv::getNetmaskOption(const Subnet4Ptr& subnet) {
 }
 
 Pkt4Ptr
-Dhcpv4Srv::processDiscover(Pkt4Ptr& discover) {
+Dhcpv4Srv::processDiscover(Pkt4Ptr& discover, bool test_mode) {
     // server-id is forbidden.
     sanityCheck(discover, FORBIDDEN);
 
@@ -2932,7 +2944,7 @@ Dhcpv4Srv::processDiscover(Pkt4Ptr& discover) {
 
     // Set the src/dest IP address, port and interface for the outgoing
     // packet.
-    adjustIfaceData(ex);
+    adjustIfaceData(ex, test_mode);
 
     appendServerID(ex);
 
@@ -2940,7 +2952,7 @@ Dhcpv4Srv::processDiscover(Pkt4Ptr& discover) {
 }
 
 Pkt4Ptr
-Dhcpv4Srv::processRequest(Pkt4Ptr& request, AllocEngine::ClientContext4Ptr& context) {
+Dhcpv4Srv::processRequest(Pkt4Ptr& request, AllocEngine::ClientContext4Ptr& context, bool test_mode) {
     // Since we cannot distinguish  between client states
     // we'll make server-id is optional for REQUESTs.
     sanityCheck(request, OPTIONAL);
@@ -2997,7 +3009,7 @@ Dhcpv4Srv::processRequest(Pkt4Ptr& request, AllocEngine::ClientContext4Ptr& cont
 
     // Set the src/dest IP address, port and interface for the outgoing
     // packet.
-    adjustIfaceData(ex);
+    adjustIfaceData(ex, test_mode);
 
     appendServerID(ex);
 
@@ -3276,7 +3288,7 @@ Dhcpv4Srv::declineLease(const Lease4Ptr& lease, const Pkt4Ptr& decline,
 }
 
 Pkt4Ptr
-Dhcpv4Srv::processInform(Pkt4Ptr& inform) {
+Dhcpv4Srv::processInform(Pkt4Ptr& inform, bool test_mode) {
     // server-id is supposed to be forbidden (as is requested address)
     // but ISC DHCP does not enforce either. So neither will we.
     sanityCheck(inform, OPTIONAL);
@@ -3301,7 +3313,7 @@ Dhcpv4Srv::processInform(Pkt4Ptr& inform) {
     appendRequestedOptions(ex);
     appendRequestedVendorOptions(ex);
     appendBasicOptions(ex);
-    adjustIfaceData(ex);
+    adjustIfaceData(ex, test_mode);
 
     // Set fixed fields (siaddr, sname, filename) if defined in
     // the reservation, class or subnet specific configuration.

@@ -1,4 +1,4 @@
-// Copyright (C) 2011-2020 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2011-2020 Inernet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -315,14 +315,14 @@ public:
     /// until shut down.
     ///
     /// @return The value returned by @c Daemon::getExitValue().
-    int run();
+    int run(bool test_mode = false);
 
     /// @brief Main server processing step.
     ///
     /// Main server processing step. Receives one incoming packet, calls
     /// the processing packet routing and (if necessary) transmits
     /// a response.
-    void run_one();
+    void run_one(bool test_mode = false);
 
     /// @brief Process a single incoming DHCPv4 packet and sends the response.
     ///
@@ -331,7 +331,7 @@ public:
     ///
     /// @param query A pointer to the packet to be processed.
     /// @param rsp A pointer to the response
-    void processPacketAndSendResponse(Pkt4Ptr& query, Pkt4Ptr& rsp);
+    void processPacketAndSendResponse(Pkt4Ptr& query, Pkt4Ptr& rsp, bool test_mode);
 
     /// @brief Process a single incoming DHCPv4 packet and sends the response.
     ///
@@ -340,7 +340,7 @@ public:
     ///
     /// @param query A pointer to the packet to be processed.
     /// @param rsp A pointer to the response
-    void processPacketAndSendResponseNoThrow(Pkt4Ptr& query, Pkt4Ptr& rsp);
+    void processPacketAndSendResponseNoThrow(Pkt4Ptr& query, Pkt4Ptr& rsp, bool test_mode);
 
     /// @brief Process an unparked DHCPv4 packet and sends the response.
     ///
@@ -358,7 +358,7 @@ public:
     /// @param query A pointer to the packet to be processed.
     /// @param rsp A pointer to the response
     /// @param allow_packet_park Indicates if parking a packet is allowed.
-    void processPacket(Pkt4Ptr& query, Pkt4Ptr& rsp,
+    void processPacket(Pkt4Ptr& query, Pkt4Ptr& rsp, bool test_mode,
                        bool allow_packet_park = true);
 
     /// @brief Instructs the server to shut down.
@@ -540,7 +540,7 @@ protected:
     /// @param discover DISCOVER message received from client
     ///
     /// @return OFFER message or NULL
-    Pkt4Ptr processDiscover(Pkt4Ptr& discover);
+    Pkt4Ptr processDiscover(Pkt4Ptr& discover, bool test_mode=false);
 
     /// @brief Processes incoming REQUEST and returns REPLY response.
     ///
@@ -556,7 +556,7 @@ protected:
     /// and deleted leases are stored.
     ///
     /// @return ACK or NAK message
-    Pkt4Ptr processRequest(Pkt4Ptr& request, AllocEngine::ClientContext4Ptr& context);
+    Pkt4Ptr processRequest(Pkt4Ptr& request, AllocEngine::ClientContext4Ptr& context, bool test_mode=false);
 
     /// @brief Processes incoming DHCPRELEASE messages.
     ///
@@ -584,7 +584,7 @@ protected:
     /// @param inform message received from client
     ///
     /// @return DHCPACK to be sent to the client.
-    Pkt4Ptr processInform(Pkt4Ptr& inform);
+    Pkt4Ptr processInform(Pkt4Ptr& inform, bool test_mode=false);
 
     /// @brief Build the configured option list
     ///
@@ -892,7 +892,7 @@ protected:
     ///
     /// @param ex The exchange holding both the client's message and the
     /// server's response.
-    void adjustIfaceData(Dhcpv4Exchange& ex);
+    void adjustIfaceData(Dhcpv4Exchange& ex, bool test_mode);
 
     /// @brief Sets remote addresses for outgoing packet.
     ///
@@ -912,7 +912,7 @@ protected:
     ///
     /// @param ex The exchange holding both the client's message and the
     /// server's response.
-    static void adjustRemoteAddr(Dhcpv4Exchange& ex);
+    static void adjustRemoteAddr(Dhcpv4Exchange& ex, bool test_mode);
 
     /// @brief converts server-id to text
     /// Converts content of server-id option to a text representation, e.g.

@@ -76,6 +76,7 @@ main(int argc, char* argv[]) {
     int thread_count = 0;
     bool verbose_mode = false; // Should server be verbose?
     bool check_mode = false;   // Check syntax
+    bool test_mode = false;
 
     // The standard config file
     std::string config_file("");
@@ -267,11 +268,21 @@ main(int argc, char* argv[]) {
             return (EXIT_FAILURE);
         }
 
+        // Check if env variable KEA_TEST_SEND_RESPONSES_TO_SOURCE was set to
+        // ENABLE, if so switch Kea to testing mode, it will result with kea
+        // sending all packets to source address of incoiming packet.
+        // Only usable in testing networks.
+        if(const char* env_p = std::getenv("KEA_TEST_SEND_RESPONSES_TO_SOURCE")) {
+            if (strncmp(env_p, "ENABLED", 7) == 0) {
+                LOG_WARN(dhcp4_logger, DHCP4_TESTING_MODE_ENABLED);
+                test_mode = true;
+            }
+        }
+
         // Tell the admin we are ready to process packets
         LOG_INFO(dhcp4_logger, DHCP4_STARTED).arg(VERSION);
-
         // And run the main loop of the server.
-        ret = server.run();
+        ret = server.run(test_mode);
 
         LOG_INFO(dhcp4_logger, DHCP4_SHUTDOWN);
 
