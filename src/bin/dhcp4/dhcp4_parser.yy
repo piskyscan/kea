@@ -513,9 +513,6 @@ global_param: valid_lifetime
             | statistic_default_sample_age
             | dhcp_multi_threading
             | unknown_map_entry
-            | enable_multi_threading
-            | packet_thread_pool_size
-            | packet_thread_queue_size
             ;
 
 valid_lifetime: VALID_LIFETIME COLON INTEGER {
@@ -1436,14 +1433,14 @@ shared_network_param: name
                     | calculate_tee_times
                     | t1_percent
                     | t2_percent
+                    | hostname_char_set
+                    | hostname_char_replacement
                     | ddns_send_updates
                     | ddns_override_no_update
                     | ddns_override_client_update
                     | ddns_replace_client_name
                     | ddns_generated_prefix
                     | ddns_qualifying_suffix
-                    | hostname_char_set
-                    | hostname_char_replacement
                     | store_extended_info
                     | unknown_map_entry
                     ;
