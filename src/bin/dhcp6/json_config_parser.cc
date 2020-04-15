@@ -525,7 +525,7 @@ configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
 
             if (config_pair.first == "dhcp-queue-control") {
                 DHCPQueueControlParser parser;
-                srv_config->setDHCPQueueControl(parser.parse(config_pair.second));
+                srv_cfg->setDHCPQueueControl(parser.parse(config_pair.second));
                 continue;
             }
 
