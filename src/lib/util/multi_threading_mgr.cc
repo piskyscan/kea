@@ -6,7 +6,6 @@
 
 #include <config.h>
 
-#include <exceptions/exceptions.h>
 #include <util/multi_threading_mgr.h>
 
 namespace isc {
