@@ -4,6 +4,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+#include <config.h>
+
+#include <exceptions/exceptions.h>
 #include <util/multi_threading_mgr.h>
 
 namespace isc {
@@ -11,6 +14,8 @@ namespace util {
 
 MultiThreadingMgr::MultiThreadingMgr()
     : enabled_(false), critical_section_count_(0), thread_pool_size_(0) {
+    : enabled_(false), critical_section_count_(0), thread_pool_size_(0),
+      config_lock_enabled_(false) {
 }
 
 MultiThreadingMgr::~MultiThreadingMgr() {
@@ -48,7 +53,7 @@ MultiThreadingMgr::exitCriticalSection() {
 }
 
 bool
-MultiThreadingMgr::isInCriticalSection() {
+MultiThreadingMgr::isInCriticalSection() const {
     return (critical_section_count_ != 0);
 }
 
@@ -113,6 +118,16 @@ MultiThreadingMgr::apply(bool enabled, uint32_t thread_count, uint32_t queue_siz
         setThreadPoolSize(thread_count);
         setPacketQueueSize(queue_size);
     }
+}
+
+bool
+MultiThreadingMgr::getConfigLock() const {
+    return (config_lock_enabled_);
+}
+
+void
+MultiThreadingMgr::setConfigLock(bool enabled) {
+    config_lock_enabled_ = enabled;
 }
 
 void

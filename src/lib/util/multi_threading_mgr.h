@@ -85,7 +85,21 @@ public:
     /// @brief Is in critical section flag.
     ///
     /// @return The critical section flag.
-    bool isInCriticalSection();
+    bool isInCriticalSection() const;
+
+    /// @brief Set configuration lock.
+    ///
+    /// Set configuration lock flag @ref config_lock_enabled_ to specific value.
+    ///
+    /// @param enabled the configuration lock value.
+    void setConfigLock(bool enabled);
+
+    /// @brief Get configuration lock.
+    ///
+    /// Get configuration lock flag @ref config_lock_enabled_ value.
+    ///
+    /// @return the configuration lock value.
+    bool getConfigLock() const;
 
     /// @brief Get the dhcp thread pool.
     ///
@@ -168,6 +182,16 @@ private:
 
     /// @brief Packet processing thread pool.
     ThreadPool<std::function<void()>> thread_pool_;
+
+    /// @brief The configuration lock flag.
+    ///
+    /// Performing configuration changes should be handled only on the main
+    /// thread while not processing dhcp traffic. This value must be set to
+    /// 'false' to indicate that it is safe to perform configuration changes or
+    /// to 'true' to indicate the opposite.
+    /// By default this value is set to 'true', but it is set to 'false' right
+    /// after applying configuration.
+    bool config_lock_enabled_;
 };
 
 /// @note: everything here MUST be used ONLY from the main thread.
