@@ -11,6 +11,7 @@
 #include <hooks/hooks_log.h>
 #include <hooks/pointer_converter.h>
 #include <util/stopwatch.h>
+#include <util/multi_threading_mgr.h>
 
 #include <boost/static_assert.hpp>
 
@@ -19,6 +20,7 @@
 #include <functional>
 #include <utility>
 
+using namespace isc::util;
 using namespace std;
 
 namespace isc {
@@ -34,6 +36,16 @@ CalloutManager::CalloutManager(int num_libraries)
         isc_throw(isc::BadValue, "number of libraries passed to the "
                   "CalloutManager must be >= 0");
     }
+}
+
+void
+CalloutManager::setLibraryIndex(int library_index) {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
+    checkLibraryIndex(library_index);
+    current_library_ = library_index;
 }
 
 // Check that the index of a library is valid.  It can range from 1 - n
@@ -59,6 +71,10 @@ void
 CalloutManager::registerCallout(const std::string& name,
                                 CalloutPtr callout,
                                 int library_index) {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     // Note the registration.
     LOG_DEBUG(callouts_logger, HOOKS_DBG_CALLS, HOOKS_CALLOUT_REGISTRATION)
         .arg(library_index).arg(name);
@@ -228,6 +244,10 @@ CalloutManager::callCommandHandlers(const std::string& command_name,
 bool
 CalloutManager::deregisterCallout(const std::string& name, CalloutPtr callout,
                                   int library_index) {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     // Sanity check that the current library index is set to a valid value.
     checkLibraryIndex(library_index);
 
@@ -282,6 +302,10 @@ CalloutManager::deregisterCallout(const std::string& name, CalloutPtr callout,
 bool
 CalloutManager::deregisterAllCallouts(const std::string& name,
                                       int library_index) {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     // New hooks could have been registered since the manager was constructed.
     ensureHookLibsVectorSize();
 
@@ -318,6 +342,10 @@ CalloutManager::deregisterAllCallouts(const std::string& name,
 
 void
 CalloutManager::registerCommandHook(const std::string& command_name) {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     // New hooks could have been registered since the manager was constructed.
     ensureHookLibsVectorSize();
 
@@ -337,6 +365,10 @@ CalloutManager::registerCommandHook(const std::string& command_name) {
 
 void
 CalloutManager::ensureHookLibsVectorSize() {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     ServerHooks& hooks = ServerHooks::getServerHooks();
     if (hooks.getCount() > hook_vector_.size()) {
         // Uh oh, there are more hook points that our vector allows.

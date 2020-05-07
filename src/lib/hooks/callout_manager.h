@@ -304,10 +304,7 @@ public:
     /// @param library_index New library index.
     ///
     /// @throw NoSuchLibrary if the index is not valid.
-    void setLibraryIndex(int library_index) {
-        checkLibraryIndex(library_index);
-        current_library_ = library_index;
-    }
+    void setLibraryIndex(int library_index);
 
     /// @defgroup calloutManagerLibraryHandles Callout manager library handles
     ///

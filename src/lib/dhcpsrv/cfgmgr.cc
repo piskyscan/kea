@@ -10,6 +10,8 @@
 #include <dhcp/libdhcp++.h>
 #include <dhcpsrv/cfgmgr.h>
 #include <dhcpsrv/dhcpsrv_log.h>
+#include <util/multi_threading_mgr.h>
+
 #include <sstream>
 #include <string>
 
@@ -34,11 +36,19 @@ CfgMgr::getDataDir() const {
 
 void
 CfgMgr::setDataDir(const std::string& datadir, bool unspecified) {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     datadir_ = Optional<std::string>(datadir, unspecified);
 }
 
 void
 CfgMgr::setD2ClientConfig(D2ClientConfigPtr& new_config) {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     ensureCurrentAllocated();
     // Note that D2ClientMgr::setD2Config() actually attempts to apply the
     // configuration by stopping its sender and opening a new one and so
@@ -69,6 +79,10 @@ CfgMgr::getD2ClientMgr() {
 
 void
 CfgMgr::ensureCurrentAllocated() {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     if (!configuration_ || configs_.empty()) {
         configuration_.reset(new SrvConfig());
         configs_.push_back(configuration_);
@@ -77,6 +91,10 @@ CfgMgr::ensureCurrentAllocated() {
 
 void
 CfgMgr::clear() {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     if (configuration_) {
         configuration_->removeStatistics();
     }
@@ -88,7 +106,10 @@ CfgMgr::clear() {
 
 void
 CfgMgr::commit() {
-
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
 
     ensureCurrentAllocated();
 
@@ -118,6 +139,10 @@ CfgMgr::commit() {
 
 void
 CfgMgr::rollback() {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     ensureCurrentAllocated();
     if (!configuration_->sequenceEquals(*configs_.back())) {
         configs_.pop_back();
@@ -126,6 +151,10 @@ CfgMgr::rollback() {
 
 void
 CfgMgr::revert(const size_t index) {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     ensureCurrentAllocated();
     if (index == 0) {
         isc_throw(isc::OutOfRange, "invalid commit index 0 when reverting"
@@ -175,6 +204,10 @@ CfgMgr::getStagingCfg() {
 
 SrvConfigPtr
 CfgMgr::createExternalCfg() {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     uint32_t seq = 0;
 
     if (!external_configs_.empty()) {
@@ -188,11 +221,19 @@ CfgMgr::createExternalCfg() {
 
 void
 CfgMgr::mergeIntoStagingCfg(const uint32_t seq) {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     mergeIntoCfg(getStagingCfg(), seq);
 }
 
 void
 CfgMgr::mergeIntoCurrentCfg(const uint32_t seq) {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     try {
         // First we need to remove statistics.
         getCurrentCfg()->removeStatistics();
@@ -229,5 +270,5 @@ CfgMgr::CfgMgr()
 CfgMgr::~CfgMgr() {
 }
 
-}; // end of isc::dhcp namespace
-}; // end of isc namespace
+} // end of isc::dhcp namespace
+} // end of isc namespace

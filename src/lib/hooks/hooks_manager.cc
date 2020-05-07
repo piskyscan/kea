@@ -13,12 +13,14 @@
 #include <hooks/library_manager_collection.h>
 #include <hooks/hooks_manager.h>
 #include <hooks/server_hooks.h>
+#include <util/multi_threading_mgr.h>
 
 #include <boost/shared_ptr.hpp>
 
 #include <string>
 #include <vector>
 
+using namespace isc::util;
 using namespace std;
 
 namespace isc {
@@ -90,11 +92,15 @@ HooksManager::callCommandHandlers(const std::string& command_name,
 
 bool
 HooksManager::loadLibrariesInternal(const HookLibsCollection& libraries) {
+    ServerHooks::getServerHooks().getParkingLotsPtr()->clear();
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
+
     if (test_mode_) {
         return (true);
     }
-
-    ServerHooks::getServerHooks().getParkingLotsPtr()->clear();
 
     // Create the library manager and load the libraries.
     lm_collection_.reset(new LibraryManagerCollection(libraries));
@@ -123,6 +129,10 @@ HooksManager::loadLibraries(const HookLibsCollection& libraries) {
 
 void
 HooksManager::unloadLibrariesInternal() {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     ServerHooks::getServerHooks().getParkingLotsPtr()->clear();
     init();
 }
@@ -169,6 +179,10 @@ HooksManager::getLibraryInfo() {
 
 void
 HooksManager::init() {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     // Nothing present, so create the collection with any empty set of
     // libraries, and get the CalloutManager.
     HookLibsCollection libraries;
@@ -181,6 +195,10 @@ HooksManager::init() {
 
 int
 HooksManager::registerHook(const std::string& name) {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     return (ServerHooks::getServerHooks().registerHook(name));
 }
 

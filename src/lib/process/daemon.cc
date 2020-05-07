@@ -13,6 +13,7 @@
 #include <log/logger_support.h>
 #include <process/config_base.h>
 #include <util/filename.h>
+#include <util/multi_threading_mgr.h>
 
 #include <boost/bind.hpp>
 
@@ -21,6 +22,7 @@
 #include <errno.h>
 
 using namespace isc::data;
+using namespace isc::util;
 
 /// @brief provides default implementation for basic daemon operations
 ///
@@ -55,7 +57,6 @@ Daemon::~Daemon() {
 }
 
 void Daemon::cleanup() {
-
 }
 
 void Daemon::shutdown() {
@@ -69,6 +70,10 @@ void Daemon::handleSignal() {
 
 void Daemon::relocateLogging(ConstElementPtr config,
                              const std::string server_name) {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     ConstElementPtr logging = config->get("Logging");
     ConstElementPtr loggers;
     if (logging) {
@@ -94,7 +99,10 @@ void Daemon::relocateLogging(ConstElementPtr config,
 
 void Daemon::configureLogger(const ConstElementPtr& log_config,
                              const ConfigPtr& storage) {
-
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     if (log_config) {
         ConstElementPtr loggers = log_config->get("loggers");
         if (loggers) {
@@ -276,5 +284,5 @@ Daemon::writeConfigFile(const std::string& config_file,
     return (bytes);
 }
 
-};
-};
+} // namespace process
+} // namespace isc

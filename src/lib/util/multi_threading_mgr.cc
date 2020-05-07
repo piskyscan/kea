@@ -14,7 +14,7 @@ namespace util {
 MultiThreadingMgr::MultiThreadingMgr()
     : enabled_(false), critical_section_count_(0), thread_pool_size_(0) {
     : enabled_(false), critical_section_count_(0), thread_pool_size_(0),
-      config_lock_enabled_(false) {
+      lock_enabled_(false) {
 }
 
 MultiThreadingMgr::~MultiThreadingMgr() {
@@ -121,12 +121,12 @@ MultiThreadingMgr::apply(bool enabled, uint32_t thread_count, uint32_t queue_siz
 
 bool
 MultiThreadingMgr::getConfigLock() const {
-    return (config_lock_enabled_);
+    return (config_locked_);
 }
 
 void
 MultiThreadingMgr::setConfigLock(bool enabled) {
-    config_lock_enabled_ = enabled;
+    config_locked_ = enabled;
 }
 
 void
@@ -149,6 +149,14 @@ MultiThreadingCriticalSection::MultiThreadingCriticalSection() {
 
 MultiThreadingCriticalSection::~MultiThreadingCriticalSection() {
     MultiThreadingMgr::instance().exitCriticalSection();
+}
+
+ConfigurationCriticalSection::ConfigurationCriticalSection() {
+    MultiThreadingMgr::instance().setConfigLock(true);
+}
+
+ConfigurationCriticalSection::~ConfigurationCriticalSection() {
+    MultiThreadingMgr::instance().setConfigLock(false);
 }
 
 }  // namespace util

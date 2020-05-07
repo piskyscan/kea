@@ -235,6 +235,8 @@ ControlledDhcpv6Srv::commandLibReloadHandler(const string&, ConstElementPtr) {
     // stop thread pool (if running)
     MultiThreadingCriticalSection cs;
 
+    ConfigurationCriticalSection ccs;
+
     /// @todo delete any stored CalloutHandles referring to the old libraries
     /// Get list of currently loaded libraries and reload them.
     HookLibsCollection loaded = HooksManager::getLibraryInfo();
@@ -253,6 +255,8 @@ ControlledDhcpv6Srv::commandLibReloadHandler(const string&, ConstElementPtr) {
 ConstElementPtr
 ControlledDhcpv6Srv::commandConfigReloadHandler(const string&,
                                                 ConstElementPtr /*args*/) {
+    ConfigurationCriticalSection ccs;
+
     // Get configuration file name.
     std::string file = ControlledDhcpv6Srv::getInstance()->getConfigFile();
     try {
@@ -360,6 +364,8 @@ ControlledDhcpv6Srv::commandConfigSetHandler(const string&,
 
     // stop thread pool (if running)
     MultiThreadingCriticalSection cs;
+
+    ConfigurationCriticalSection ccs;
 
     // disable multi-threading (it will be applied by new configuration)
     // this must be done in order to properly handle MT to ST transition

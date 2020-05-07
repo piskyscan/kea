@@ -16,6 +16,7 @@
 #include <dhcp/pkt_filter_inet6.h>
 #include <exceptions/exceptions.h>
 #include <util/io/pktinfo_utilities.h>
+#include <util/multi_threading_mgr.h>
 
 #include <boost/foreach.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -70,6 +71,10 @@ Iface::Iface(const std::string& name, int ifindex)
 
 void
 Iface::closeSockets() {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     // Close IPv4 sockets.
     closeSockets(AF_INET);
     // Close IPv6 sockets.
@@ -78,6 +83,10 @@ Iface::closeSockets() {
 
 void
 Iface::closeSockets(const uint16_t family) {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     // Check that the correct 'family' value has been specified.
     // The possible values are AF_INET or AF_INET6. Note that, in
     // the current code they are used to differentiate that the
@@ -138,6 +147,10 @@ Iface::getPlainMac() const {
 }
 
 void Iface::setMac(const uint8_t* mac, size_t len) {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     if (len > MAX_MAC_LEN) {
         isc_throw(OutOfRange, "Interface " << getFullName()
                   << " was detected to have link address of length "
@@ -279,6 +292,10 @@ Iface::countActive4() const {
 }
 
 void IfaceMgr::closeSockets() {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     // Stops the receiver thread if there is one.
     stopDHCPReceiver();
 
@@ -807,6 +824,10 @@ IfaceMgr::clearUnicasts() {
 int IfaceMgr::openSocket(const std::string& ifname, const IOAddress& addr,
                          const uint16_t port, const bool receive_bcast,
                          const bool send_bcast) {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     IfacePtr iface = getIface(ifname);
     if (!iface) {
         isc_throw(BadValue, "There is no " << ifname << " interface present.");

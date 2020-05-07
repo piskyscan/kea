@@ -41,9 +41,9 @@
 #include <hooks/hooks_parser.h>
 #include <log/logger_support.h>
 #include <process/config_ctl_parser.h>
-
 #include <util/encode/hex.h>
 #include <util/strutil.h>
+#include <util/multi_threading_mgr.h>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/foreach.hpp>
@@ -59,12 +59,13 @@
 
 #include <stdint.h>
 
-using namespace std;
 using namespace isc;
+using namespace isc::asiolink;
 using namespace isc::data;
 using namespace isc::dhcp;
-using namespace isc::asiolink;
 using namespace isc::hooks;
+using namespace isc::util;
+using namespace std;
 
 namespace {
 
@@ -365,6 +366,10 @@ namespace dhcp {
 /// In that case the user simply has to accept they'll be disconnected.
 ///
 void configureCommandChannel() {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     // Get new socket configuration.
     ConstElementPtr sock_cfg =
         CfgMgr::instance().getStagingCfg()->getControlSocketInfo();
@@ -401,7 +406,10 @@ void configureCommandChannel() {
 isc::data::ConstElementPtr
 configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
                      bool check_only) {
-
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     if (!config_set) {
         ConstElementPtr answer = isc::config::createAnswer(1,
                                  string("Can't parse NULL config"));

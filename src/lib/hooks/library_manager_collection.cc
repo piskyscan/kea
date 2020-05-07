@@ -10,6 +10,9 @@
 #include <hooks/hooks_manager.h>
 #include <hooks/library_manager.h>
 #include <hooks/library_manager_collection.h>
+#include <util/multi_threading_mgr.h>
+
+using namespace isc::util;
 
 namespace isc {
 namespace hooks {
@@ -51,7 +54,10 @@ LibraryManagerCollection::LibraryManagerCollection(const HookLibsCollection& lib
 
 bool
 LibraryManagerCollection::loadLibraries() {
-
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     // Unload libraries if any are loaded.
     static_cast<void>(unloadLibraries());
 
@@ -103,7 +109,10 @@ LibraryManagerCollection::loadLibraries() {
 
 void
 LibraryManagerCollection::unloadLibraries() {
-
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     // Delete the library managers in the reverse order to which they were
     // created, then clear the library manager vector.
     for (int i = lib_managers_.size() - 1; i >= 0; --i) {

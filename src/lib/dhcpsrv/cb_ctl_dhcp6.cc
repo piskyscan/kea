@@ -11,11 +11,13 @@
 #include <dhcpsrv/parsers/simple_parser6.h>
 #include <hooks/callout_handle.h>
 #include <hooks/hooks_manager.h>
+#include <util/multi_threading_mgr.h>
 
 using namespace isc::db;
 using namespace isc::data;
 using namespace isc::process;
 using namespace isc::hooks;
+using namespace isc::util;
 
 namespace {
 
@@ -45,6 +47,10 @@ CBControlDHCPv6::databaseConfigApply(const db::BackendSelector& backend_selector
                                      const db::ServerSelector& server_selector,
                                      const boost::posix_time::ptime& lb_modification_time,
                                      const db::AuditEntryCollection& audit_entries) {
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     bool globals_fetched = false;
 
     // Let's first delete all the configuration elements for which DELETE audit

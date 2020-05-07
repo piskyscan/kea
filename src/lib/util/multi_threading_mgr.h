@@ -89,14 +89,14 @@ public:
 
     /// @brief Set configuration lock.
     ///
-    /// Set configuration lock flag @ref config_lock_enabled_ to specific value.
+    /// Set configuration lock flag @ref config_locked_ to specified value.
     ///
     /// @param enabled the configuration lock value.
     void setConfigLock(bool enabled);
 
     /// @brief Get configuration lock.
     ///
-    /// Get configuration lock flag @ref config_lock_enabled_ value.
+    /// Get configuration lock flag @ref config_locked_ value.
     ///
     /// @return the configuration lock value.
     bool getConfigLock() const;
@@ -191,7 +191,7 @@ private:
     /// to 'true' to indicate the opposite.
     /// By default this value is set to 'true', but it is set to 'false' right
     /// after applying configuration.
-    bool config_lock_enabled_;
+    bool config_locked_;
 };
 
 /// @note: everything here MUST be used ONLY from the main thread.
@@ -220,6 +220,28 @@ public:
     /// Leaving the critical section. The dhcp thread pool instance will be
     /// started according to the new configuration.
     virtual ~MultiThreadingCriticalSection();
+};
+
+/// @brief RAII class creating a configuration critical section.
+///
+/// @note: starting and stopping the dhcp thread pool should be handled
+/// in the main thread, before creating a configuration critical section.
+/// This is mainly useful to detect calling function which can change the
+/// configuration while processing dhcp traffic (from hooks or from processing
+/// threads). Changing the configuration while processing packets can lead to
+/// inconsistent data in the packet, or ever crashes.
+class ConfigurationCriticalSection : public boost::noncopyable {
+public:
+
+    /// @brief Constructor.
+    ///
+    /// Entering the critical section. The configuration lock flag will be set.
+    ConfigurationCriticalSection();
+
+    /// @brief Destructor.
+    ///
+    /// Leaving the critical section. The configuration lock flag will be unset.
+    virtual ~ConfigurationCriticalSection();
 };
 
 }  // namespace util

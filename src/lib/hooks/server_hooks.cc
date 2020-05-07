@@ -9,13 +9,15 @@
 #include <exceptions/exceptions.h>
 #include <hooks/hooks_log.h>
 #include <hooks/server_hooks.h>
+#include <util/multi_threading_mgr.h>
 
 #include <algorithm>
 #include <utility>
 #include <vector>
 
-using namespace std;
+using namespace isc::util;
 using namespace isc;
+using namespace std;
 
 namespace isc {
 namespace hooks {
@@ -42,7 +44,10 @@ ServerHooks::ServerHooks() {
 
 int
 ServerHooks::registerHook(const string& name) {
-
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     // Determine index for the new element and insert.
     int index = hooks_.size();
     pair<HookCollection::iterator, bool> result =
@@ -85,7 +90,10 @@ ServerHooks::registerHook(const string& name) {
 
 void
 ServerHooks::initialize() {
-
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     // Clear out the name->index and index->name maps.
     hooks_.clear();
     inverse_hooks_.clear();
@@ -109,7 +117,10 @@ ServerHooks::initialize() {
 
 void
 ServerHooks::reset() {
-
+    if (MultiThreadingMgr::instance().getConfigLock()) {
+        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
+                  "processing dhcp traffic");
+    }
     // Clear all hooks then initialize the pre-defined ones.
     initialize();
 
@@ -122,7 +133,6 @@ ServerHooks::reset() {
 
 std::string
 ServerHooks::getName(int index) const {
-
     // Get iterator to matching element.
     InverseHookCollection::const_iterator i = inverse_hooks_.find(index);
     if (i == inverse_hooks_.end()) {
@@ -136,7 +146,6 @@ ServerHooks::getName(int index) const {
 
 int
 ServerHooks::getIndex(const string& name) const {
-
     // Get iterator to matching element.
     HookCollection::const_iterator i = hooks_.find(name);
     if (i == hooks_.end()) {
@@ -214,8 +223,6 @@ ServerHooks::hookToCommandName(const std::string& hook_name) {
     }
     return ("");
 }
-
-
 
 } // namespace hooks
 } // namespace isc
