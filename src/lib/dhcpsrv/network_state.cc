@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2018 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2017-2020 Internet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -9,9 +9,11 @@
 #include <exceptions/exceptions.h>
 #include <dhcpsrv/network_state.h>
 #include <dhcpsrv/timer_mgr.h>
+#include <util/multi_threading_mgr.h>
 #include <boost/bind.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <string>
+#include <mutex>
 
 namespace {
 
@@ -30,7 +32,8 @@ public:
     /// @brief Constructor.
     NetworkStateImpl(const NetworkState::ServerType& server_type)
         : server_type_(server_type), globally_disabled_(false), disabled_subnets_(),
-          disabled_networks_(), timer_mgr_(TimerMgr::instance()) {
+          disabled_networks_(), timer_mgr_(TimerMgr::instance()),
+          mutex_() {
     }
 
     /// @brief Destructor.
@@ -39,8 +42,25 @@ public:
     }
 
     /// @brief Globally disables or enables DHCP service.
+    ///
+    /// @param disable the new flag value.
     void setDisableService(const bool disable) {
-        globally_disabled_ = disable;
+        if (util::MultiThreadingMgr::instance().getMode()) {
+            std::lock_guard<std::mutex> lock(mutex_);
+            globally_disabled_ = disable;
+        } else {
+            globally_disabled_ = disable;
+        }
+    }
+
+    /// @brief Checks if the DHCP service is globally enabled.
+    bool isServiceEnabled() {
+        if (util::MultiThreadingMgr::instance().getMode()) {
+            std::lock_guard<std::mutex> lock(mutex_);
+            return (!globally_disabled_);
+        } else {
+            return (!globally_disabled_);
+        }
     }
 
     /// @brief Enables DHCP service globally and per scopes.
@@ -79,6 +99,14 @@ public:
         }
     }
 
+protected:
+    /// @brief Get server type.
+    /// For tests only.
+    NetworkState::ServerType getServerType() const {
+        return (server_type_);
+    }
+
+private:
     /// @brief Server type.
     NetworkState::ServerType server_type_;
 
@@ -96,6 +124,9 @@ public:
     /// This pointer is held here to make sure that the timer manager is not
     /// destroyed before an instance of this class is destroyed.
     TimerMgrPtr timer_mgr_;
+
+    /// @brief A mutex to protect disabled flags.
+    std::mutex mutex_;
 };
 
 NetworkState::NetworkState(const NetworkState::ServerType& server_type)
@@ -124,7 +155,7 @@ NetworkState::delayedEnableAll(const unsigned int seconds) {
 
 bool
 NetworkState::isServiceEnabled() const {
-    return (!impl_->globally_disabled_);
+    return (impl_->isServiceEnabled());
 }
 
 bool
