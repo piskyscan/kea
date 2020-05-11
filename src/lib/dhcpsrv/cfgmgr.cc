@@ -79,14 +79,19 @@ CfgMgr::getD2ClientMgr() {
 
 void
 CfgMgr::ensureCurrentAllocated() {
+    if (!configuration_ || configs_.empty()) {
+        performConditionalInitialization();
+    }
+}
+
+void
+CfgMgr::performConditionalInitialization() {
     if (MultiThreadingMgr::instance().getConfigLock()) {
         isc_throw(isc::InvalidOperation, "Trying to change configuration while "
                   "processing dhcp traffic");
     }
-    if (!configuration_ || configs_.empty()) {
-        configuration_.reset(new SrvConfig());
-        configs_.push_back(configuration_);
-    }
+    configuration_.reset(new SrvConfig());
+    configs_.push_back(configuration_);
 }
 
 void

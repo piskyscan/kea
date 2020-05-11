@@ -298,13 +298,18 @@ protected:
 
 private:
 
-    /// @brief Checks if current configuration is created and creates it if needed.
+    /// @brief Checks if current configuration is created and creates it if
+    /// needed.
     ///
     /// This private method is called to ensure that the current configuration
-    /// is created. If current configuration is not set, it creates the
-    /// default current configuration.
+    /// is created. If current configuration is not set, it creates the default
+    /// current configuration by calling @ref performConditionalInitialization.
     void ensureCurrentAllocated();
 
+    /// @brief Creates the current configuration.
+    ///
+    /// This private method creates the default current configuration.
+    void performConditionalInitialization();
 
     /// @brief Merges external configuration with the given sequence number
     /// into the specified configuration.

@@ -1059,6 +1059,7 @@ void ControlledDhcpv6Srv::shutdownServer(int exit_value) {
 }
 
 ControlledDhcpv6Srv::~ControlledDhcpv6Srv() {
+    MultiThreadingMgr::instance().setConfigLock(false);
     try {
         cleanup();
 

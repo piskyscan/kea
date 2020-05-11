@@ -122,6 +122,7 @@ public:
 
     /// @brief Destructor
     ~CtrlChannelDhcpv4SrvTest() {
+        MultiThreadingMgr::instance().setConfigLock(false);
         LeaseMgrFactory::destroy();
         StatsMgr::instance().removeAll();
 
@@ -870,9 +871,6 @@ TEST_F(CtrlChannelDhcpv4SrvTest, configSet) {
     // Check that the config was not lost
     subnets = CfgMgr::instance().getCurrentCfg()->getCfgSubnets4()->getAll();
     EXPECT_EQ(2, subnets->size());
-
-    // Clean up after the test.
-    CfgMgr::instance().clear();
 }
 
 // Tests if the server returns its configuration using config-get.
@@ -1040,9 +1038,6 @@ TEST_F(CtrlChannelDhcpv4SrvTest, configTest) {
     // Check that the config was not applied.
     subnets = CfgMgr::instance().getCurrentCfg()->getCfgSubnets4()->getAll();
     EXPECT_EQ(1, subnets->size());
-
-    // Clean up after the test.
-    CfgMgr::instance().clear();
 }
 
 // This test verifies that the DHCP server handles version-get commands

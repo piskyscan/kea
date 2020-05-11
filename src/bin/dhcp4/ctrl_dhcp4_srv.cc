@@ -1040,6 +1040,7 @@ void ControlledDhcpv4Srv::shutdownServer(int exit_value) {
 }
 
 ControlledDhcpv4Srv::~ControlledDhcpv4Srv() {
+    MultiThreadingMgr::instance().setConfigLock(false);
     try {
         cleanup();
 

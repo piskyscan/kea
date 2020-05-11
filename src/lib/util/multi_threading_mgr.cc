@@ -152,11 +152,11 @@ MultiThreadingCriticalSection::~MultiThreadingCriticalSection() {
 }
 
 ConfigurationCriticalSection::ConfigurationCriticalSection() {
-    MultiThreadingMgr::instance().setConfigLock(true);
+    MultiThreadingMgr::instance().setConfigLock(false);
 }
 
 ConfigurationCriticalSection::~ConfigurationCriticalSection() {
-    MultiThreadingMgr::instance().setConfigLock(false);
+    MultiThreadingMgr::instance().setConfigLock(true);
 }
 
 }  // namespace util
