@@ -16,6 +16,9 @@
 #include <cc/command_interpreter.h>
 #include <cc/data.h>
 #include <testutils/user_context_utils.h>
+#include <util/multi_threading_mgr.h>
+
+
 #include <gtest/gtest.h>
 #include <errno.h>
 #include <set>
@@ -29,6 +32,7 @@ using namespace isc::dhcp;
 using namespace isc::dhcp_ddns;
 using namespace isc::asiolink;
 using namespace isc::test;
+using namespace isc::util;
 
 namespace {
 
@@ -63,12 +67,14 @@ public:
     ///
     /// The libraries are stored in libraries
     void loadLibs() {
+        ConfigurationCriticalSection ccs;
         ASSERT_TRUE(HooksManager::loadLibraries(libraries_))
             << "library loading failed";
     }
 
     /// @brief Unloads all libraries.
     void unloadLibs() {
+        ConfigurationCriticalSection ccs;
         ASSERT_NO_THROW(HooksManager::unloadLibraries());
     }
 
@@ -269,6 +275,7 @@ public:
     LeaseCmdsTest()
         :LibLoadTest(LEASE_CMDS_LIB_SO),
         d2_mgr_(CfgMgr::instance().getD2ClientMgr()) {
+        MultiThreadingMgr::instance().setConfigLock(false);
         LeaseMgrFactory::destroy();
         enableD2();
         lmptr_ = 0;
@@ -278,6 +285,7 @@ public:
     ///
     /// Removes library (if any), destroys lease manager (if any).
     virtual ~LeaseCmdsTest() {
+        MultiThreadingMgr::instance().setConfigLock(false);
         // destroys lease manager first because the other order triggers
         // a clang/boost bug
         LeaseMgrFactory::destroy();
