@@ -143,19 +143,19 @@ MultiThreadingMgr::startPktProcessing() {
     }
 }
 
-MultiThreadingCriticalSection::MultiThreadingCriticalSection() {
+MultiThreadingCriticalSectionBase::MultiThreadingCriticalSectionBase() {
     MultiThreadingMgr::instance().enterCriticalSection();
 }
 
-MultiThreadingCriticalSection::~MultiThreadingCriticalSection() {
+MultiThreadingCriticalSectionBase::~MultiThreadingCriticalSectionBase() {
     MultiThreadingMgr::instance().exitCriticalSection();
 }
 
-ConfigurationCriticalSection::ConfigurationCriticalSection() {
+ConfigurationCriticalSectionBase::ConfigurationCriticalSectionBase() {
     MultiThreadingMgr::instance().setConfigLock(false);
 }
 
-ConfigurationCriticalSection::~ConfigurationCriticalSection() {
+ConfigurationCriticalSectionBase::~ConfigurationCriticalSectionBase() {
     MultiThreadingMgr::instance().setConfigLock(true);
 }
 

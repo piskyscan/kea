@@ -206,20 +206,20 @@ private:
 /// deadlock.
 /// This is mainly useful in hook commands which handle configuration
 /// changes.
-class MultiThreadingCriticalSection : public boost::noncopyable {
+class MultiThreadingCriticalSectionBase : public boost::noncopyable {
 public:
 
     /// @brief Constructor.
     ///
     /// Entering the critical section. The dhcp thread pool instance will be
     /// stopped so that all configuration changes can be safely applied.
-    MultiThreadingCriticalSection();
+    MultiThreadingCriticalSectionBase();
 
     /// @brief Destructor.
     ///
     /// Leaving the critical section. The dhcp thread pool instance will be
     /// started according to the new configuration.
-    virtual ~MultiThreadingCriticalSection();
+    virtual ~MultiThreadingCriticalSectionBase();
 };
 
 /// @brief RAII class creating a configuration critical section.
@@ -230,18 +230,25 @@ public:
 /// configuration while processing dhcp traffic (from hooks or from processing
 /// threads). Changing the configuration while processing packets can lead to
 /// inconsistent data in the packet, or ever crashes.
-class ConfigurationCriticalSection : public boost::noncopyable {
+class ConfigurationCriticalSectionBase : public boost::noncopyable {
 public:
 
     /// @brief Constructor.
     ///
     /// Entering the critical section. The configuration lock flag will be set.
-    ConfigurationCriticalSection();
+    ConfigurationCriticalSectionBase();
 
     /// @brief Destructor.
     ///
     /// Leaving the critical section. The configuration lock flag will be unset.
-    virtual ~ConfigurationCriticalSection();
+    virtual ~ConfigurationCriticalSectionBase();
+};
+
+class MultiThreadingCriticalSection : public MultiThreadingCriticalSectionBase,
+                                      public ConfigurationCriticalSectionBase {
+};
+
+class ConfigurationCriticalSection : public ConfigurationCriticalSectionBase {
 };
 
 }  // namespace util
