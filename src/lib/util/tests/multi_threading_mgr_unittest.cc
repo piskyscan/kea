@@ -158,6 +158,8 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
     EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
     // critical section count should be 0
     EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 0);
+    // lock configuration
+    EXPECT_NO_THROW(MultiThreadingMgr::instance().setConfigLock(true));
     // apply multi-threading configuration with 16 threads and queue size 256
     MultiThreadingMgr::instance().apply(true, 16, 256);
     // thread count should match
@@ -170,8 +172,8 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
     EXPECT_FALSE(MultiThreadingMgr::instance().isInCriticalSection());
     // critical section count should be 0
     EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 0);
-    // the configuration lock flag should be unset
-    EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
+    // the configuration lock flag should be set
+    EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
     // critical section count should be 0
     EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 0);
     // use scope to test constructor and destructor
@@ -181,8 +183,8 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
         EXPECT_TRUE(MultiThreadingMgr::instance().isInCriticalSection());
         // critical section count should be 1
         EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 1);
-        // the configuration lock flag should be set
-        EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
+        // the configuration lock flag should be unset
+        EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
         // critical section count should be 1
         EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 1);
         // thread pool should be stopped
@@ -198,8 +200,8 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
             EXPECT_TRUE(MultiThreadingMgr::instance().isInCriticalSection());
             // critical section count should be 2
             EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 2);
-            // the configuration lock flag should be set
-            EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
+            // the configuration lock flag should be unset
+            EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
             // critical section count should be 2
             EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 2);
             // thread pool should be stopped
@@ -213,8 +215,8 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
         EXPECT_TRUE(MultiThreadingMgr::instance().isInCriticalSection());
         // critical section count should be 1
         EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 1);
-        // the configuration lock flag should be set
-        EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
+        // the configuration lock flag should be unset
+        EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
         // critical section count should be 1
         EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 1);
         // thread pool should be stopped
@@ -228,8 +230,8 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
     EXPECT_FALSE(MultiThreadingMgr::instance().isInCriticalSection());
     // critical section count should be 0
     EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 0);
-    // the configuration lock flag should be unset
-    EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
+    // the configuration lock flag should be set
+    EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
     // critical section count should be 0
     EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 0);
     // thread count should match
@@ -245,8 +247,8 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
         EXPECT_TRUE(MultiThreadingMgr::instance().isInCriticalSection());
         // critical section count should be 1
         EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 1);
-        // the configuration lock flag should be set
-        EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
+        // the configuration lock flag should be unset
+        EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
         // critical section count should be 1
         EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 1);
         // thread pool should be stopped
@@ -268,8 +270,8 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
     EXPECT_FALSE(MultiThreadingMgr::instance().isInCriticalSection());
     // critical section count should be 0
     EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 0);
-    // the configuration lock flag should be unset
-    EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
+    // the configuration lock flag should be set
+    EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
     // critical section count should be 0
     EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 0);
     // thread count should match
@@ -285,8 +287,8 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
         EXPECT_TRUE(MultiThreadingMgr::instance().isInCriticalSection());
         // critical section count should be 1
         EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 1);
-        // the configuration lock flag should be set
-        EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
+        // the configuration lock flag should be unset
+        EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
         // critical section count should be 1
         EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 1);
         // thread pool should be stopped
@@ -308,8 +310,8 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
     EXPECT_FALSE(MultiThreadingMgr::instance().isInCriticalSection());
     // critical section count should be 0
     EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 0);
-    // the configuration lock flag should be unset
-    EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
+    // the configuration lock flag should be set
+    EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
     // critical section count should be 0
     EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 0);
     // thread count should match
@@ -325,8 +327,8 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
         EXPECT_TRUE(MultiThreadingMgr::instance().isInCriticalSection());
         // critical section count should be 1
         EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 1);
-        // the configuration lock flag should be set
-        EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
+        // the configuration lock flag should be unset
+        EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
         // critical section count should be 1
         EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 1);
         // thread pool should be stopped
@@ -342,8 +344,8 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
             EXPECT_TRUE(MultiThreadingMgr::instance().isInCriticalSection());
             // critical section count should be 2
             EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 2);
-            // the configuration lock flag should be set
-            EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
+            // the configuration lock flag should be unset
+            EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
             // critical section count should be 2
             EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 2);
             // thread pool should be stopped
@@ -357,8 +359,8 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
         EXPECT_TRUE(MultiThreadingMgr::instance().isInCriticalSection());
         // critical section count should be 1
         EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 1);
-        // the configuration lock flag should be set
-        EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
+        // the configuration lock flag should be unset
+        EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
         // critical section count should be 1
         EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 1);
         // thread pool should be stopped
@@ -372,8 +374,8 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
     EXPECT_FALSE(MultiThreadingMgr::instance().isInCriticalSection());
     // critical section count should be 0
     EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 0);
-    // the configuration lock flag should be unset
-    EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
+    // the configuration lock flag should be set
+    EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
     // critical section count should be 0
     EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 0);
     // thread count should match
@@ -389,8 +391,8 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
         EXPECT_TRUE(MultiThreadingMgr::instance().isInCriticalSection());
         // critical section count should be 1
         EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 1);
-        // the configuration lock flag should be set
-        EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
+        // the configuration lock flag should be unset
+        EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
         // critical section count should be 1
         EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 1);
         // thread pool should be stopped
@@ -408,8 +410,8 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
     EXPECT_FALSE(MultiThreadingMgr::instance().isInCriticalSection());
     // critical section count should be 0
     EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 0);
-    // the configuration lock flag should be unset
-    EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
+    // the configuration lock flag should be set
+    EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
     // critical section count should be 0
     EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 0);
     // thread count should match
@@ -420,6 +422,8 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
     EXPECT_EQ(MultiThreadingMgr::instance().getPacketQueueSize(), 256);
     // apply multi-threading configuration with 0 threads
     MultiThreadingMgr::instance().apply(false, 0, 0);
+    // unlock configuration
+    EXPECT_NO_THROW(MultiThreadingMgr::instance().setConfigLock(false));
 }
 
 /// @brief Verifies that the configuration critical section works.
@@ -428,28 +432,36 @@ TEST(MultiThreadingMgrTest, configurationCriticalSection) {
     EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
     // critical section count should be 0
     EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 0);
+    // lock configuration
+    EXPECT_NO_THROW(MultiThreadingMgr::instance().setConfigLock(true));
+    // the configuration lock flag should be set
+    EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
+    // critical section count should be 0
+    EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 0);
     // use scope to test constructor and destructor
     {
         ConfigurationCriticalSection cs;
-        // the configuration lock flag should be set
-        EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
+        // the configuration lock flag should be unset
+        EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
         // critical section count should be 1
         EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 1);
         // use scope to test constructor and destructor
         {
             ConfigurationCriticalSection inner_cs;
-            // the configuration lock flag should be set
-            EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
+            // the configuration lock flag should be unset
+            EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
             // critical section count should be 2
             EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 2);
         }
-        // the configuration lock flag should be set
-        EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
+        // the configuration lock flag should be unset
+        EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
         // critical section count should be 1
         EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 1);
     }
-    // the configuration lock flag should be unset
-    EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
+    // the configuration lock flag should be set
+    EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
     // critical section count should be 0
     EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 0);
+    // unlock configuration
+    EXPECT_NO_THROW(MultiThreadingMgr::instance().setConfigLock(false));
 }

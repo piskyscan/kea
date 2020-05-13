@@ -152,7 +152,7 @@ template<>
 void
 CriticalSectionBase<ConfigurationCriticalSectionBase>::lock() {
     if (!ConfigurationCriticalSectionBase::getCriticalSectionCount()) {
-        MultiThreadingMgr::instance().setConfigLock(true);
+        MultiThreadingMgr::instance().setConfigLock(false);
     }
 }
 
@@ -160,7 +160,7 @@ template<>
 void
 CriticalSectionBase<ConfigurationCriticalSectionBase>::unlock() {
     if (!ConfigurationCriticalSectionBase::getCriticalSectionCount()) {
-        MultiThreadingMgr::instance().setConfigLock(false);
+        MultiThreadingMgr::instance().setConfigLock(true);
     }
 }
 

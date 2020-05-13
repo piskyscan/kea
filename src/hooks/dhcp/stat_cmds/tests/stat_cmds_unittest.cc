@@ -44,15 +44,21 @@ public:
     /// @brief Constructor
     LibLoadTest(std::string lib_filename)
         : lib_name_(lib_filename), start_time_(second_clock::universal_time()) {
+        {
+            ConfigurationCriticalSection ccs;
+            CommandMgr::instance();
+            unloadLibs();
+        }
         MultiThreadingMgr::instance().setConfigLock(false);
-        CommandMgr::instance();
-        unloadLibs();
     }
 
     /// @brief Destructor
     /// Removes files that may be left over from previous tests
     virtual ~LibLoadTest() {
-        unloadLibs();
+        {
+            ConfigurationCriticalSection ccs;
+            unloadLibs();
+        }
         MultiThreadingMgr::instance().setConfigLock(false);
     }
 
@@ -337,23 +343,29 @@ public:
     /// Also ensured there is no lease manager leftovers from previous
     /// test.
     StatCmdsTest()
-        :LibLoadTest(STAT_CMDS_LIB_SO), hwaddr_({10,20,30,40,50,00}),
-         duid_({10,20,30,40,50,60,70,00}) {
+        : LibLoadTest(STAT_CMDS_LIB_SO), hwaddr_({10,20,30,40,50,00}),
+          duid_({10,20,30,40,50,60,70,00}) {
+        {
+            ConfigurationCriticalSection ccs;
+            LeaseMgrFactory::destroy();
+            lmptr_ = 0;
+        }
         MultiThreadingMgr::instance().setConfigLock(false);
-        LeaseMgrFactory::destroy();
-        lmptr_ = 0;
     }
 
     /// @brief Destructor
     ///
     /// Removes library (if any), destroys lease manager (if any).
     virtual ~StatCmdsTest() {
+        {
+            ConfigurationCriticalSection ccs;
+            // destroys lease manager first because the other order triggers
+            // a clang/boost bug
+            LeaseMgrFactory::destroy();
+            unloadLibs();
+            lmptr_ = 0;
+        }
         MultiThreadingMgr::instance().setConfigLock(false);
-        // destroys lease manager first because the other order triggers
-        // a clang/boost bug
-        LeaseMgrFactory::destroy();
-        unloadLibs();
-        lmptr_ = 0;
     }
 
     /// @brief Initializes lease manager for v6 operation

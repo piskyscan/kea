@@ -48,15 +48,21 @@ public:
     /// @brief Constructor
     LibLoadTest(std::string lib_filename)
         : lib_name_(lib_filename) {
+        {
+            ConfigurationCriticalSection css;
+            CommandMgr::instance();
+            unloadLibs();
+        }
         MultiThreadingMgr::instance().setConfigLock(false);
-        CommandMgr::instance();
-        unloadLibs();
     }
 
     /// @brief Destructor
     /// Removes files that may be left over from previous tests
     virtual ~LibLoadTest() {
-        unloadLibs();
+        {
+            ConfigurationCriticalSection css;
+            unloadLibs();
+        }
         MultiThreadingMgr::instance().setConfigLock(false);
     }
 
@@ -275,25 +281,31 @@ public:
     /// Also ensured there is no lease manager leftovers from previous
     /// test.
     LeaseCmdsTest()
-        :LibLoadTest(LEASE_CMDS_LIB_SO),
-        d2_mgr_(CfgMgr::instance().getD2ClientMgr()) {
+        : LibLoadTest(LEASE_CMDS_LIB_SO),
+          d2_mgr_(CfgMgr::instance().getD2ClientMgr()) {
+        {
+            ConfigurationCriticalSection css;
+            LeaseMgrFactory::destroy();
+            enableD2();
+            lmptr_ = 0;
+        }
         MultiThreadingMgr::instance().setConfigLock(false);
-        LeaseMgrFactory::destroy();
-        enableD2();
-        lmptr_ = 0;
     }
 
     /// @brief Destructor
     ///
     /// Removes library (if any), destroys lease manager (if any).
     virtual ~LeaseCmdsTest() {
+        {
+            ConfigurationCriticalSection css;
+            // destroys lease manager first because the other order triggers
+            // a clang/boost bug
+            LeaseMgrFactory::destroy();
+            disableD2();
+            unloadLibs();
+            lmptr_ = 0;
+        }
         MultiThreadingMgr::instance().setConfigLock(false);
-        // destroys lease manager first because the other order triggers
-        // a clang/boost bug
-        LeaseMgrFactory::destroy();
-        disableD2();
-        unloadLibs();
-        lmptr_ = 0;
     }
 
     /// @brief Initializes lease manager (and optionally populates it with a lease)
