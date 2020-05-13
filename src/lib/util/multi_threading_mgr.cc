@@ -12,8 +12,7 @@ namespace isc {
 namespace util {
 
 MultiThreadingMgr::MultiThreadingMgr()
-    : enabled_(false), critical_section_count_(0), thread_pool_size_(0),
-      config_locked_(false) {
+    : enabled_(false), thread_pool_size_(0), config_locked_(false) {
 }
 
 MultiThreadingMgr::~MultiThreadingMgr() {
@@ -38,21 +37,16 @@ MultiThreadingMgr::setMode(bool enabled) {
 void
 MultiThreadingMgr::enterCriticalSection() {
     stopPktProcessing();
-    ++critical_section_count_;
 }
 
 void
 MultiThreadingMgr::exitCriticalSection() {
-    if (critical_section_count_ == 0) {
-        isc_throw(InvalidOperation, "invalid negative value for override");
-    }
-    --critical_section_count_;
     startPktProcessing();
 }
 
 bool
 MultiThreadingMgr::isInCriticalSection() const {
-    return (critical_section_count_ != 0);
+    return (MultiThreadingCriticalSectionBase::getCriticalSectionCount() != 0);
 }
 
 ThreadPool<std::function<void()>>&
@@ -142,20 +136,32 @@ MultiThreadingMgr::startPktProcessing() {
     }
 }
 
-MultiThreadingCriticalSectionBase::MultiThreadingCriticalSectionBase() {
+template<>
+void
+CriticalSectionBase<MultiThreadingCriticalSectionBase>::lock() {
     MultiThreadingMgr::instance().enterCriticalSection();
 }
 
-MultiThreadingCriticalSectionBase::~MultiThreadingCriticalSectionBase() {
+template<>
+void
+CriticalSectionBase<MultiThreadingCriticalSectionBase>::unlock() {
     MultiThreadingMgr::instance().exitCriticalSection();
 }
 
-ConfigurationCriticalSectionBase::ConfigurationCriticalSectionBase() {
-    MultiThreadingMgr::instance().setConfigLock(false);
+template<>
+void
+CriticalSectionBase<ConfigurationCriticalSectionBase>::lock() {
+    if (!ConfigurationCriticalSectionBase::getCriticalSectionCount()) {
+        MultiThreadingMgr::instance().setConfigLock(true);
+    }
 }
 
-ConfigurationCriticalSectionBase::~ConfigurationCriticalSectionBase() {
-    MultiThreadingMgr::instance().setConfigLock(true);
+template<>
+void
+CriticalSectionBase<ConfigurationCriticalSectionBase>::unlock() {
+    if (!ConfigurationCriticalSectionBase::getCriticalSectionCount()) {
+        MultiThreadingMgr::instance().setConfigLock(false);
+    }
 }
 
 }  // namespace util
