@@ -48,6 +48,7 @@ public:
     /// @brief Constructor
     LibLoadTest(std::string lib_filename)
         : lib_name_(lib_filename) {
+        MultiThreadingMgr::instance().setConfigLock(false);
         CommandMgr::instance();
         unloadLibs();
     }
@@ -56,6 +57,7 @@ public:
     /// Removes files that may be left over from previous tests
     virtual ~LibLoadTest() {
         unloadLibs();
+        MultiThreadingMgr::instance().setConfigLock(false);
     }
 
     /// @brief Adds library/parameters to list of libraries to be loaded

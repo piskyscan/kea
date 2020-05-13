@@ -18,12 +18,12 @@
 #include <cc/data.h>
 #include <cc/data.h>
 #include <stats/stats_mgr.h>
+#include <util/multi_threading_mgr.h>
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <gtest/gtest.h>
 #include <time.h>
 
-using namespace std;
 using namespace isc;
 using namespace isc::hooks;
 using namespace isc::config;
@@ -31,7 +31,10 @@ using namespace isc::data;
 using namespace isc::dhcp;
 using namespace isc::asiolink;
 using namespace isc::stats;
+using namespace isc::util;
+
 using namespace boost::posix_time;
+using namespace std;
 
 namespace {
 
@@ -41,6 +44,7 @@ public:
     /// @brief Constructor
     LibLoadTest(std::string lib_filename)
         : lib_name_(lib_filename), start_time_(second_clock::universal_time()) {
+        MultiThreadingMgr::instance().setConfigLock(false);
         CommandMgr::instance();
         unloadLibs();
     }
@@ -49,6 +53,7 @@ public:
     /// Removes files that may be left over from previous tests
     virtual ~LibLoadTest() {
         unloadLibs();
+        MultiThreadingMgr::instance().setConfigLock(false);
     }
 
     /// @brief Adds library/parameters to list of libraries to be loaded
@@ -60,12 +65,14 @@ public:
     ///
     /// The libraries are stored in libraries
     void loadLibs() {
+        ConfigurationCriticalSection ccs;
         ASSERT_TRUE(HooksManager::loadLibraries(libraries_))
             << "library loading failed";
     }
 
     /// @brief Unloads all libraries.
     void unloadLibs() {
+        ConfigurationCriticalSection ccs;
         ASSERT_NO_THROW(HooksManager::unloadLibraries());
     }
 
@@ -90,7 +97,8 @@ public:
             EXPECT_TRUE(args_txt.find(name) != string::npos);
         } else {
             EXPECT_TRUE(args_txt.find(name) == string::npos);
-        } }
+        }
+    }
 
     /// @brief tests specified command and verifies response
     ///
@@ -331,6 +339,7 @@ public:
     StatCmdsTest()
         :LibLoadTest(STAT_CMDS_LIB_SO), hwaddr_({10,20,30,40,50,00}),
          duid_({10,20,30,40,50,60,70,00}) {
+        MultiThreadingMgr::instance().setConfigLock(false);
         LeaseMgrFactory::destroy();
         lmptr_ = 0;
     }
@@ -339,6 +348,7 @@ public:
     ///
     /// Removes library (if any), destroys lease manager (if any).
     virtual ~StatCmdsTest() {
+        MultiThreadingMgr::instance().setConfigLock(false);
         // destroys lease manager first because the other order triggers
         // a clang/boost bug
         LeaseMgrFactory::destroy();
