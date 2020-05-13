@@ -92,15 +92,14 @@ HooksManager::callCommandHandlers(const std::string& command_name,
 
 bool
 HooksManager::loadLibrariesInternal(const HookLibsCollection& libraries) {
-    ServerHooks::getServerHooks().getParkingLotsPtr()->clear();
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
 
     if (test_mode_) {
         return (true);
     }
+
+    ServerHooks::getServerHooks().getParkingLotsPtr()->clear();
 
     // Create the library manager and load the libraries.
     lm_collection_.reset(new LibraryManagerCollection(libraries));
@@ -129,10 +128,8 @@ HooksManager::loadLibraries(const HookLibsCollection& libraries) {
 
 void
 HooksManager::unloadLibrariesInternal() {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
     ServerHooks::getServerHooks().getParkingLotsPtr()->clear();
     init();
 }
@@ -179,10 +176,8 @@ HooksManager::getLibraryInfo() {
 
 void
 HooksManager::init() {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
     // Nothing present, so create the collection with any empty set of
     // libraries, and get the CalloutManager.
     HookLibsCollection libraries;
@@ -195,10 +190,8 @@ HooksManager::init() {
 
 int
 HooksManager::registerHook(const std::string& name) {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
     return (ServerHooks::getServerHooks().registerHook(name));
 }
 

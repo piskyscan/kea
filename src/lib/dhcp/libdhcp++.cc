@@ -212,10 +212,8 @@ LibDHCP::getRuntimeOptionDefs(const std::string& space) {
 
 void
 LibDHCP::setRuntimeOptionDefs(const OptionDefSpaceContainer& defs) {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
     OptionDefSpaceContainer defs_copy;
     std::list<std::string> option_space_names = defs.getOptionSpaceNames();
     for (std::list<std::string>::const_iterator name = option_space_names.begin();
@@ -232,28 +230,22 @@ LibDHCP::setRuntimeOptionDefs(const OptionDefSpaceContainer& defs) {
 
 void
 LibDHCP::clearRuntimeOptionDefs() {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
     runtime_option_defs_.reset();
 }
 
 void
 LibDHCP::revertRuntimeOptionDefs() {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
     runtime_option_defs_.revert();
 }
 
 void
 LibDHCP::commitRuntimeOptionDefs() {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
     runtime_option_defs_.commit();
 }
 
@@ -926,10 +918,8 @@ LibDHCP::OptionFactoryRegister(Option::Universe u,
 
 bool
 LibDHCP::initOptionDefs() {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
     for (uint32_t i = 0; OPTION_DEF_PARAMS[i].optionDefParams; ++i) {
         std::string space = OPTION_DEF_PARAMS[i].space;
         option_defs_[space] = OptionDefContainerPtr(new OptionDefContainer);
@@ -970,10 +960,8 @@ void
 initOptionSpace(OptionDefContainerPtr& defs,
                 const OptionDefParams* params,
                 size_t params_size) {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
     // Container holding vendor options is typically not initialized, as it
     // is held in map of null pointers. We need to initialize here in this
     // case.

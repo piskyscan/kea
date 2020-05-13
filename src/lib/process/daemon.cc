@@ -70,10 +70,8 @@ void Daemon::handleSignal() {
 
 void Daemon::relocateLogging(ConstElementPtr config,
                              const std::string server_name) {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
     ConstElementPtr logging = config->get("Logging");
     ConstElementPtr loggers;
     if (logging) {
@@ -99,10 +97,8 @@ void Daemon::relocateLogging(ConstElementPtr config,
 
 void Daemon::configureLogger(const ConstElementPtr& log_config,
                              const ConfigPtr& storage) {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
     if (log_config) {
         ConstElementPtr loggers = log_config->get("loggers");
         if (loggers) {

@@ -44,10 +44,8 @@ ServerHooks::ServerHooks() {
 
 int
 ServerHooks::registerHook(const string& name) {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
     // Determine index for the new element and insert.
     int index = hooks_.size();
     pair<HookCollection::iterator, bool> result =
@@ -90,10 +88,8 @@ ServerHooks::registerHook(const string& name) {
 
 void
 ServerHooks::initialize() {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
     // Clear out the name->index and index->name maps.
     hooks_.clear();
     inverse_hooks_.clear();
@@ -117,10 +113,8 @@ ServerHooks::initialize() {
 
 void
 ServerHooks::reset() {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
     // Clear all hooks then initialize the pre-defined ones.
     initialize();
 

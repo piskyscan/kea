@@ -340,6 +340,26 @@ class MultiThreadingCriticalSection : public MultiThreadingCriticalSectionBase,
 class ConfigurationCriticalSection : public ConfigurationCriticalSectionBase {
 };
 
+/// @brief class which can be used to check and prevent functions to modify
+/// server configuration while processing packets (even in single thread mode).
+/// @node: it can be used to prevent not thread safe functions to be called on
+/// processing threads
+class ConfigurationLockChecker {
+public:
+
+    /// @brief Constructor.
+    ///
+    /// Used to check if configuration changes are permitted in current scope.
+    ///
+    /// @throw
+    ConfigurationLockChecker () {
+        if (MultiThreadingMgr::instance().getConfigLock()) {
+            isc_throw(isc::InvalidOperation, "Trying to modify configuration "
+                      "while it is locked (read only)");
+        }
+    }
+};
+
 }  // namespace util
 }  // namespace isc
 

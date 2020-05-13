@@ -54,10 +54,8 @@ LibraryManagerCollection::LibraryManagerCollection(const HookLibsCollection& lib
 
 bool
 LibraryManagerCollection::loadLibraries() {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
     // Unload libraries if any are loaded.
     static_cast<void>(unloadLibraries());
 
@@ -109,10 +107,8 @@ LibraryManagerCollection::loadLibraries() {
 
 void
 LibraryManagerCollection::unloadLibraries() {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
     // Delete the library managers in the reverse order to which they were
     // created, then clear the library manager vector.
     for (int i = lib_managers_.size() - 1; i >= 0; --i) {

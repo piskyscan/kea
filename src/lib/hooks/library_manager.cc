@@ -173,10 +173,8 @@ LibraryManager::checkMultiThreadingCompatible() const {
 
 void
 LibraryManager::registerStandardCallouts() {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
     // Set the library index for doing the registration.  This is picked up
     // when the library handle is created.
     manager_->setLibraryIndex(index_);
@@ -204,10 +202,8 @@ LibraryManager::registerStandardCallouts() {
 
 bool
 LibraryManager::runLoad() {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
     // Get the pointer to the "load" function.
     PointerConverter pc(dlsym(dl_handle_, LOAD_FUNCTION_NAME));
     if (pc.loadPtr() != NULL) {
@@ -251,10 +247,8 @@ LibraryManager::runLoad() {
 
 bool
 LibraryManager::runUnload() {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
     // Get the pointer to the "load" function.
     PointerConverter pc(dlsym(dl_handle_, UNLOAD_FUNCTION_NAME));
     if (pc.unloadPtr() != NULL) {
@@ -296,10 +290,8 @@ LibraryManager::runUnload() {
 
 bool
 LibraryManager::loadLibrary() {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
     LOG_DEBUG(hooks_logger, HOOKS_DBG_TRACE, HOOKS_LIBRARY_LOADING)
         .arg(library_name_);
 
@@ -362,10 +354,8 @@ LibraryManager::loadLibrary() {
 
 bool
 LibraryManager::unloadLibrary() {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
     bool result = true;
     if (dl_handle_ != NULL) {
         LOG_DEBUG(hooks_logger, HOOKS_DBG_TRACE, HOOKS_LIBRARY_UNLOADING)

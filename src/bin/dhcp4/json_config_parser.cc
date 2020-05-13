@@ -267,10 +267,8 @@ namespace dhcp {
 /// In that case the user simply has to accept they'll be disconnected.
 ///
 void configureCommandChannel() {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
     // Get new socket configuration.
     ConstElementPtr sock_cfg =
         CfgMgr::instance().getStagingCfg()->getControlSocketInfo();
@@ -307,10 +305,8 @@ void configureCommandChannel() {
 isc::data::ConstElementPtr
 configureDhcp4Server(Dhcpv4Srv& server, isc::data::ConstElementPtr config_set,
                      bool check_only) {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
     if (!config_set) {
         ConstElementPtr answer = isc::config::createAnswer(CONTROL_RESULT_ERROR,
                                  string("Can't parse NULL config"));

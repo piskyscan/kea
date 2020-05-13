@@ -47,10 +47,8 @@ CBControlDHCPv6::databaseConfigApply(const db::BackendSelector& backend_selector
                                      const db::ServerSelector& server_selector,
                                      const boost::posix_time::ptime& lb_modification_time,
                                      const db::AuditEntryCollection& audit_entries) {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
     bool globals_fetched = false;
 
     // Let's first delete all the configuration elements for which DELETE audit

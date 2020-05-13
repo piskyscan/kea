@@ -36,19 +36,17 @@ CfgMgr::getDataDir() const {
 
 void
 CfgMgr::setDataDir(const std::string& datadir, bool unspecified) {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
+
     datadir_ = Optional<std::string>(datadir, unspecified);
 }
 
 void
 CfgMgr::setD2ClientConfig(D2ClientConfigPtr& new_config) {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
+
     ensureCurrentAllocated();
     // Note that D2ClientMgr::setD2Config() actually attempts to apply the
     // configuration by stopping its sender and opening a new one and so
@@ -86,20 +84,18 @@ CfgMgr::ensureCurrentAllocated() {
 
 void
 CfgMgr::performConditionalInitialization() {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
+
     configuration_.reset(new SrvConfig());
     configs_.push_back(configuration_);
 }
 
 void
 CfgMgr::clear() {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
+
     if (configuration_) {
         configuration_->removeStatistics();
     }
@@ -111,10 +107,8 @@ CfgMgr::clear() {
 
 void
 CfgMgr::commit() {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
 
     ensureCurrentAllocated();
 
@@ -144,10 +138,9 @@ CfgMgr::commit() {
 
 void
 CfgMgr::rollback() {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
+
     ensureCurrentAllocated();
     if (!configuration_->sequenceEquals(*configs_.back())) {
         configs_.pop_back();
@@ -156,10 +149,9 @@ CfgMgr::rollback() {
 
 void
 CfgMgr::revert(const size_t index) {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
+
     ensureCurrentAllocated();
     if (index == 0) {
         isc_throw(isc::OutOfRange, "invalid commit index 0 when reverting"
@@ -209,10 +201,9 @@ CfgMgr::getStagingCfg() {
 
 SrvConfigPtr
 CfgMgr::createExternalCfg() {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
+
     uint32_t seq = 0;
 
     if (!external_configs_.empty()) {
@@ -226,19 +217,17 @@ CfgMgr::createExternalCfg() {
 
 void
 CfgMgr::mergeIntoStagingCfg(const uint32_t seq) {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
+
     mergeIntoCfg(getStagingCfg(), seq);
 }
 
 void
 CfgMgr::mergeIntoCurrentCfg(const uint32_t seq) {
-    if (MultiThreadingMgr::instance().getConfigLock()) {
-        isc_throw(isc::InvalidOperation, "Trying to change configuration while "
-                  "processing dhcp traffic");
-    }
+    // Check that configuration changes are permitted.
+    ConfigurationLockChecker ck;
+
     try {
         // First we need to remove statistics.
         getCurrentCfg()->removeStatistics();
