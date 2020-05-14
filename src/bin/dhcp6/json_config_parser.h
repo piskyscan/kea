@@ -42,7 +42,7 @@ class Dhcpv6Srv;
 /// @throw Dhcp6ConfigError if trying to create a parser for NULL config.
 isc::data::ConstElementPtr
 configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
-                     bool check_only = false);
+                     bool check_only = false, bool test_mode = false);
 
 }  // namespace dhcp
 }  // namespace isc

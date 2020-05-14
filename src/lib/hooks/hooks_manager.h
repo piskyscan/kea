@@ -226,21 +226,6 @@ public:
     static const int CONTEXT_CREATE = ServerHooks::CONTEXT_CREATE;
     static const int CONTEXT_DESTROY = ServerHooks::CONTEXT_DESTROY;
 
-    /// @brief Get the shared callout manager
-    ///
-    /// @return A reference to the shared callout manager
-    static boost::shared_ptr<CalloutManager> getSharedCalloutManager();
-
-    /// @brief Set the shared callout manager
-    ///
-    /// This function sets the shared callout manager and explicitly updates
-    /// @ref callout_manager_ (by calling @ref init) if @ref loadLibraries has
-    /// not yet been called.
-    ///
-    /// @param manager The shared callout manager
-    static void setSharedCalloutManager(boost::shared_ptr<CalloutManager> manager =
-                                        boost::shared_ptr<CalloutManager>());
-
     /// @brief Park an object (packet).
     ///
     /// The typical use case for parking an object is when the server needs to
@@ -499,12 +484,6 @@ private:
 
     /// Callout manager for the set of library managers.
     boost::shared_ptr<CalloutManager> callout_manager_;
-
-    /// Shared callout manager to survive library reloads.
-    static boost::shared_ptr<CalloutManager> shared_callout_manager_;
-
-    /// Loaded flag to indicate if @ref loadLibraries has been called
-    static bool loaded_;
 };
 
 } // namespace util

@@ -58,7 +58,7 @@ class Dhcpv4Srv;
 isc::data::ConstElementPtr
 configureDhcp4Server(Dhcpv4Srv&,
                      isc::data::ConstElementPtr config_set,
-                     bool check_only = false);
+                     bool check_only = false, bool test_mode = false);
 
 }  // namespace dhcp
 }  // namespace isc

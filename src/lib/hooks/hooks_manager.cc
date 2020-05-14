@@ -24,9 +24,6 @@ using namespace std;
 namespace isc {
 namespace hooks {
 
-boost::shared_ptr<CalloutManager> HooksManager::shared_callout_manager_;
-bool HooksManager::loaded_;
-
 // Constructor
 
 HooksManager::HooksManager() {
@@ -109,8 +106,6 @@ HooksManager::loadLibrariesInternal(const HookLibsCollection& libraries) {
         init();
     }
 
-    loaded_ = true;
-
     return (status);
 }
 
@@ -132,8 +127,6 @@ HooksManager::unloadLibrariesInternal(bool initialize) {
         lm_collection_.reset();
         callout_manager_.reset();
     }
-
-    loaded_ = false;
 }
 
 void HooksManager::unloadLibraries() {
@@ -220,19 +213,6 @@ HooksManager::postCalloutsLibraryHandle() {
 std::vector<std::string>
 HooksManager::validateLibraries(const std::vector<std::string>& libraries) {
     return (LibraryManagerCollection::validateLibraries(libraries));
-}
-
-boost::shared_ptr<CalloutManager>
-HooksManager::getSharedCalloutManager() {
-    return (shared_callout_manager_);
-}
-
-void
-HooksManager::setSharedCalloutManager(boost::shared_ptr<CalloutManager> manager) {
-    shared_callout_manager_ = manager;
-    if (!loaded_) {
-        unloadLibraries();
-    }
 }
 
 } // namespace util

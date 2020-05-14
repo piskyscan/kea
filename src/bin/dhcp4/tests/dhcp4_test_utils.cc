@@ -607,13 +607,13 @@ Dhcpv4SrvTest::testDiscoverRequest(const uint8_t msg_type) {
 }
 
 void
-Dhcpv4SrvTest::configure(const std::string& config, const bool commit) {
-    configure(config, srv_, commit);
+Dhcpv4SrvTest::configure(const std::string& config, const bool commit, const bool keep_hooks) {
+    configure(config, srv_, commit, keep_hooks);
 }
 
 void
 Dhcpv4SrvTest::configure(const std::string& config, NakedDhcpv4Srv& srv,
-                         const bool commit) {
+                         const bool commit, bool keep_hooks) {
     ConstElementPtr json;
     try {
         json = parseJSON(config);
@@ -630,7 +630,7 @@ Dhcpv4SrvTest::configure(const std::string& config, NakedDhcpv4Srv& srv,
     disableIfacesReDetect(json);
 
     // Configure the server and make sure the config is accepted
-    EXPECT_NO_THROW(status = configureDhcp4Server(srv, json));
+    EXPECT_NO_THROW(status = configureDhcp4Server(srv, json, false, keep_hooks));
     ASSERT_TRUE(status);
     int rcode;
     ConstElementPtr comment = config::parseAnswer(rcode, status);

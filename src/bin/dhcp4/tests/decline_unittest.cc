@@ -83,7 +83,8 @@ Dhcpv4SrvTest::acquireAndDecline(Dhcp4Client& client,
                                  const std::string& client_id_1,
                                  const std::string& hw_address_2,
                                  const std::string& client_id_2,
-                                 ExpectedResult expected_result) {
+                                 ExpectedResult expected_result,
+                                 const bool keep_hooks) {
 
     // Set this global statistic explicitly to zero.
     isc::stats::StatsMgr::instance().setValue("declined-addresses",
@@ -93,7 +94,8 @@ Dhcpv4SrvTest::acquireAndDecline(Dhcp4Client& client,
     CfgMgr::instance().clear();
 
     // Configure DHCP server.
-    configure(DECLINE_CONFIGS[0], *client.getServer());
+    ASSERT_NO_THROW(configure(DECLINE_CONFIGS[0], *client.getServer(), true,
+                              keep_hooks));
     // Explicitly set the client id.
     client.includeClientId(client_id_1);
     // Explicitly set the HW address.

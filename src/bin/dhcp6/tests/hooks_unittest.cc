@@ -136,10 +136,6 @@ public:
 
     /// @brief destructor (deletes Dhcpv6Srv)
     ~HooksDhcpv6SrvTest() {
-
-        // Clear shared manager
-        HooksManager::getHooksManager().setSharedCalloutManager();
-
     }
 
     /// @brief creates an option with specified option code
@@ -4417,10 +4413,6 @@ TEST_F(HooksDhcpv6SrvTest, leases6CommittedRebindPrefix) {
 TEST_F(HooksDhcpv6SrvTest, basicLease6Decline) {
     IfaceMgrTestConfig test_config(true);
 
-    // Libraries will be reloaded later
-    HooksManager::getHooksManager().setSharedCalloutManager(
-        boost::shared_ptr<CalloutManager>(new CalloutManager(0)));
-
     // Install lease6_decline callout
     EXPECT_NO_THROW(HooksManager::preCalloutsLibraryHandle().registerCallout(
                         "lease6_decline", lease6_decline_callout));
@@ -4429,7 +4421,7 @@ TEST_F(HooksDhcpv6SrvTest, basicLease6Decline) {
     // address, so the decline procedure should be successful.
     Dhcp6Client client;
     acquireAndDecline(client, "01:02:03:04:05:06", 1234, "01:02:03:04:05:06",
-                      1234, VALID_ADDR, SHOULD_PASS);
+                      1234, VALID_ADDR, SHOULD_PASS, true);
 
     // Check that the proper callback was called.
     EXPECT_EQ("lease6_decline", callback_name_);
@@ -4471,10 +4463,6 @@ TEST_F(HooksDhcpv6SrvTest, basicLease6Decline) {
 TEST_F(HooksDhcpv6SrvTest, lease6DeclineSkip) {
     IfaceMgrTestConfig test_config(true);
 
-    // Libraries will be reloaded later
-    HooksManager::getHooksManager().setSharedCalloutManager(
-        boost::shared_ptr<CalloutManager>(new CalloutManager(0)));
-
     // Install lease6_decline_skip callout. It will set the status to skip
     EXPECT_NO_THROW(HooksManager::preCalloutsLibraryHandle().registerCallout(
                         "lease6_decline", lease6_decline_skip));
@@ -4483,7 +4471,7 @@ TEST_F(HooksDhcpv6SrvTest, lease6DeclineSkip) {
     // address, so the decline procedure should be successful.
     Dhcp6Client client;
     acquireAndDecline(client, "01:02:03:04:05:06", 1234, "01:02:03:04:05:06",
-                      1234, VALID_ADDR, SHOULD_FAIL);
+                      1234, VALID_ADDR, SHOULD_FAIL, true);
 
     // Check that the proper callback was called.
     EXPECT_EQ("lease6_decline", callback_name_);
@@ -4522,10 +4510,6 @@ TEST_F(HooksDhcpv6SrvTest, lease6DeclineSkip) {
 TEST_F(HooksDhcpv6SrvTest, lease6DeclineDrop) {
     IfaceMgrTestConfig test_config(true);
 
-    // Libraries will be reloaded later
-    HooksManager::getHooksManager().setSharedCalloutManager(
-        boost::shared_ptr<CalloutManager>(new CalloutManager(0)));
-
     // Install lease6_decline_drop callout. It will set the status to drop
     EXPECT_NO_THROW(HooksManager::preCalloutsLibraryHandle().registerCallout(
                         "lease6_decline", lease6_decline_drop));
@@ -4536,7 +4520,7 @@ TEST_F(HooksDhcpv6SrvTest, lease6DeclineDrop) {
     // packets.
     Dhcp6Client client;
     acquireAndDecline(client, "01:02:03:04:05:06", 1234, "01:02:03:04:05:06",
-                      1234, VALID_ADDR, SHOULD_FAIL);
+                      1234, VALID_ADDR, SHOULD_FAIL, true);
 
     // Check that the proper callback was called.
     EXPECT_EQ("lease6_decline", callback_name_);

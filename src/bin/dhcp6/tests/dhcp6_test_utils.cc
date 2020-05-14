@@ -802,12 +802,13 @@ Dhcpv6SrvTest::testReceiveStats(uint8_t pkt_type, const std::string& stat_name) 
 }
 
 void
-Dhcpv6SrvTest::configure(const std::string& config) {
-    configure(config, srv_);
+Dhcpv6SrvTest::configure(const std::string& config, const bool keep_hooks) {
+    configure(config, srv_, keep_hooks);
 }
 
 void
-Dhcpv6SrvTest::configure(const std::string& config, NakedDhcpv6Srv& srv) {
+Dhcpv6SrvTest::configure(const std::string& config, NakedDhcpv6Srv& srv,
+                         const bool keep_hooks) {
     ConstElementPtr json;
     try {
         json = parseJSON(config);

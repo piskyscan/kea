@@ -300,7 +300,7 @@ void configureCommandChannel() {
 
 isc::data::ConstElementPtr
 configureDhcp4Server(Dhcpv4Srv& server, isc::data::ConstElementPtr config_set,
-                     bool check_only) {
+                     bool check_only, bool test_mode) {
     if (!config_set) {
         ConstElementPtr answer = isc::config::createAnswer(CONTROL_RESULT_ERROR,
                                  string("Can't parse NULL config"));
@@ -662,12 +662,14 @@ configureDhcp4Server(Dhcpv4Srv& server, isc::data::ConstElementPtr config_set,
             cfg = CfgMgr::instance().getStagingCfg()->getD2ClientConfig();
             CfgMgr::instance().setD2ClientConfig(cfg);
 
+            if (!test_mode) {
             // This occurs last as if it succeeds, there is no easy way to
             // revert it.  As a result, the failure to commit a subsequent
             // change causes problems when trying to roll back.
             const HooksConfig& libraries =
                 CfgMgr::instance().getStagingCfg()->getHooksConfig();
             libraries.loadLibraries();
+            }
         }
         catch (const isc::Exception& ex) {
             LOG_ERROR(dhcp4_logger, DHCP4_PARSER_COMMIT_FAIL).arg(ex.what());

@@ -72,7 +72,8 @@ Dhcpv6SrvTest::acquireAndDecline(Dhcp6Client& client,
                                  const std::string& duid2,
                                  const uint32_t iaid2,
                                  AddressInclusion addr_type,
-                                 ExpectedResult expected_result) {
+                                 ExpectedResult expected_result,
+                                 const bool keep_hooks) {
     // Set this global statistic explicitly to zero.
     StatsMgr::instance().setValue("declined-addresses", static_cast<int64_t>(0));
 
@@ -80,7 +81,7 @@ Dhcpv6SrvTest::acquireAndDecline(Dhcp6Client& client,
     client.requestAddress(iaid1);
 
     // Configure the server with a configuration.
-    ASSERT_NO_THROW(configure(DECLINE_CONFIGS[0], *client.getServer()));
+    ASSERT_NO_THROW(configure(DECLINE_CONFIGS[0], *client.getServer(), keep_hooks));
 
     // Let's get the subnet-id and generate statistics name out of it.
     const Subnet6Collection* subnets =

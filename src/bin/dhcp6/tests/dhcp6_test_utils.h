@@ -509,13 +509,13 @@ public:
     /// @brief Runs DHCPv6 configuration from the JSON string.
     ///
     /// @param config String holding server configuration in JSON format.
-    void configure(const std::string& config);
+    void configure(const std::string& config, const bool keep_hooks = false);
 
     /// @brief Configure the DHCPv6 server using the JSON string.
     ///
     /// @param config String holding server configuration in JSON format.
     /// @param srv Server to be configured.
-    void configure(const std::string& config, NakedDhcpv6Srv& srv);
+    void configure(const std::string& config, NakedDhcpv6Srv& srv, const bool keep_hooks = false);
 
     /// @brief Checks that server response (ADVERTISE or REPLY) contains proper
     ///        IA_NA option
@@ -676,7 +676,8 @@ public:
                            const std::string& duid2,
                            const uint32_t iaid2,
                            AddressInclusion addr_type,
-                           ExpectedResult expected_result);
+                           ExpectedResult expected_result,
+                           const bool keep_hooks = false);
 
     /// @brief Performs basic (positive) RENEW test
     ///

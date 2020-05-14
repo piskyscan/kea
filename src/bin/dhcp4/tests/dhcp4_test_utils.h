@@ -440,7 +440,7 @@ public:
     /// @param config String holding server configuration in JSON format.
     /// @param commit A boolean flag indicating if the new configuration
     /// should be committed (if true), or not (if false).
-    void configure(const std::string& config, const bool commit = true);
+    void configure(const std::string& config, const bool commit = true, const bool keep_hooks = false);
 
     /// @brief Configure specified DHCP server using JSON string.
     ///
@@ -449,7 +449,7 @@ public:
     /// @param commit A boolean flag indicating if the new configuration
     /// should be committed (if true), or not (if false).
     void configure(const std::string& config, NakedDhcpv4Srv& srv,
-                   const bool commit = true);
+                   const bool commit = true, const bool keep_hooks = false);
 
     /// @brief Configure specified DHCP server using JSON string.
     ///
@@ -502,7 +502,8 @@ public:
                            const std::string& client_id_1,
                            const std::string& hw_address_2,
                            const std::string& client_id_2,
-                           ExpectedResult expected_result);
+                           ExpectedResult expected_result,
+                           const bool keep_hooks = false);
 
     /// @brief This function cleans up after the test.
     virtual void TearDown();

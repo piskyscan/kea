@@ -129,7 +129,6 @@ public:
         HooksManager::preCalloutsLibraryHandle().deregisterAllCallouts("lease4_decline");
         HooksManager::preCalloutsLibraryHandle().deregisterAllCallouts("host4_identifier");
 
-        HooksManager::getHooksManager().setSharedCalloutManager();
         delete srv_;
     }
 
@@ -2377,9 +2376,6 @@ TEST_F(HooksDhcpv4SrvTest, HooksDecline) {
     IfaceMgrTestConfig test_config(true);
     IfaceMgr::instance().openSockets4();
 
-    // Libraries will be reloaded later
-    HooksManager::getHooksManager().setSharedCalloutManager(
-        boost::shared_ptr<CalloutManager>(new CalloutManager(0)));
 
     // Install a callout
     EXPECT_NO_THROW(HooksManager::preCalloutsLibraryHandle().registerCallout(
@@ -2389,7 +2385,7 @@ TEST_F(HooksDhcpv4SrvTest, HooksDecline) {
     Dhcp4Client client(Dhcp4Client::SELECTING);
     acquireAndDecline(client, "01:02:03:04:05:06", "12:14",
                       "01:02:03:04:05:06", "12:14",
-                      SHOULD_PASS);
+                      SHOULD_PASS, true);
 
     EXPECT_EQ("lease4_decline", callback_name_);
 
@@ -2430,9 +2426,6 @@ TEST_F(HooksDhcpv4SrvTest, HooksDeclineSkip) {
     IfaceMgrTestConfig test_config(true);
     IfaceMgr::instance().openSockets4();
 
-    // Libraries will be reloaded later
-    HooksManager::getHooksManager().setSharedCalloutManager(
-        boost::shared_ptr<CalloutManager>(new CalloutManager(0)));
 
     // Install a callout
     EXPECT_NO_THROW(HooksManager::preCalloutsLibraryHandle().registerCallout(
@@ -2443,7 +2436,7 @@ TEST_F(HooksDhcpv4SrvTest, HooksDeclineSkip) {
     Dhcp4Client client(Dhcp4Client::SELECTING);
     acquireAndDecline(client, "01:02:03:04:05:06", "12:14",
                       "01:02:03:04:05:06", "12:14",
-                      SHOULD_FAIL);
+                      SHOULD_FAIL, true);
 
     EXPECT_EQ("lease4_decline", callback_name_);
 
@@ -2482,10 +2475,6 @@ TEST_F(HooksDhcpv4SrvTest, HooksDeclineDrop) {
     IfaceMgrTestConfig test_config(true);
     IfaceMgr::instance().openSockets4();
 
-    // Libraries will be reloaded later
-    HooksManager::getHooksManager().setSharedCalloutManager(
-        boost::shared_ptr<CalloutManager>(new CalloutManager(0)));
-
     // Install a callout
     EXPECT_NO_THROW(HooksManager::preCalloutsLibraryHandle().registerCallout(
                         "lease4_decline", lease4_decline_drop_callout));
@@ -2495,7 +2484,7 @@ TEST_F(HooksDhcpv4SrvTest, HooksDeclineDrop) {
     Dhcp4Client client(Dhcp4Client::SELECTING);
     acquireAndDecline(client, "01:02:03:04:05:06", "12:14",
                       "01:02:03:04:05:06", "12:14",
-                      SHOULD_FAIL);
+                      SHOULD_FAIL, true);
 
     EXPECT_EQ("lease4_decline", callback_name_);
 
