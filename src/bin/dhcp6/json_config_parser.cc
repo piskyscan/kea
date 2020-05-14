@@ -785,7 +785,7 @@ configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
             cfg = CfgMgr::instance().getStagingCfg()->getD2ClientConfig();
             CfgMgr::instance().setD2ClientConfig(cfg);
 
-            if (test_mode) {
+            if (!test_mode) {
             // This occurs last as if it succeeds, there is no easy way to
             // revert it.  As a result, the failure to commit a subsequent
             // change causes problems when trying to roll back.
