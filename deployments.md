@@ -13,4 +13,4 @@ If you would like to add yourself to the list, you may create a pull request / m
 | ISC | https://www.isc.org | ~100 clients | 5/2018 | migrated from ISC DHCP. small enterprise, guest wifi, migrated from ISC DHCP |
 | ... | .... | type over | .... | .... |
 
-NB if we find links on here that we suspect to be abuse sites, we will delete them. 
+We reserve the right to remove any links to sites that we suspect to be abuse or spam. 
