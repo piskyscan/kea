@@ -2384,11 +2384,11 @@ Dhcpv4Srv::assignLease(Dhcpv4Exchange& ex) {
         // We have a lease! Let's set it in the packet and send it back to
         // the client.
         if (fake_allocation) {
-            LOG_DEBUG(lease4_logger, DHCP4_LEASE_ADVERT)
+            LOG_DEBUG(lease4_logger, DBG_DHCP4_BASIC, DHCP4_LEASE_ADVERT)
                 .arg(query->getLabel())
                 .arg(lease->addr_.toText());
         } else {
-            LOG_DEBUG(lease4_logger, DHCP4_LEASE_ALLOC)
+            LOG_DEBUG(lease4_logger, DBG_DHCP4_BASIC, DHCP4_LEASE_ALLOC)
                 .arg(query->getLabel())
                 .arg(lease->addr_.toText())
                 .arg(Lease::lifetimeToText(lease->valid_lft_));
