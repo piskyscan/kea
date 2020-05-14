@@ -823,7 +823,7 @@ Dhcpv6SrvTest::configure(const std::string& config, NakedDhcpv6Srv& srv,
     disableIfacesReDetect(json);
 
     // Configure the server and make sure the config is accepted
-    EXPECT_NO_THROW(status = configureDhcp6Server(srv, json));
+    EXPECT_NO_THROW(status = configureDhcp6Server(srv, json, false, keep_hooks));
     ASSERT_TRUE(status);
     int rcode;
     ConstElementPtr comment = isc::config::parseAnswer(rcode, status);
