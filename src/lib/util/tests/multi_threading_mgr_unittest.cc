@@ -465,3 +465,19 @@ TEST(MultiThreadingMgrTest, configurationCriticalSection) {
     // unlock configuration
     EXPECT_NO_THROW(MultiThreadingMgr::instance().setConfigLock(false));
 }
+
+/// @brief Verifies that the configuration lock checker works.
+TEST(MultiThreadingMgrTest, configurationLockChecker) {
+    // store a lambda
+    std::function<void()> configuration_function = []() { ConfigurationLockChecker ck; };
+    // calling function with configuration lock unset should not throw
+    EXPECT_NO_THROW(configuration_function());
+    // lock configuration
+    MultiThreadingMgr::instance().setConfigLock(true);
+    // calling function with configuration lock set should throw
+    EXPECT_THROW(configuration_function(), isc::InvalidOperation);
+    // unlock configuration
+    MultiThreadingMgr::instance().setConfigLock(false);
+    // calling function with configuration lock unset should not throw
+    EXPECT_NO_THROW(configuration_function());
+}
