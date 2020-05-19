@@ -72,7 +72,7 @@ Iface::Iface(const std::string& name, int ifindex)
 void
 Iface::closeSockets() {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     // Close IPv4 sockets.
     closeSockets(AF_INET);
     // Close IPv6 sockets.
@@ -82,7 +82,7 @@ Iface::closeSockets() {
 void
 Iface::closeSockets(const uint16_t family) {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     // Check that the correct 'family' value has been specified.
     // The possible values are AF_INET or AF_INET6. Note that, in
     // the current code they are used to differentiate that the
@@ -144,7 +144,7 @@ Iface::getPlainMac() const {
 
 void Iface::setMac(const uint8_t* mac, size_t len) {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     if (len > MAX_MAC_LEN) {
         isc_throw(OutOfRange, "Interface " << getFullName()
                   << " was detected to have link address of length "
@@ -287,7 +287,7 @@ Iface::countActive4() const {
 
 void IfaceMgr::closeSockets() {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     // Stops the receiver thread if there is one.
     stopDHCPReceiver();
 
@@ -817,7 +817,7 @@ int IfaceMgr::openSocket(const std::string& ifname, const IOAddress& addr,
                          const uint16_t port, const bool receive_bcast,
                          const bool send_bcast) {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     IfacePtr iface = getIface(ifname);
     if (!iface) {
         isc_throw(BadValue, "There is no " << ifname << " interface present.");

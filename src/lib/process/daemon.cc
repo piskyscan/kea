@@ -71,7 +71,7 @@ void Daemon::handleSignal() {
 void Daemon::relocateLogging(ConstElementPtr config,
                              const std::string server_name) {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     ConstElementPtr logging = config->get("Logging");
     ConstElementPtr loggers;
     if (logging) {
@@ -98,7 +98,7 @@ void Daemon::relocateLogging(ConstElementPtr config,
 void Daemon::configureLogger(const ConstElementPtr& log_config,
                              const ConfigPtr& storage) {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     if (log_config) {
         ConstElementPtr loggers = log_config->get("loggers");
         if (loggers) {

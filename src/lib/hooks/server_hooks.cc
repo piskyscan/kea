@@ -45,7 +45,7 @@ ServerHooks::ServerHooks() {
 int
 ServerHooks::registerHook(const string& name) {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     // Determine index for the new element and insert.
     int index = hooks_.size();
     pair<HookCollection::iterator, bool> result =
@@ -89,7 +89,7 @@ ServerHooks::registerHook(const string& name) {
 void
 ServerHooks::initialize() {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     // Clear out the name->index and index->name maps.
     hooks_.clear();
     inverse_hooks_.clear();
@@ -114,7 +114,7 @@ ServerHooks::initialize() {
 void
 ServerHooks::reset() {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     // Clear all hooks then initialize the pre-defined ones.
     initialize();
 

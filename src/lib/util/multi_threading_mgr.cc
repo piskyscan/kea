@@ -51,7 +51,7 @@ MultiThreadingMgr::isInCriticalSection() const {
 
 ThreadPool<std::function<void()>>&
 MultiThreadingMgr::getThreadPool() {
-    return thread_pool_;
+    return (thread_pool_);
 }
 
 uint32_t

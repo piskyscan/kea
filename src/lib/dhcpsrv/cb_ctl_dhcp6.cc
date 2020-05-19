@@ -48,7 +48,7 @@ CBControlDHCPv6::databaseConfigApply(const db::BackendSelector& backend_selector
                                      const boost::posix_time::ptime& lb_modification_time,
                                      const db::AuditEntryCollection& audit_entries) {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     bool globals_fetched = false;
 
     // Let's first delete all the configuration elements for which DELETE audit

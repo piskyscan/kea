@@ -268,7 +268,7 @@ namespace dhcp {
 ///
 void configureCommandChannel() {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     // Get new socket configuration.
     ConstElementPtr sock_cfg =
         CfgMgr::instance().getStagingCfg()->getControlSocketInfo();
@@ -306,7 +306,7 @@ isc::data::ConstElementPtr
 configureDhcp4Server(Dhcpv4Srv& server, isc::data::ConstElementPtr config_set,
                      bool check_only) {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     if (!config_set) {
         ConstElementPtr answer = isc::config::createAnswer(CONTROL_RESULT_ERROR,
                                  string("Can't parse NULL config"));

@@ -93,7 +93,7 @@ HooksManager::callCommandHandlers(const std::string& command_name,
 bool
 HooksManager::loadLibrariesInternal(const HookLibsCollection& libraries) {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
 
     if (test_mode_) {
         return (true);
@@ -129,7 +129,7 @@ HooksManager::loadLibraries(const HookLibsCollection& libraries) {
 void
 HooksManager::unloadLibrariesInternal() {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     ServerHooks::getServerHooks().getParkingLotsPtr()->clear();
     init();
 }
@@ -177,7 +177,7 @@ HooksManager::getLibraryInfo() {
 void
 HooksManager::init() {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     // Nothing present, so create the collection with any empty set of
     // libraries, and get the CalloutManager.
     HookLibsCollection libraries;
@@ -191,7 +191,7 @@ HooksManager::init() {
 int
 HooksManager::registerHook(const std::string& name) {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     return (ServerHooks::getServerHooks().registerHook(name));
 }
 

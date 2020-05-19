@@ -174,7 +174,7 @@ LibraryManager::checkMultiThreadingCompatible() const {
 void
 LibraryManager::registerStandardCallouts() {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     // Set the library index for doing the registration.  This is picked up
     // when the library handle is created.
     manager_->setLibraryIndex(index_);
@@ -203,7 +203,7 @@ LibraryManager::registerStandardCallouts() {
 bool
 LibraryManager::runLoad() {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     // Get the pointer to the "load" function.
     PointerConverter pc(dlsym(dl_handle_, LOAD_FUNCTION_NAME));
     if (pc.loadPtr() != NULL) {
@@ -248,7 +248,7 @@ LibraryManager::runLoad() {
 bool
 LibraryManager::runUnload() {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     // Get the pointer to the "load" function.
     PointerConverter pc(dlsym(dl_handle_, UNLOAD_FUNCTION_NAME));
     if (pc.unloadPtr() != NULL) {
@@ -291,7 +291,7 @@ LibraryManager::runUnload() {
 bool
 LibraryManager::loadLibrary() {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     LOG_DEBUG(hooks_logger, HOOKS_DBG_TRACE, HOOKS_LIBRARY_LOADING)
         .arg(library_name_);
 
@@ -355,7 +355,7 @@ LibraryManager::loadLibrary() {
 bool
 LibraryManager::unloadLibrary() {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     bool result = true;
     if (dl_handle_ != NULL) {
         LOG_DEBUG(hooks_logger, HOOKS_DBG_TRACE, HOOKS_LIBRARY_UNLOADING)

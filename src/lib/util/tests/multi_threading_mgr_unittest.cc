@@ -469,7 +469,7 @@ TEST(MultiThreadingMgrTest, configurationCriticalSection) {
 /// @brief Verifies that the configuration lock checker works.
 TEST(MultiThreadingMgrTest, configurationLockChecker) {
     // store a lambda
-    std::function<void()> configuration_function = []() { ConfigurationLockChecker ck; };
+    std::function<void()> configuration_function = []() { ReadOnlyConfigProbe ck; };
     // calling function with configuration lock unset should not throw
     EXPECT_NO_THROW(configuration_function());
     // lock configuration

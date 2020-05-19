@@ -37,7 +37,7 @@ CfgMgr::getDataDir() const {
 void
 CfgMgr::setDataDir(const std::string& datadir, bool unspecified) {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
 
     datadir_ = Optional<std::string>(datadir, unspecified);
 }
@@ -45,7 +45,7 @@ CfgMgr::setDataDir(const std::string& datadir, bool unspecified) {
 void
 CfgMgr::setD2ClientConfig(D2ClientConfigPtr& new_config) {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
 
     ensureCurrentAllocated();
     // Note that D2ClientMgr::setD2Config() actually attempts to apply the
@@ -85,7 +85,7 @@ CfgMgr::ensureCurrentAllocated() {
 void
 CfgMgr::performConditionalInitialization() {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
 
     configuration_.reset(new SrvConfig());
     configs_.push_back(configuration_);
@@ -94,7 +94,7 @@ CfgMgr::performConditionalInitialization() {
 void
 CfgMgr::clear() {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
 
     if (configuration_) {
         configuration_->removeStatistics();
@@ -108,7 +108,7 @@ CfgMgr::clear() {
 void
 CfgMgr::commit() {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
 
     ensureCurrentAllocated();
 
@@ -139,7 +139,7 @@ CfgMgr::commit() {
 void
 CfgMgr::rollback() {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
 
     ensureCurrentAllocated();
     if (!configuration_->sequenceEquals(*configs_.back())) {
@@ -150,7 +150,7 @@ CfgMgr::rollback() {
 void
 CfgMgr::revert(const size_t index) {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
 
     ensureCurrentAllocated();
     if (index == 0) {
@@ -202,7 +202,7 @@ CfgMgr::getStagingCfg() {
 SrvConfigPtr
 CfgMgr::createExternalCfg() {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
 
     uint32_t seq = 0;
 
@@ -218,7 +218,7 @@ CfgMgr::createExternalCfg() {
 void
 CfgMgr::mergeIntoStagingCfg(const uint32_t seq) {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
 
     mergeIntoCfg(getStagingCfg(), seq);
 }
@@ -226,7 +226,7 @@ CfgMgr::mergeIntoStagingCfg(const uint32_t seq) {
 void
 CfgMgr::mergeIntoCurrentCfg(const uint32_t seq) {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
 
     try {
         // First we need to remove statistics.

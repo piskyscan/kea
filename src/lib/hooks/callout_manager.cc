@@ -41,7 +41,7 @@ CalloutManager::CalloutManager(int num_libraries)
 void
 CalloutManager::setLibraryIndex(int library_index) {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     checkLibraryIndex(library_index);
     current_library_ = library_index;
 }
@@ -70,7 +70,7 @@ CalloutManager::registerCallout(const std::string& name,
                                 CalloutPtr callout,
                                 int library_index) {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     // Note the registration.
     LOG_DEBUG(callouts_logger, HOOKS_DBG_CALLS, HOOKS_CALLOUT_REGISTRATION)
         .arg(library_index).arg(name);
@@ -241,7 +241,7 @@ bool
 CalloutManager::deregisterCallout(const std::string& name, CalloutPtr callout,
                                   int library_index) {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     // Sanity check that the current library index is set to a valid value.
     checkLibraryIndex(library_index);
 
@@ -297,7 +297,7 @@ bool
 CalloutManager::deregisterAllCallouts(const std::string& name,
                                       int library_index) {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     // New hooks could have been registered since the manager was constructed.
     ensureHookLibsVectorSize();
 
@@ -335,7 +335,7 @@ CalloutManager::deregisterAllCallouts(const std::string& name,
 void
 CalloutManager::registerCommandHook(const std::string& command_name) {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     // New hooks could have been registered since the manager was constructed.
     ensureHookLibsVectorSize();
 
@@ -356,7 +356,7 @@ CalloutManager::registerCommandHook(const std::string& command_name) {
 void
 CalloutManager::ensureHookLibsVectorSize() {
     // Check that configuration changes are permitted.
-    ConfigurationLockChecker ck;
+    ReadOnlyConfigProbe ck;
     ServerHooks& hooks = ServerHooks::getServerHooks();
     if (hooks.getCount() > hook_vector_.size()) {
         // Uh oh, there are more hook points that our vector allows.
