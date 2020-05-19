@@ -364,7 +364,7 @@ public:
     ///
     /// Used to check if configuration changes are permitted in current scope.
     ///
-    /// @throw
+    /// @throw @ref InvalidOperation if the configuration is locked.
     ConfigurationLockChecker() {
         if (MultiThreadingMgr::instance().getConfigLock()) {
             isc_throw(isc::InvalidOperation, "Trying to update a locked "
