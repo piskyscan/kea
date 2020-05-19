@@ -179,10 +179,10 @@ private:
     ///
     /// Performing configuration changes should be handled only on the main
     /// thread while not processing dhcp traffic. This value must be set to
-    /// 'false' to indicate that it is safe to perform configuration changes or
-    /// to 'true' to indicate the opposite.
-    /// By default this value is set to 'true', but it is set to 'false' right
-    /// after applying configuration.
+    /// false to indicate that it is safe to perform configuration changes or
+    /// to true to indicate the opposite.
+    /// By default this value is set to false, but it is set to true right after
+    /// applying configuration.
     bool config_locked_;
 };
 
@@ -190,18 +190,22 @@ private:
 ///
 /// @brief RAII class creating a generic critical section.
 ///
-/// @note: the class is useful to properly implement critical sections which
-/// can interleave.
+/// @note: the class is useful to properly implement nested critical sections.
+///
 /// The constructor calls @ref lock function and then increments the internal
 /// counter @ref critical_section_count_. The destructor decrements the internal
 /// counter @ref critical_section_count_ and calls @ref unlock function.
 /// The specialized class can check the value of the counter and perform
-/// actions for specific values (eg. lock only when it is 0, before it is
+/// actions for specific values (e.g. lock only when it is 0, before it is
 /// incremented, or unlock only if it is 0, after it is decremented).
 /// This is implemented as a generic class to be able to use the functionality
 /// in all specializations, as virtual functions can not work when called from
 /// the constructor or destructor of the base class.
 /// Each specialization needs to implement @ref lock and @ref unlock functions.
+///
+/// @tparam T is needed to generate a new implementation for each instantiation
+/// so that the internal @ref critical_section_count_ is independent for each
+/// generated type.
 template <typename T>
 class CriticalSectionBase : public boost::noncopyable {
 public:
@@ -254,16 +258,27 @@ private:
 
     /// @brief The critical section count.
     ///
-    /// This handles multiple interleaved sections.
+    /// This handles multiple nested critical sections.
     static uint32_t critical_section_count_;
 };
 
 template <typename T>
 uint32_t CriticalSectionBase<T>::critical_section_count_;
 
+/// @brief Type used to define @ref MultiThreadingCriticalSectionBase as an
+/// instantiation of @ref CriticalSectionBase
+struct ThreadLock {
+};
+
+/// @brief Type used to define @ref ConfigurationCriticalSectionBase as an
+/// instantiation of @ref CriticalSectionBase
+struct ConfigLock {
+};
+
 /// @note: everything here MUST be used ONLY from the main thread.
 ///
-/// @brief RAII class creating a base multi threading critical section.
+/// @brief RAII class creating a base multi threading critical section which is
+/// an instantiation of @ref CriticalSectionBase generic class.
 ///
 /// @note: the multi-threading mode MUST NOT be changed in the RAII
 /// @c MultiThreadingCriticalSection body.
@@ -272,28 +287,21 @@ uint32_t CriticalSectionBase<T>::critical_section_count_;
 /// deadlock.
 /// @node: some measures have been implemented in the @ref ThreadPool to throw
 /// instead of deadlock (indicating that the code must be fixed).
+///
 /// This is mainly useful in hook commands which handle configuration
 /// changes.
-class MultiThreadingCriticalSectionBase :
-        public CriticalSectionBase<MultiThreadingCriticalSectionBase> {
-public:
-
-    /// @brief Constructor.
-    ///
-    /// Entering the critical section. The dhcp thread pool instance will be
-    /// stopped so that all configuration changes can be safely applied.
-    MultiThreadingCriticalSectionBase() {};
-
-    /// @brief Destructor.
-    ///
-    /// Leaving the critical section. The dhcp thread pool instance will be
-    /// started according to the new configuration.
-    virtual ~MultiThreadingCriticalSectionBase() {};
-};
+/// The constructor is called when entering the critical section.
+/// The dhcp thread pool instance will be stopped so that all configuration
+/// changes can be safely applied.
+/// The destructor is called when leaving the critical section.
+/// The dhcp thread pool instance will be started according to the new
+/// configuration.
+typedef CriticalSectionBase<ThreadLock> MultiThreadingCriticalSectionBase;
 
 /// @note: everything here MUST be used ONLY from the main thread.
 ///
-/// @brief RAII class creating a base configuration critical section.
+/// @brief RAII class creating a base configuration critical section which is an
+/// instantiation of @ref CriticalSectionBase generic class.
 ///
 /// @note: starting and stopping the dhcp thread pool should be handled
 /// in the main thread, before creating a configuration critical section.
@@ -301,30 +309,33 @@ public:
 /// @ref MultiThreadingCriticalSection derives:
 /// @ref MultiThreadingCriticalSectionBase and then
 /// @ref ConfigurationCriticalSectionBase.
+///
 /// This is mainly useful to detect calling function which can change the
 /// configuration while processing dhcp traffic (from hooks or from processing
 /// threads). Changing the configuration while processing packets can lead to
 /// inconsistent data in the packet, or ever crashes.
-class ConfigurationCriticalSectionBase :
-        public CriticalSectionBase<ConfigurationCriticalSectionBase> {
-public:
-
-    /// @brief Constructor.
-    ///
-    /// Entering the critical section. The configuration lock flag will be set.
-    ConfigurationCriticalSectionBase() {};
-
-    /// @brief Destructor.
-    ///
-    /// Leaving the critical section. The configuration lock flag will be unset.
-    virtual ~ConfigurationCriticalSectionBase() {};
-};
+/// The constructor is called when entering the critical section. The
+/// configuration lock flag will be unset.
+/// The destructor is called when leaving the critical section. The
+/// configuration lock flag will be set.
+typedef CriticalSectionBase<ConfigLock> ConfigurationCriticalSectionBase;
 
 /// @note: everything here MUST be used ONLY from the main thread.
 ///
 /// @brief RAII class creating a multi threading critical section which
-/// implements a base configuration critical section and a base multi threading
+/// implements a base multi threading critical section and a base configuration
 /// critical section.
+///
+/// @note: the order of derivation is important: first the base multi threading
+/// critical section and last the base configuration critical section.
+///
+/// This will guarantee the proper call of all constructors:
+/// @ref MultiThreadingCriticalSectionBase and then
+/// @ref ConfigurationCriticalSectionBase (the configuration is unlocked when
+/// all threads are stopped) and the proper call of all destructors:
+/// @ref ~ConfigurationCriticalSectionBase and then
+/// @ref ~MultiThreadingCriticalSectionBase (all threads are started when the
+/// configuration is locked)
 class MultiThreadingCriticalSection : public MultiThreadingCriticalSectionBase,
                                       public ConfigurationCriticalSectionBase {
 };
@@ -333,15 +344,17 @@ class MultiThreadingCriticalSection : public MultiThreadingCriticalSectionBase,
 ///
 /// @brief RAII class creating a configuration critical section which implements
 /// a base configuration critical section.
+///
 /// @note: this can be used when modifying the staging configuration and the
 /// processing threads are never affected because the configuration is not
 /// applied.
-/// eg: when testing a configuration using commands or in related unittests.
+/// e.g.: when testing a configuration using commands or in related unittests.
 class ConfigurationCriticalSection : public ConfigurationCriticalSectionBase {
 };
 
 /// @brief class which can be used to check and prevent functions to modify
 /// server configuration while processing packets (even in single thread mode).
+///
 /// @node: it can be used to prevent not thread safe functions to be called on
 /// processing threads
 class ConfigurationLockChecker {
@@ -352,10 +365,10 @@ public:
     /// Used to check if configuration changes are permitted in current scope.
     ///
     /// @throw
-    ConfigurationLockChecker () {
+    ConfigurationLockChecker() {
         if (MultiThreadingMgr::instance().getConfigLock()) {
-            isc_throw(isc::InvalidOperation, "Trying to modify configuration "
-                      "while it is locked (read only)");
+            isc_throw(isc::InvalidOperation, "Trying to modify a locked (read "
+                      "only) configuration.");
         }
     }
 };

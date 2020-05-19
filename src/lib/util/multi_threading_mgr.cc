@@ -136,30 +136,38 @@ MultiThreadingMgr::startPktProcessing() {
     }
 }
 
+/// @brief specialization of @ref lock for @ref CriticalSectionBase using
+/// @ref ThreadLock
 template<>
 void
-CriticalSectionBase<MultiThreadingCriticalSectionBase>::lock() {
+CriticalSectionBase<ThreadLock>::lock() {
     MultiThreadingMgr::instance().enterCriticalSection();
 }
 
+/// @brief specialization of @ref unlock for @ref CriticalSectionBase using
+/// @ref ThreadLock
 template<>
 void
-CriticalSectionBase<MultiThreadingCriticalSectionBase>::unlock() {
+CriticalSectionBase<ThreadLock>::unlock() {
     MultiThreadingMgr::instance().exitCriticalSection();
 }
 
+/// @brief specialization of @ref lock for @ref CriticalSectionBase using
+/// @ref ConfigLock
 template<>
 void
-CriticalSectionBase<ConfigurationCriticalSectionBase>::lock() {
-    if (!ConfigurationCriticalSectionBase::getCriticalSectionCount()) {
+CriticalSectionBase<ConfigLock>::lock() {
+    if (!CriticalSectionBase<ConfigLock>::getCriticalSectionCount()) {
         MultiThreadingMgr::instance().setConfigLock(false);
     }
 }
 
+/// @brief specialization of @ref unlock for @ref CriticalSectionBase using
+/// @ref ConfigLock
 template<>
 void
-CriticalSectionBase<ConfigurationCriticalSectionBase>::unlock() {
-    if (!ConfigurationCriticalSectionBase::getCriticalSectionCount()) {
+CriticalSectionBase<ConfigLock>::unlock() {
+    if (!CriticalSectionBase<ConfigLock>::getCriticalSectionCount()) {
         MultiThreadingMgr::instance().setConfigLock(true);
     }
 }
