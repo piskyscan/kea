@@ -367,8 +367,8 @@ public:
     /// @throw
     ConfigurationLockChecker() {
         if (MultiThreadingMgr::instance().getConfigLock()) {
-            isc_throw(isc::InvalidOperation, "Trying to modify a locked (read "
-                      "only) configuration.");
+            isc_throw(isc::InvalidOperation, "Trying to modify a locked "
+                      "configuration.");
         }
     }
 };
