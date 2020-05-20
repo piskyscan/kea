@@ -3,6 +3,7 @@ SUBDIRS = .
 sqlscriptsdir = ${datarootdir}/${PACKAGE_NAME}/scripts/mysql
 sqlscripts_DATA = dhcpdb_create.mysql
 sqlscripts_DATA += dhcpdb_drop.mysql
+sqlscripts_DATA += recount_lease_stats.sh
 sqlscripts_DATA += upgrade_1.0_to_2.0.sh
 sqlscripts_DATA += upgrade_2.0_to_3.0.sh
 sqlscripts_DATA += upgrade_3.0_to_4.0.sh
@@ -21,7 +22,8 @@ sqlscripts_DATA += upgrade_9.1_to_9.2.sh
 sqlscripts_DATA += upgrade_9.2_to_9.3.sh
 sqlscripts_DATA += wipe_data.sh
 
-DISTCLEANFILES = upgrade_1.0_to_2.0.sh
+DISTCLEANFILES = recount_lease_stats.sh
+DISTCLEANFILES += upgrade_1.0_to_2.0.sh
 DISTCLEANFILES += upgrade_2.0_to_3.0.sh
 DISTCLEANFILES += upgrade_3.0_to_4.0.sh
 DISTCLEANFILES += upgrade_4.0_to_4.1.sh

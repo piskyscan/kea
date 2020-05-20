@@ -1,0 +1,38 @@
+#!/bin/sh
+
+prefix=@prefix@
+# Include utilities. Use installed version if available and
+# use build version if it isn't.
+if [ -e @datarootdir@/@PACKAGE_NAME@/scripts/admin-utils.sh ]; then
+    . @datarootdir@/@PACKAGE_NAME@/scripts/admin-utils.sh
+else
+    . @abs_top_builddir@/src/bin/admin/admin-utils.sh
+fi
+
+# Do not check the version nor table existence
+
+mysql "$@" <<EOF
+START TRANSACTION;
+
+-- recount IPv4 leases from scratch
+DELETE FROM lease4_stat;
+
+INSERT INTO lease4_stat (subnet_id, state, leases)
+    SELECT subnet_id, state, COUNT(*)
+    FROM lease4 WHERE state = 0 OR state = 1
+    GROUP BY subnet_id, state;
+
+-- recount IPv6 leases from scratch
+DELETE FROM lease6_stat;
+
+INSERT INTO lease6_stat (subnet_id, lease_type, state, leases)
+    SELECT subnet_id, lease_type, state, COUNT(*)
+    FROM lease6 WHERE state = 0 OR state = 1
+    GROUP BY subnet_id, lease_type, state;
+
+COMMIT;
+EOF
+
+RESULT=$?
+
+exit $?

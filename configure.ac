@@ -1714,6 +1714,7 @@ AC_CONFIG_FILES([Makefile
                  src/share/database/scripts/cql/upgrade_4.0_to_5.0.sh
                  src/share/database/scripts/cql/wipe_data.sh
                  src/share/database/scripts/mysql/Makefile
+                 src/share/database/scripts/mysql/recount_lease_stats.sh
                  src/share/database/scripts/mysql/upgrade_1.0_to_2.0.sh
                  src/share/database/scripts/mysql/upgrade_2.0_to_3.0.sh
                  src/share/database/scripts/mysql/upgrade_3.0_to_4.0.sh
@@ -1732,6 +1733,7 @@ AC_CONFIG_FILES([Makefile
                  src/share/database/scripts/mysql/upgrade_9.2_to_9.3.sh
                  src/share/database/scripts/mysql/wipe_data.sh
                  src/share/database/scripts/pgsql/Makefile
+                 src/share/database/scripts/pgsql/recount_lease_stats.sh
                  src/share/database/scripts/pgsql/upgrade_1.0_to_2.0.sh
                  src/share/database/scripts/pgsql/upgrade_2.0_to_3.0.sh
                  src/share/database/scripts/pgsql/upgrade_3.0_to_3.1.sh
