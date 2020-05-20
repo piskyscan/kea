@@ -45,21 +45,21 @@ public:
     LibLoadTest(std::string lib_filename)
         : lib_name_(lib_filename), start_time_(second_clock::universal_time()) {
         {
-            ConfigurationCriticalSection ccs;
+            ConfigCriticalSection ccs;
             CommandMgr::instance();
             unloadLibs();
         }
-        MultiThreadingMgr::instance().setConfigLock(false);
+        MultiThreadingMgr::instance().setReadOnlyConfig(false);
     }
 
     /// @brief Destructor
     /// Removes files that may be left over from previous tests
     virtual ~LibLoadTest() {
         {
-            ConfigurationCriticalSection ccs;
+            ConfigCriticalSection ccs;
             unloadLibs();
         }
-        MultiThreadingMgr::instance().setConfigLock(false);
+        MultiThreadingMgr::instance().setReadOnlyConfig(false);
     }
 
     /// @brief Adds library/parameters to list of libraries to be loaded
@@ -71,14 +71,14 @@ public:
     ///
     /// The libraries are stored in libraries
     void loadLibs() {
-        ConfigurationCriticalSection ccs;
+        ConfigCriticalSection ccs;
         ASSERT_TRUE(HooksManager::loadLibraries(libraries_))
             << "library loading failed";
     }
 
     /// @brief Unloads all libraries.
     void unloadLibs() {
-        ConfigurationCriticalSection ccs;
+        ConfigCriticalSection ccs;
         ASSERT_NO_THROW(HooksManager::unloadLibraries());
     }
 
@@ -346,11 +346,11 @@ public:
         : LibLoadTest(STAT_CMDS_LIB_SO), hwaddr_({10,20,30,40,50,00}),
           duid_({10,20,30,40,50,60,70,00}) {
         {
-            ConfigurationCriticalSection ccs;
+            ConfigCriticalSection ccs;
             LeaseMgrFactory::destroy();
             lmptr_ = 0;
         }
-        MultiThreadingMgr::instance().setConfigLock(false);
+        MultiThreadingMgr::instance().setReadOnlyConfig(false);
     }
 
     /// @brief Destructor
@@ -358,14 +358,14 @@ public:
     /// Removes library (if any), destroys lease manager (if any).
     virtual ~StatCmdsTest() {
         {
-            ConfigurationCriticalSection ccs;
+            ConfigCriticalSection ccs;
             // destroys lease manager first because the other order triggers
             // a clang/boost bug
             LeaseMgrFactory::destroy();
             unloadLibs();
             lmptr_ = 0;
         }
-        MultiThreadingMgr::instance().setConfigLock(false);
+        MultiThreadingMgr::instance().setReadOnlyConfig(false);
     }
 
     /// @brief Initializes lease manager for v6 operation

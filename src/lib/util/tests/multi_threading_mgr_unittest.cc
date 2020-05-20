@@ -20,10 +20,10 @@ TEST(MultiThreadingMgrTest, defaultMode) {
     EXPECT_FALSE(MultiThreadingMgr::instance().getMode());
 }
 
-/// @brief Verifies that the default configuration lock flag is false.
-TEST(MultiThreadingMgrTest, defaultConfigurationLock) {
-    // configuration lock flag should be unset
-    EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
+/// @brief Verifies that the default read only config flag is false.
+TEST(MultiThreadingMgrTest, defaultReadOnlyConfig) {
+    // read only config flag should be unset
+    EXPECT_FALSE(MultiThreadingMgr::instance().getReadOnlyConfig());
 }
 
 /// @brief Verifies that the mode setter works.
@@ -38,16 +38,16 @@ TEST(MultiThreadingMgrTest, setMode) {
     EXPECT_FALSE(MultiThreadingMgr::instance().getMode());
 }
 
-/// @brief Verifies that the configuration lock setter works.
-TEST(MultiThreadingMgrTest, setConfigLock) {
-    // enable configuration lock
-    EXPECT_NO_THROW(MultiThreadingMgr::instance().setConfigLock(true));
-    // configuration lock flag should be set
-    EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
-    // disable configuration lock
-    EXPECT_NO_THROW(MultiThreadingMgr::instance().setConfigLock(false));
-    // configuration lock flag should be unset
-    EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
+/// @brief Verifies that the read only config flag setter works.
+TEST(MultiThreadingMgrTest, setReadOnlyConfig) {
+    // enable read only configuration
+    EXPECT_NO_THROW(MultiThreadingMgr::instance().setReadOnlyConfig(true));
+    // read only config flag should be set
+    EXPECT_TRUE(MultiThreadingMgr::instance().getReadOnlyConfig());
+    // disable read only configuration
+    EXPECT_NO_THROW(MultiThreadingMgr::instance().setReadOnlyConfig(false));
+    // read only config flag should be unset
+    EXPECT_FALSE(MultiThreadingMgr::instance().getReadOnlyConfig());
 }
 
 /// @brief Verifies that accessing the thread pool works.
@@ -154,12 +154,12 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
     EXPECT_FALSE(MultiThreadingMgr::instance().isInCriticalSection());
     // critical section count should be 0
     EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 0);
-    // the configuration lock flag should be unset
-    EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
+    // the read only config flag should be unset
+    EXPECT_FALSE(MultiThreadingMgr::instance().getReadOnlyConfig());
     // critical section count should be 0
-    EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 0);
-    // lock configuration
-    EXPECT_NO_THROW(MultiThreadingMgr::instance().setConfigLock(true));
+    EXPECT_EQ(ConfigCriticalSectionBase::getCriticalSectionCount(), 0);
+    // enable read only configuration
+    EXPECT_NO_THROW(MultiThreadingMgr::instance().setReadOnlyConfig(true));
     // apply multi-threading configuration with 16 threads and queue size 256
     MultiThreadingMgr::instance().apply(true, 16, 256);
     // thread count should match
@@ -172,10 +172,10 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
     EXPECT_FALSE(MultiThreadingMgr::instance().isInCriticalSection());
     // critical section count should be 0
     EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 0);
-    // the configuration lock flag should be set
-    EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
+    // the read only config flag should be set
+    EXPECT_TRUE(MultiThreadingMgr::instance().getReadOnlyConfig());
     // critical section count should be 0
-    EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 0);
+    EXPECT_EQ(ConfigCriticalSectionBase::getCriticalSectionCount(), 0);
     // use scope to test constructor and destructor
     {
         MultiThreadingCriticalSection cs;
@@ -183,10 +183,10 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
         EXPECT_TRUE(MultiThreadingMgr::instance().isInCriticalSection());
         // critical section count should be 1
         EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 1);
-        // the configuration lock flag should be unset
-        EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
+        // the read only config flag should be unset
+        EXPECT_FALSE(MultiThreadingMgr::instance().getReadOnlyConfig());
         // critical section count should be 1
-        EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 1);
+        EXPECT_EQ(ConfigCriticalSectionBase::getCriticalSectionCount(), 1);
         // thread pool should be stopped
         EXPECT_EQ(thread_pool.size(), 0);
         // thread count should be 16
@@ -200,10 +200,10 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
             EXPECT_TRUE(MultiThreadingMgr::instance().isInCriticalSection());
             // critical section count should be 2
             EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 2);
-            // the configuration lock flag should be unset
-            EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
+            // the read only config flag should be unset
+            EXPECT_FALSE(MultiThreadingMgr::instance().getReadOnlyConfig());
             // critical section count should be 2
-            EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 2);
+            EXPECT_EQ(ConfigCriticalSectionBase::getCriticalSectionCount(), 2);
             // thread pool should be stopped
             EXPECT_EQ(thread_pool.size(), 0);
             // thread count should be 16
@@ -215,10 +215,10 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
         EXPECT_TRUE(MultiThreadingMgr::instance().isInCriticalSection());
         // critical section count should be 1
         EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 1);
-        // the configuration lock flag should be unset
-        EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
+        // the read only config flag should be unset
+        EXPECT_FALSE(MultiThreadingMgr::instance().getReadOnlyConfig());
         // critical section count should be 1
-        EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 1);
+        EXPECT_EQ(ConfigCriticalSectionBase::getCriticalSectionCount(), 1);
         // thread pool should be stopped
         EXPECT_EQ(thread_pool.size(), 0);
         // thread count should be 16
@@ -230,10 +230,10 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
     EXPECT_FALSE(MultiThreadingMgr::instance().isInCriticalSection());
     // critical section count should be 0
     EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 0);
-    // the configuration lock flag should be set
-    EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
+    // the read only config flag should be set
+    EXPECT_TRUE(MultiThreadingMgr::instance().getReadOnlyConfig());
     // critical section count should be 0
-    EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 0);
+    EXPECT_EQ(ConfigCriticalSectionBase::getCriticalSectionCount(), 0);
     // thread count should match
     EXPECT_EQ(thread_pool.size(), 16);
     // thread count should be 16
@@ -247,10 +247,10 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
         EXPECT_TRUE(MultiThreadingMgr::instance().isInCriticalSection());
         // critical section count should be 1
         EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 1);
-        // the configuration lock flag should be unset
-        EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
+        // the read only config flag should be unset
+        EXPECT_FALSE(MultiThreadingMgr::instance().getReadOnlyConfig());
         // critical section count should be 1
-        EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 1);
+        EXPECT_EQ(ConfigCriticalSectionBase::getCriticalSectionCount(), 1);
         // thread pool should be stopped
         EXPECT_EQ(thread_pool.size(), 0);
         // thread count should be 16
@@ -270,10 +270,10 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
     EXPECT_FALSE(MultiThreadingMgr::instance().isInCriticalSection());
     // critical section count should be 0
     EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 0);
-    // the configuration lock flag should be set
-    EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
+    // the read only config flag should be set
+    EXPECT_TRUE(MultiThreadingMgr::instance().getReadOnlyConfig());
     // critical section count should be 0
-    EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 0);
+    EXPECT_EQ(ConfigCriticalSectionBase::getCriticalSectionCount(), 0);
     // thread count should match
     EXPECT_EQ(thread_pool.size(), 64);
     // thread count should be 64
@@ -287,10 +287,10 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
         EXPECT_TRUE(MultiThreadingMgr::instance().isInCriticalSection());
         // critical section count should be 1
         EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 1);
-        // the configuration lock flag should be unset
-        EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
+        // the read only config flag should be unset
+        EXPECT_FALSE(MultiThreadingMgr::instance().getReadOnlyConfig());
         // critical section count should be 1
-        EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 1);
+        EXPECT_EQ(ConfigCriticalSectionBase::getCriticalSectionCount(), 1);
         // thread pool should be stopped
         EXPECT_EQ(thread_pool.size(), 0);
         // thread count should be 64
@@ -310,10 +310,10 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
     EXPECT_FALSE(MultiThreadingMgr::instance().isInCriticalSection());
     // critical section count should be 0
     EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 0);
-    // the configuration lock flag should be set
-    EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
+    // the read only config flag should be set
+    EXPECT_TRUE(MultiThreadingMgr::instance().getReadOnlyConfig());
     // critical section count should be 0
-    EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 0);
+    EXPECT_EQ(ConfigCriticalSectionBase::getCriticalSectionCount(), 0);
     // thread count should match
     EXPECT_EQ(thread_pool.size(), 0);
     // thread count should be 0
@@ -327,10 +327,10 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
         EXPECT_TRUE(MultiThreadingMgr::instance().isInCriticalSection());
         // critical section count should be 1
         EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 1);
-        // the configuration lock flag should be unset
-        EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
+        // the read only config flag should be unset
+        EXPECT_FALSE(MultiThreadingMgr::instance().getReadOnlyConfig());
         // critical section count should be 1
-        EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 1);
+        EXPECT_EQ(ConfigCriticalSectionBase::getCriticalSectionCount(), 1);
         // thread pool should be stopped
         EXPECT_EQ(thread_pool.size(), 0);
         // thread count should be 0
@@ -344,10 +344,10 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
             EXPECT_TRUE(MultiThreadingMgr::instance().isInCriticalSection());
             // critical section count should be 2
             EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 2);
-            // the configuration lock flag should be unset
-            EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
+            // the read only config flag should be unset
+            EXPECT_FALSE(MultiThreadingMgr::instance().getReadOnlyConfig());
             // critical section count should be 2
-            EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 2);
+            EXPECT_EQ(ConfigCriticalSectionBase::getCriticalSectionCount(), 2);
             // thread pool should be stopped
             EXPECT_EQ(thread_pool.size(), 0);
             // thread count should be 0
@@ -359,10 +359,10 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
         EXPECT_TRUE(MultiThreadingMgr::instance().isInCriticalSection());
         // critical section count should be 1
         EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 1);
-        // the configuration lock flag should be unset
-        EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
+        // the read only config flag should be unset
+        EXPECT_FALSE(MultiThreadingMgr::instance().getReadOnlyConfig());
         // critical section count should be 1
-        EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 1);
+        EXPECT_EQ(ConfigCriticalSectionBase::getCriticalSectionCount(), 1);
         // thread pool should be stopped
         EXPECT_EQ(thread_pool.size(), 0);
         // thread count should be 0
@@ -374,10 +374,10 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
     EXPECT_FALSE(MultiThreadingMgr::instance().isInCriticalSection());
     // critical section count should be 0
     EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 0);
-    // the configuration lock flag should be set
-    EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
+    // the read only config flag should be set
+    EXPECT_TRUE(MultiThreadingMgr::instance().getReadOnlyConfig());
     // critical section count should be 0
-    EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 0);
+    EXPECT_EQ(ConfigCriticalSectionBase::getCriticalSectionCount(), 0);
     // thread count should match
     EXPECT_EQ(thread_pool.size(), 0);
     // thread count should be 0
@@ -391,10 +391,10 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
         EXPECT_TRUE(MultiThreadingMgr::instance().isInCriticalSection());
         // critical section count should be 1
         EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 1);
-        // the configuration lock flag should be unset
-        EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
+        // the read only config flag should be unset
+        EXPECT_FALSE(MultiThreadingMgr::instance().getReadOnlyConfig());
         // critical section count should be 1
-        EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 1);
+        EXPECT_EQ(ConfigCriticalSectionBase::getCriticalSectionCount(), 1);
         // thread pool should be stopped
         EXPECT_EQ(thread_pool.size(), 0);
         // apply multi-threading configuration with 64 threads
@@ -410,10 +410,10 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
     EXPECT_FALSE(MultiThreadingMgr::instance().isInCriticalSection());
     // critical section count should be 0
     EXPECT_EQ(MultiThreadingCriticalSectionBase::getCriticalSectionCount(), 0);
-    // the configuration lock flag should be set
-    EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
+    // the read only config flag should be set
+    EXPECT_TRUE(MultiThreadingMgr::instance().getReadOnlyConfig());
     // critical section count should be 0
-    EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 0);
+    EXPECT_EQ(ConfigCriticalSectionBase::getCriticalSectionCount(), 0);
     // thread count should match
     EXPECT_EQ(thread_pool.size(), 64);
     // thread count should be 64
@@ -422,62 +422,62 @@ TEST(MultiThreadingMgrTest, multiThreadingCriticalSection) {
     EXPECT_EQ(MultiThreadingMgr::instance().getPacketQueueSize(), 256);
     // apply multi-threading configuration with 0 threads
     MultiThreadingMgr::instance().apply(false, 0, 0);
-    // unlock configuration
-    EXPECT_NO_THROW(MultiThreadingMgr::instance().setConfigLock(false));
+    // disable read only configuration
+    EXPECT_NO_THROW(MultiThreadingMgr::instance().setReadOnlyConfig(false));
 }
 
 /// @brief Verifies that the configuration critical section works.
 TEST(MultiThreadingMgrTest, configurationCriticalSection) {
-    // the configuration lock flag should be unset
-    EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
+    // the read only config flag should be unset
+    EXPECT_FALSE(MultiThreadingMgr::instance().getReadOnlyConfig());
     // critical section count should be 0
-    EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 0);
-    // lock configuration
-    EXPECT_NO_THROW(MultiThreadingMgr::instance().setConfigLock(true));
-    // the configuration lock flag should be set
-    EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
+    EXPECT_EQ(ConfigCriticalSectionBase::getCriticalSectionCount(), 0);
+    // enable read only configuration
+    EXPECT_NO_THROW(MultiThreadingMgr::instance().setReadOnlyConfig(true));
+    // the read only config flag should be set
+    EXPECT_TRUE(MultiThreadingMgr::instance().getReadOnlyConfig());
     // critical section count should be 0
-    EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 0);
+    EXPECT_EQ(ConfigCriticalSectionBase::getCriticalSectionCount(), 0);
     // use scope to test constructor and destructor
     {
-        ConfigurationCriticalSection cs;
-        // the configuration lock flag should be unset
-        EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
+        ConfigCriticalSection cs;
+        // the read only config flag should be unset
+        EXPECT_FALSE(MultiThreadingMgr::instance().getReadOnlyConfig());
         // critical section count should be 1
-        EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 1);
+        EXPECT_EQ(ConfigCriticalSectionBase::getCriticalSectionCount(), 1);
         // use scope to test constructor and destructor
         {
-            ConfigurationCriticalSection inner_cs;
-            // the configuration lock flag should be unset
-            EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
+            ConfigCriticalSection inner_cs;
+            // the read only config flag should be unset
+            EXPECT_FALSE(MultiThreadingMgr::instance().getReadOnlyConfig());
             // critical section count should be 2
-            EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 2);
+            EXPECT_EQ(ConfigCriticalSectionBase::getCriticalSectionCount(), 2);
         }
-        // the configuration lock flag should be unset
-        EXPECT_FALSE(MultiThreadingMgr::instance().getConfigLock());
+        // the read only config flag should be unset
+        EXPECT_FALSE(MultiThreadingMgr::instance().getReadOnlyConfig());
         // critical section count should be 1
-        EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 1);
+        EXPECT_EQ(ConfigCriticalSectionBase::getCriticalSectionCount(), 1);
     }
-    // the configuration lock flag should be set
-    EXPECT_TRUE(MultiThreadingMgr::instance().getConfigLock());
+    // the read only config flag should be set
+    EXPECT_TRUE(MultiThreadingMgr::instance().getReadOnlyConfig());
     // critical section count should be 0
-    EXPECT_EQ(ConfigurationCriticalSectionBase::getCriticalSectionCount(), 0);
-    // unlock configuration
-    EXPECT_NO_THROW(MultiThreadingMgr::instance().setConfigLock(false));
+    EXPECT_EQ(ConfigCriticalSectionBase::getCriticalSectionCount(), 0);
+    // disable read only configuration
+    EXPECT_NO_THROW(MultiThreadingMgr::instance().setReadOnlyConfig(false));
 }
 
-/// @brief Verifies that the configuration lock checker works.
-TEST(MultiThreadingMgrTest, configurationLockChecker) {
+/// @brief Verifies that the read only config probe works.
+TEST(MultiThreadingMgrTest, readOnlyConfigProbe) {
     // store a lambda
-    std::function<void()> configuration_function = []() { ReadOnlyConfigProbe ck; };
-    // calling function with configuration lock unset should not throw
-    EXPECT_NO_THROW(configuration_function());
-    // lock configuration
-    MultiThreadingMgr::instance().setConfigLock(true);
-    // calling function with configuration lock set should throw
-    EXPECT_THROW(configuration_function(), isc::InvalidOperation);
-    // unlock configuration
-    MultiThreadingMgr::instance().setConfigLock(false);
-    // calling function with configuration lock unset should not throw
-    EXPECT_NO_THROW(configuration_function());
+    std::function<void()> config_function = []() { ReadOnlyConfigProbe ck; };
+    // calling function with read only config flag unset should not throw
+    EXPECT_NO_THROW(config_function());
+    // enable read only configuration
+    MultiThreadingMgr::instance().setReadOnlyConfig(true);
+    // calling function with read only config flag set should throw
+    EXPECT_THROW(config_function(), isc::InvalidOperation);
+    // disable read only configuration
+    MultiThreadingMgr::instance().setReadOnlyConfig(false);
+    // calling function with read only config flag unset should not throw
+    EXPECT_NO_THROW(config_function());
 }

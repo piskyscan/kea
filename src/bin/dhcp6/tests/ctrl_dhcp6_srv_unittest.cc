@@ -103,7 +103,7 @@ public:
     }
 
     virtual ~CtrlDhcpv6SrvTest() {
-        MultiThreadingMgr::instance().setConfigLock(false);
+        MultiThreadingMgr::instance().setReadOnlyConfig(false);
         LeaseMgrFactory::destroy();
         StatsMgr::instance().removeAll();
         CommandMgr::instance().deregisterAll();

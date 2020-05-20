@@ -122,7 +122,7 @@ public:
 
     /// @brief Destructor
     ~CtrlChannelDhcpv4SrvTest() {
-        MultiThreadingMgr::instance().setConfigLock(false);
+        MultiThreadingMgr::instance().setReadOnlyConfig(false);
         LeaseMgrFactory::destroy();
         StatsMgr::instance().removeAll();
 

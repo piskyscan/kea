@@ -70,36 +70,36 @@ public:
     ///
     /// When entering @ref MultiThreadingCriticalSection, increment internal
     /// counter so that any configuration change that might start the packet
-    /// thread pool is delayed until exiting the respective section.
+    /// thread pool is delayed until leaving the respective section.
     /// If the internal counter is 0, then stop the thread pool.
     void enterCriticalSection();
 
     /// @brief Exit critical section.
     ///
-    /// When exiting @ref MultiThreadingCriticalSection, decrement internal
+    /// When leaving @ref MultiThreadingCriticalSection, decrement internal
     /// counter so that the dhcp thread pool can be started according to the
     /// new configuration.
     /// If the internal counter is 0, then start the thread pool.
-    void exitCriticalSection();
+    void leaveCriticalSection();
 
     /// @brief Is in critical section flag.
     ///
     /// @return The critical section flag.
     bool isInCriticalSection() const;
 
-    /// @brief Set configuration lock.
+    /// @brief Set read only config flag.
     ///
-    /// Set configuration lock flag @ref config_locked_ to specified value.
+    /// Set read only config flag @ref readonly_config_ to specified value.
     ///
-    /// @param enabled the configuration lock value.
-    void setConfigLock(bool enabled);
+    /// @param value the read only config flag value.
+    void setReadOnlyConfig(bool value);
 
-    /// @brief Get configuration lock.
+    /// @brief Get read only config flag.
     ///
-    /// Get configuration lock flag @ref config_locked_ value.
+    /// Get read only config flag @ref readonly_config_ value.
     ///
-    /// @return the configuration lock value.
-    bool getConfigLock() const;
+    /// @return the read only config flag value.
+    bool getReadOnlyConfig() const;
 
     /// @brief Get the dhcp thread pool.
     ///
@@ -175,7 +175,7 @@ private:
     /// @brief Packet processing thread pool.
     ThreadPool<std::function<void()>> thread_pool_;
 
-    /// @brief The configuration lock flag.
+    /// @brief The read only config flag.
     ///
     /// Performing configuration changes should be handled only on the main
     /// thread while not processing dhcp traffic. This value must be set to
@@ -183,7 +183,7 @@ private:
     /// to true to indicate the opposite.
     /// By default this value is set to false, but it must be set to true right
     /// after applying configuration.
-    bool config_locked_;
+    bool readonly_config_;
 };
 
 /// @note: everything here MUST be used ONLY from the main thread.
@@ -192,16 +192,16 @@ private:
 ///
 /// @note: this is useful to properly implement recursive critical sections.
 ///
-/// The constructor calls @ref lock function and then increments the internal
+/// The constructor calls @ref enter function and then increments the internal
 /// counter @ref critical_section_count_. The destructor decrements the internal
-/// counter @ref critical_section_count_ and calls @ref unlock function.
+/// counter @ref critical_section_count_ and calls @ref leave function.
 /// The specialized class can check the value of the counter and perform
-/// actions for specific values (e.g. lock only when it is 0, before it is
-/// incremented, or unlock only if it is 0, after it is decremented).
+/// actions for specific values (e.g. only when it is 0, before it is
+/// incremented, or only if it is 0, after it is decremented).
 /// This is implemented as a generic class to be able to use the functionality
 /// in all specializations, as virtual functions can not work when called from
 /// the constructor or destructor of the base class.
-/// Each specialization needs to implement @ref lock and @ref unlock functions.
+/// Each specialization needs to implement @ref enter and @ref leave functions.
 ///
 /// @tparam T is needed to generate a new implementation for each instantiation
 /// so that the internal @ref critical_section_count_ is independent for each
@@ -212,19 +212,19 @@ public:
 
     /// @brief Constructor.
     ///
-    /// Calls @ref lock and increments @ref critical_section_count_.
+    /// Calls @ref enter and increments @ref critical_section_count_.
     CriticalSectionBase() {
-        lock();
+        enter();
         ++critical_section_count_;
     }
 
     /// @brief Destructor.
     ///
-    /// Decrements @ref critical_section_count_ and calls @ref unlock.
+    /// Decrements @ref critical_section_count_ and calls @ref leave.
     virtual ~CriticalSectionBase() {
         validate();
         --critical_section_count_;
-        unlock();
+        leave();
     }
 
     /// @brief Get critical section count
@@ -236,17 +236,17 @@ public:
 
 private:
 
-    /// @brief Lock generic function to be called when entering a critical
+    /// @brief Enter generic function to be called when entering a critical
     /// section.
-    void lock();
+    void enter();
 
-    /// @brief Unlock generic function to be called when exiting a critical
+    /// @brief Leave generic function to be called when leaving a critical
     /// section.
-    void unlock();
+    void leave();
 
 private:
 
-    /// @brief Validate the internal value of @ref critical_section_count_
+    /// @brief Validate the internal value of @ref critical_section_count_.
     ///
     /// This method is needed to work around the compiler warning by throwing
     /// in the destructor (which of course should never happen).
@@ -267,12 +267,12 @@ uint32_t CriticalSectionBase<T>::critical_section_count_;
 
 /// @brief Type used to define @ref MultiThreadingCriticalSectionBase as an
 /// instantiation of @ref CriticalSectionBase.
-struct ThreadLock {
+struct ThreadSection {
 };
 
-/// @brief Type used to define @ref ConfigurationCriticalSectionBase as an
+/// @brief Type used to define @ref ConfigCriticalSectionBase as an
 /// instantiation of @ref CriticalSectionBase.
-struct ConfigLock {
+struct ConfigSection {
 };
 
 /// @note: everything here MUST be used ONLY from the main thread.
@@ -292,7 +292,7 @@ struct ConfigLock {
 /// The destructor is called when leaving the critical section.
 /// The dhcp thread pool instance will be started according to the new
 /// configuration.
-typedef CriticalSectionBase<ThreadLock> MultiThreadingCriticalSectionBase;
+typedef CriticalSectionBase<ThreadSection> MultiThreadingCriticalSectionBase;
 
 /// @note: everything here MUST be used ONLY from the main thread.
 ///
@@ -304,18 +304,18 @@ typedef CriticalSectionBase<ThreadLock> MultiThreadingCriticalSectionBase;
 /// @note: this is implemented by relying on derivation order:
 /// @ref MultiThreadingCriticalSection derives:
 /// @ref MultiThreadingCriticalSectionBase and then
-/// @ref ConfigurationCriticalSectionBase.
+/// @ref ConfigCriticalSectionBase.
 ///
 /// @note: this is mainly useful to detect calling function which can change the
 /// configuration while processing dhcp traffic (from hooks or from processing
 /// threads). Changing the configuration while processing packets can lead to
 /// inconsistent data in the packet, or ever crashes.
 ///
-/// The constructor is called when entering the critical section. The
-/// configuration lock flag will be unset.
-/// The destructor is called when leaving the critical section. The
-/// configuration lock flag will be set.
-typedef CriticalSectionBase<ConfigLock> ConfigurationCriticalSectionBase;
+/// The constructor is called when entering the critical section. The read only
+/// configuration flag will be unset.
+/// The destructor is called when leaving the critical section. The read only
+/// configuration flag will be set.
+typedef CriticalSectionBase<ConfigSection> ConfigCriticalSectionBase;
 
 /// @note: everything here MUST be used ONLY from the main thread.
 ///
@@ -328,13 +328,13 @@ typedef CriticalSectionBase<ConfigLock> ConfigurationCriticalSectionBase;
 ///
 /// This will guarantee the proper call of all constructors:
 /// @ref MultiThreadingCriticalSectionBase and then
-/// @ref ConfigurationCriticalSectionBase (the configuration is unlocked when
-/// all threads are stopped) and the proper call of all destructors:
-/// @ref ~ConfigurationCriticalSectionBase and then
+/// @ref ConfigCriticalSectionBase (the read only configuration flag is unset
+/// when all threads are stopped) and the proper call of all destructors:
+/// @ref ~ConfigCriticalSectionBase and then
 /// @ref ~MultiThreadingCriticalSectionBase (all threads are started when the
-/// configuration is locked).
+/// read only configuration flag is set).
 class MultiThreadingCriticalSection : public MultiThreadingCriticalSectionBase,
-                                      public ConfigurationCriticalSectionBase {
+                                      public ConfigCriticalSectionBase {
 };
 
 /// @note: everything here MUST be used ONLY from the main thread.
@@ -346,7 +346,7 @@ class MultiThreadingCriticalSection : public MultiThreadingCriticalSectionBase,
 /// processing threads are never affected because the configuration is not
 /// applied.
 /// e.g.: when testing a configuration using commands or in related unittests.
-class ConfigurationCriticalSection : public ConfigurationCriticalSectionBase {
+class ConfigCriticalSection : public ConfigCriticalSectionBase {
 };
 
 /// @brief class which can be used to check and prevent functions to modify
@@ -361,9 +361,9 @@ public:
     ///
     /// Used to check if configuration changes are permitted in current scope.
     ///
-    /// @throw @ref InvalidOperation if the configuration is locked.
+    /// @throw @ref InvalidOperation if the configuration is read only.
     ReadOnlyConfigProbe() {
-        if (MultiThreadingMgr::instance().getConfigLock()) {
+        if (MultiThreadingMgr::instance().getReadOnlyConfig()) {
             isc_throw(isc::InvalidOperation,
                       "configuration modification is not allowed.");
         }

@@ -12,7 +12,7 @@ namespace isc {
 namespace util {
 
 MultiThreadingMgr::MultiThreadingMgr()
-    : enabled_(false), thread_pool_size_(0), config_locked_(false) {
+    : enabled_(false), thread_pool_size_(0), readonly_config_(false) {
 }
 
 MultiThreadingMgr::~MultiThreadingMgr() {
@@ -40,7 +40,7 @@ MultiThreadingMgr::enterCriticalSection() {
 }
 
 void
-MultiThreadingMgr::exitCriticalSection() {
+MultiThreadingMgr::leaveCriticalSection() {
     startPktProcessing();
 }
 
@@ -113,13 +113,13 @@ MultiThreadingMgr::apply(bool enabled, uint32_t thread_count, uint32_t queue_siz
 }
 
 bool
-MultiThreadingMgr::getConfigLock() const {
-    return (config_locked_);
+MultiThreadingMgr::getReadOnlyConfig() const {
+    return (readonly_config_);
 }
 
 void
-MultiThreadingMgr::setConfigLock(bool enabled) {
-    config_locked_ = enabled;
+MultiThreadingMgr::setReadOnlyConfig(bool value) {
+    readonly_config_ = value;
 }
 
 void
@@ -136,39 +136,39 @@ MultiThreadingMgr::startPktProcessing() {
     }
 }
 
-/// @brief specialization of @ref lock for @ref CriticalSectionBase using
-/// @ref ThreadLock
+/// @brief specialization of @ref enter for @ref CriticalSectionBase using
+/// @ref ThreadSection
 template<>
 void
-CriticalSectionBase<ThreadLock>::lock() {
+CriticalSectionBase<ThreadSection>::enter() {
     MultiThreadingMgr::instance().enterCriticalSection();
 }
 
-/// @brief specialization of @ref unlock for @ref CriticalSectionBase using
-/// @ref ThreadLock
+/// @brief specialization of @ref leave for @ref CriticalSectionBase using
+/// @ref ThreadSection
 template<>
 void
-CriticalSectionBase<ThreadLock>::unlock() {
-    MultiThreadingMgr::instance().exitCriticalSection();
+CriticalSectionBase<ThreadSection>::leave() {
+    MultiThreadingMgr::instance().leaveCriticalSection();
 }
 
-/// @brief specialization of @ref lock for @ref CriticalSectionBase using
-/// @ref ConfigLock
+/// @brief specialization of @ref enter for @ref CriticalSectionBase using
+/// @ref ConfigSection
 template<>
 void
-CriticalSectionBase<ConfigLock>::lock() {
-    if (!CriticalSectionBase<ConfigLock>::getCriticalSectionCount()) {
-        MultiThreadingMgr::instance().setConfigLock(false);
+CriticalSectionBase<ConfigSection>::enter() {
+    if (!CriticalSectionBase<ConfigSection>::getCriticalSectionCount()) {
+        MultiThreadingMgr::instance().setReadOnlyConfig(false);
     }
 }
 
-/// @brief specialization of @ref unlock for @ref CriticalSectionBase using
-/// @ref ConfigLock
+/// @brief specialization of @ref leave for @ref CriticalSectionBase using
+/// @ref ConfigSection
 template<>
 void
-CriticalSectionBase<ConfigLock>::unlock() {
-    if (!CriticalSectionBase<ConfigLock>::getCriticalSectionCount()) {
-        MultiThreadingMgr::instance().setConfigLock(true);
+CriticalSectionBase<ConfigSection>::leave() {
+    if (!CriticalSectionBase<ConfigSection>::getCriticalSectionCount()) {
+        MultiThreadingMgr::instance().setReadOnlyConfig(true);
     }
 }
 

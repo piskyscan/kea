@@ -18,7 +18,6 @@
 #include <testutils/user_context_utils.h>
 #include <util/multi_threading_mgr.h>
 
-
 #include <gtest/gtest.h>
 #include <errno.h>
 #include <set>
@@ -49,21 +48,21 @@ public:
     LibLoadTest(std::string lib_filename)
         : lib_name_(lib_filename) {
         {
-            ConfigurationCriticalSection css;
+            ConfigCriticalSection css;
             CommandMgr::instance();
             unloadLibs();
         }
-        MultiThreadingMgr::instance().setConfigLock(false);
+        MultiThreadingMgr::instance().setReadOnlyConfig(false);
     }
 
     /// @brief Destructor
     /// Removes files that may be left over from previous tests
     virtual ~LibLoadTest() {
         {
-            ConfigurationCriticalSection css;
+            ConfigCriticalSection css;
             unloadLibs();
         }
-        MultiThreadingMgr::instance().setConfigLock(false);
+        MultiThreadingMgr::instance().setReadOnlyConfig(false);
     }
 
     /// @brief Adds library/parameters to list of libraries to be loaded
@@ -75,14 +74,14 @@ public:
     ///
     /// The libraries are stored in libraries
     void loadLibs() {
-        ConfigurationCriticalSection ccs;
+        ConfigCriticalSection ccs;
         ASSERT_TRUE(HooksManager::loadLibraries(libraries_))
             << "library loading failed";
     }
 
     /// @brief Unloads all libraries.
     void unloadLibs() {
-        ConfigurationCriticalSection ccs;
+        ConfigCriticalSection ccs;
         ASSERT_NO_THROW(HooksManager::unloadLibraries());
     }
 
@@ -284,12 +283,12 @@ public:
         : LibLoadTest(LEASE_CMDS_LIB_SO),
           d2_mgr_(CfgMgr::instance().getD2ClientMgr()) {
         {
-            ConfigurationCriticalSection css;
+            ConfigCriticalSection css;
             LeaseMgrFactory::destroy();
             enableD2();
             lmptr_ = 0;
         }
-        MultiThreadingMgr::instance().setConfigLock(false);
+        MultiThreadingMgr::instance().setReadOnlyConfig(false);
     }
 
     /// @brief Destructor
@@ -297,7 +296,7 @@ public:
     /// Removes library (if any), destroys lease manager (if any).
     virtual ~LeaseCmdsTest() {
         {
-            ConfigurationCriticalSection css;
+            ConfigCriticalSection css;
             // destroys lease manager first because the other order triggers
             // a clang/boost bug
             LeaseMgrFactory::destroy();
@@ -305,7 +304,7 @@ public:
             unloadLibs();
             lmptr_ = 0;
         }
-        MultiThreadingMgr::instance().setConfigLock(false);
+        MultiThreadingMgr::instance().setReadOnlyConfig(false);
     }
 
     /// @brief Initializes lease manager (and optionally populates it with a lease)
