@@ -5,6 +5,13 @@ sphinxbuilddir=$(builddir)/_build
 api_files1=$(shell cat $(srcdir)/api-files.txt)
 api_files=$(foreach af,$(api_files1), $(srcdir)/$(af))
 
+EXTRA_DIST+=api-files.txt
+EXTRA_DIST+=$(api_files)
+EXTRA_DIST+=api/README
+EXTRA_DIST+=api/_template.json
+EXTRA_DIST+=api/generate-templates
+EXTRA_DIST+=api/cmds-list
+
 if GENERATE_DOCS
 
 sphinxopts=
@@ -83,13 +90,6 @@ mes_files1=$(shell cat mes-files.txt)
 mes_files=$(foreach mf,$(mes_files1), $(top_srcdir)/$(mf))
 
 EXTRA_DIST+=mes-files.txt
-EXTRA_DIST+=api-files.txt
-EXTRA_DIST+=$(api_files)
-EXTRA_DIST+=api/README
-EXTRA_DIST+=api/_template.json
-EXTRA_DIST+=api/generate-templates
-EXTRA_DIST+=api/cmds-list
-
 
 if HAVE_PDFLATEX
 all: html mans pdf
