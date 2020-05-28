@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2012-2020 Internet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -137,27 +137,62 @@ public:
 
     /// @brief returns the last address that was tried from this pool
     ///
+    /// The caller must not hold the allocator mutex in Kea thread mode.
+    ///
     /// @return address/prefix that was last tried from this pool
-    isc::asiolink::IOAddress getLastAllocated() const {
-        return last_allocated_;
+    isc::asiolink::IOAddress getLastAllocated() const;
+
+    /// @brief returns the last address that was tried from this pool
+    ///
+    /// The caller must hold the allocator mutex in Kea thread mode.
+    ///
+    /// @return address/prefix that was last tried from this pool
+    isc::asiolink::IOAddress getLastAllocatedLocked() const {
+        return (last_allocated_);
     }
 
     /// @brief checks if the last address is valid
+    ///
+    /// The caller must not hold the allocator mutex in Kea thread mode.
+    ///
     /// @return true if the last address is valid
-    bool isLastAllocatedValid() const {
-        return last_allocated_valid_;
+    bool isLastAllocatedValid() const;
+
+    /// @brief checks if the last address is valid
+    ///
+    /// The caller must hold the allocator mutex in Kea thread mode.
+    ///
+    /// @return true if the last address is valid
+    bool isLastAllocatedValidLocked() const {
+        return (last_allocated_valid_);
     }
 
     /// @brief sets the last address that was tried from this pool
     ///
+    /// The caller must not hold the allocator mutex in Kea thread mode.
+    ///
     /// @param addr address/prefix to that was tried last
-    void setLastAllocated(const isc::asiolink::IOAddress& addr) {
+    void setLastAllocated(const isc::asiolink::IOAddress& addr);
+
+    /// @brief sets the last address that was tried from this pool
+    ///
+    /// The caller must hold the allocator mutex in Kea thread mode.
+    ///
+    /// @param addr address/prefix to that was tried last
+    void setLastAllocatedLocked(const isc::asiolink::IOAddress& addr) {
         last_allocated_ = addr;
         last_allocated_valid_ = true;
     }
 
     /// @brief resets the last address to invalid
-    void resetLastAllocated() {
+    ///
+    /// The caller must not hold the allocator mutex in Kea thread mode.
+    void resetLastAllocated();
+
+    /// @brief resets the last address to invalid
+    ///
+    /// The caller must hold the allocator mutex in Kea thread mode.
+    void resetLastAllocatedLocked() {
         last_allocated_valid_ = false;
     }
 

@@ -129,11 +129,6 @@ protected:
 
         /// @brief Defines pool type allocation
         Lease::Type pool_type_;
-
-    private:
-
-        /// @brief The mutex to protect the allocated lease
-        std::mutex mutex_;
     };
 
     /// defines a pointer to allocator
@@ -1864,8 +1859,21 @@ public:
         return (rw_mutex_);
     }
 
+    /// @brief Get the allocator mutex.
+    ///
+    /// This mutex is used to protect the allocator instruments.
+    /// @return A reference to the class allocator mutex.
+    static std::mutex& getAllocatorMutex() {
+        return (mutex_);
+    }
+
+private:
+
     /// @brief The read-write mutex.
     isc::util::ReadWriteMutex rw_mutex_;
+
+    /// @brief The mutex to protect the allocator instruments.
+    static std::mutex mutex_;
 };
 
 /// @brief A pointer to the @c AllocEngine object.

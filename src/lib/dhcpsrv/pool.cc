@@ -8,24 +8,27 @@
 
 #include <asiolink/io_address.h>
 #include <asiolink/addr_utilities.h>
+#include <dhcpsrv/alloc_engine.h>
 #include <dhcpsrv/pool.h>
+#include <util/multi_threading_mgr.h>
 #include <boost/make_shared.hpp>
 #include <sstream>
 
 using namespace isc::asiolink;
 using namespace isc::data;
+using namespace isc::util;
 
 namespace isc {
 namespace dhcp {
 
-Pool::Pool(Lease::Type type, const isc::asiolink::IOAddress& first,
-           const isc::asiolink::IOAddress& last)
+Pool::Pool(Lease::Type type, const IOAddress& first,
+           const IOAddress& last)
     :id_(getNextID()), first_(first), last_(last), type_(type),
      capacity_(0), cfg_option_(new CfgOption()), client_class_(""),
      last_allocated_(first), last_allocated_valid_(false) {
 }
 
-bool Pool::inRange(const isc::asiolink::IOAddress& addr) const {
+bool Pool::inRange(const IOAddress& addr) const {
     return (first_ <= addr && addr <= last_);
 }
 
@@ -37,6 +40,42 @@ void Pool::allowClientClass(const ClientClass& class_name) {
     client_class_ = class_name;
 }
 
+IOAddress Pool::getLastAllocated() const {
+    if (MultiThreadingMgr::instance().getMode()) {
+        std::lock_guard<std::mutex> lock(AllocEngine::getAllocatorMutex());
+        return (getLastAllocatedLocked());
+    } else {
+        return (getLastAllocatedLocked());
+    }
+}
+
+bool Pool::isLastAllocatedValid() const {
+    if (MultiThreadingMgr::instance().getMode()) {
+        std::lock_guard<std::mutex> lock(AllocEngine::getAllocatorMutex());
+        return (isLastAllocatedValidLocked());
+    } else {
+        return (isLastAllocatedValidLocked());
+    }
+}
+
+void Pool::setLastAllocated(const IOAddress& addr) {
+    if (MultiThreadingMgr::instance().getMode()) {
+        std::lock_guard<std::mutex> lock(AllocEngine::getAllocatorMutex());
+        setLastAllocatedLocked(addr);
+    } else {
+        setLastAllocatedLocked(addr);
+    }
+}
+
+void Pool::resetLastAllocated() {
+    if (MultiThreadingMgr::instance().getMode()) {
+        std::lock_guard<std::mutex> lock(AllocEngine::getAllocatorMutex());
+        resetLastAllocatedLocked();
+    } else {
+        resetLastAllocatedLocked();
+    }
+}
+
 std::string
 Pool::toText() const {
     std::stringstream tmp;
@@ -45,8 +84,8 @@ Pool::toText() const {
     return (tmp.str());
 }
 
-Pool4::Pool4(const isc::asiolink::IOAddress& first,
-             const isc::asiolink::IOAddress& last)
+Pool4::Pool4(const IOAddress& first,
+             const IOAddress& last)
 :Pool(Lease::TYPE_V4, first, last) {
     // check if specified address boundaries are sane
     if (!first.isV4() || !last.isV4()) {
@@ -64,7 +103,7 @@ Pool4::Pool4(const isc::asiolink::IOAddress& first,
     capacity_ = addrsInRange(first, last);
 }
 
-Pool4::Pool4( const isc::asiolink::IOAddress& prefix, uint8_t prefix_len)
+Pool4::Pool4( const IOAddress& prefix, uint8_t prefix_len)
 :Pool(Lease::TYPE_V4, prefix, IOAddress("0.0.0.0")) {
 
     // check if the prefix is sane
@@ -152,8 +191,8 @@ Pool4::toElement() const {
 }
 
 
-Pool6::Pool6(Lease::Type type, const isc::asiolink::IOAddress& first,
-             const isc::asiolink::IOAddress& last)
+Pool6::Pool6(Lease::Type type, const IOAddress& first,
+             const IOAddress& last)
     : Pool(type, first, last), prefix_len_(128), pd_exclude_option_() {
 
     // check if specified address boundaries are sane
@@ -194,7 +233,7 @@ Pool6::Pool6(Lease::Type type, const isc::asiolink::IOAddress& first,
     capacity_ = addrsInRange(first, last);
 }
 
-Pool6::Pool6(Lease::Type type, const isc::asiolink::IOAddress& prefix,
+Pool6::Pool6(Lease::Type type, const IOAddress& prefix,
              const uint8_t prefix_len, const uint8_t delegated_len /* = 128 */)
     : Pool(type, prefix, IOAddress::IPV6_ZERO_ADDRESS()),
       prefix_len_(delegated_len), pd_exclude_option_() {

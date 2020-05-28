@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2012-2020 Internet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -9,8 +9,10 @@
 #include <asiolink/io_address.h>
 #include <asiolink/addr_utilities.h>
 #include <dhcp/option_space.h>
+#include <dhcpsrv/alloc_engine.h>
 #include <dhcpsrv/shared_network.h>
 #include <dhcpsrv/subnet.h>
+#include <util/multi_threading_mgr.h>
 #include <boost/lexical_cast.hpp>
 #include <boost/make_shared.hpp>
 #include <algorithm>
@@ -53,8 +55,7 @@ namespace dhcp {
 // This is an initial value of subnet-id. See comments in subnet.h for details.
 SubnetID Subnet::static_id_ = 1;
 
-Subnet::Subnet(const isc::asiolink::IOAddress& prefix, uint8_t len,
-               const SubnetID id)
+Subnet::Subnet(const IOAddress& prefix, uint8_t len, const SubnetID id)
     : id_(id == 0 ? generateNextID() : id), prefix_(prefix),
       prefix_len_(len),
       last_allocated_ia_(lastAddrInPrefix(prefix, len)),
@@ -77,14 +78,23 @@ Subnet::Subnet(const isc::asiolink::IOAddress& prefix, uint8_t len,
 }
 
 bool
-Subnet::inRange(const isc::asiolink::IOAddress& addr) const {
+Subnet::inRange(const IOAddress& addr) const {
     IOAddress first = firstAddrInPrefix(prefix_, prefix_len_);
     IOAddress last = lastAddrInPrefix(prefix_, prefix_len_);
 
     return ((first <= addr) && (addr <= last));
 }
 
-isc::asiolink::IOAddress Subnet::getLastAllocated(Lease::Type type) const {
+IOAddress Subnet::getLastAllocated(Lease::Type type) const {
+    if (MultiThreadingMgr::instance().getMode()) {
+        std::lock_guard<std::mutex> lock(AllocEngine::getAllocatorMutex());
+        return (getLastAllocatedLocked(type));
+    } else {
+        return (getLastAllocatedLocked(type));
+    }
+}
+
+IOAddress Subnet::getLastAllocatedLocked(Lease::Type type) const {
     // check if the type is valid (and throw if it isn't)
     checkType(type);
 
@@ -103,6 +113,16 @@ isc::asiolink::IOAddress Subnet::getLastAllocated(Lease::Type type) const {
 
 boost::posix_time::ptime
 Subnet::getLastAllocatedTime(const Lease::Type& lease_type) const {
+    if (MultiThreadingMgr::instance().getMode()) {
+        std::lock_guard<std::mutex> lock(AllocEngine::getAllocatorMutex());
+        return (getLastAllocatedTimeLocked(lease_type));
+    } else {
+        return (getLastAllocatedTimeLocked(lease_type));
+    }
+}
+
+boost::posix_time::ptime
+Subnet::getLastAllocatedTimeLocked(const Lease::Type& lease_type) const {
     auto t = last_allocated_time_.find(lease_type);
     if (t != last_allocated_time_.end()) {
         return (t->second);
@@ -114,9 +134,16 @@ Subnet::getLastAllocatedTime(const Lease::Type& lease_type) const {
 }
 
 
-void Subnet::setLastAllocated(Lease::Type type,
-                              const isc::asiolink::IOAddress& addr) {
+void Subnet::setLastAllocated(Lease::Type type, const IOAddress& addr) {
+    if (MultiThreadingMgr::instance().getMode()) {
+        std::lock_guard<std::mutex> lock(AllocEngine::getAllocatorMutex());
+        setLastAllocatedLocked(type, addr);
+    } else {
+        setLastAllocatedLocked(type, addr);
+    }
+}
 
+void Subnet::setLastAllocatedLocked(Lease::Type type, const IOAddress& addr) {
     // check if the type is valid (and throw if it isn't)
     checkType(type);
 
@@ -359,7 +386,7 @@ PoolCollection& Subnet::getPoolsWritable(Lease::Type type) {
     }
 }
 
-const PoolPtr Subnet::getPool(Lease::Type type, const isc::asiolink::IOAddress& hint,
+const PoolPtr Subnet::getPool(Lease::Type type, const IOAddress& hint,
                               bool anypool /* true */) const {
     // check if the type is valid (and throw if it isn't)
     checkType(type);
@@ -400,7 +427,7 @@ const PoolPtr Subnet::getPool(Lease::Type type, const isc::asiolink::IOAddress& 
 
 const PoolPtr Subnet::getPool(Lease::Type type,
                               const ClientClasses& client_classes,
-                              const isc::asiolink::IOAddress& hint) const {
+                              const IOAddress& hint) const {
     // check if the type is valid (and throw if it isn't)
     checkType(type);
 
@@ -487,7 +514,7 @@ Subnet::delPools(Lease::Type type) {
 }
 
 bool
-Subnet::inPool(Lease::Type type, const isc::asiolink::IOAddress& addr) const {
+Subnet::inPool(Lease::Type type, const IOAddress& addr) const {
 
     // Let's start with checking if it even belongs to that subnet.
     if ((type != Lease::TYPE_PD) && !inRange(addr)) {
@@ -508,7 +535,7 @@ Subnet::inPool(Lease::Type type, const isc::asiolink::IOAddress& addr) const {
 
 bool
 Subnet::inPool(Lease::Type type,
-               const isc::asiolink::IOAddress& addr,
+               const IOAddress& addr,
                const ClientClasses& client_classes) const {
 
     // Let's start with checking if it even belongs to that subnet.

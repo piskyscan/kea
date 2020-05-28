@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2019 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2017-2020 Internet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -176,6 +176,8 @@ public:
     ///
     /// @todo Need extensions to this logic when we support more than one client
     /// class for a subnet.
+    ///
+    /// The caller must not hold the allocator mutex in Kea thread mode.
     ///
     /// @param selected_subnet Pointer to a currently selected subnet.
     ///

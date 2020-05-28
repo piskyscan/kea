@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2012-2020 Internet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -72,6 +72,8 @@ public:
     /// from this subnet. This is used as helper information for the next
     /// iteration of the allocation algorithm.
     ///
+    /// The caller must not hold the allocator mutex in Kea thread mode.
+    ///
     /// @todo: Define map<SubnetID, ClientClass, IOAddress> somewhere in the
     ///        AllocEngine::IterativeAllocator and keep the data there
     ///
@@ -79,8 +81,25 @@ public:
     /// @return address/prefix that was last tried from this subnet
     isc::asiolink::IOAddress getLastAllocated(Lease::Type type) const;
 
+    /// @brief returns the last address that was tried from this subnet
+    ///
+    /// This method returns the last address that was attempted to be allocated
+    /// from this subnet. This is used as helper information for the next
+    /// iteration of the allocation algorithm.
+    ///
+    /// The caller must hold the allocator mutex in Kea thread mode.
+    ///
+    /// @todo: Define map<SubnetID, ClientClass, IOAddress> somewhere in the
+    ///        AllocEngine::IterativeAllocator and keep the data there
+    ///
+    /// @param type lease type to be returned
+    /// @return address/prefix that was last tried from this subnet
+    isc::asiolink::IOAddress getLastAllocatedLocked(Lease::Type type) const;
+
     /// @brief Returns the timestamp when the @c setLastAllocated function
     /// was called.
+    ///
+    /// The caller must not hold the allocator mutex in Kea thread mode.
     ///
     /// @param lease_type Lease type for which last allocation timestamp should
     /// be returned.
@@ -90,11 +109,26 @@ public:
     /// not recognized (which is unlikely).
     boost::posix_time::ptime getLastAllocatedTime(const Lease::Type& lease_type) const;
 
+    /// @brief Returns the timestamp when the @c setLastAllocated function
+    /// was called.
+    ///
+    /// The caller must hold the allocator mutex in Kea thread mode.
+    ///
+    /// @param lease_type Lease type for which last allocation timestamp should
+    /// be returned.
+    ///
+    /// @return Time when a lease of a specified type has been allocated from
+    /// this subnet. The negative infinity time is returned if a lease type is
+    /// not recognized (which is unlikely).
+    boost::posix_time::ptime getLastAllocatedTimeLocked(const Lease::Type& lease_type) const;
+
     /// @brief sets the last address that was tried from this subnet
     ///
     /// This method sets the last address that was attempted to be allocated
     /// from this subnet. This is used as helper information for the next
     /// iteration of the allocation algorithm.
+    ///
+    /// The caller must not hold the allocator mutex in Kea thread mode.
     ///
     /// @todo: Define map<SubnetID, ClientClass, IOAddress> somewhere in the
     ///        AllocEngine::IterativeAllocator and keep the data there
@@ -102,6 +136,21 @@ public:
     /// @param type lease type to be set
     void setLastAllocated(Lease::Type type,
                           const isc::asiolink::IOAddress& addr);
+
+    /// @brief sets the last address that was tried from this subnet
+    ///
+    /// This method sets the last address that was attempted to be allocated
+    /// from this subnet. This is used as helper information for the next
+    /// iteration of the allocation algorithm.
+    ///
+    /// The caller must hold the allocator mutex in Kea thread mode.
+    ///
+    /// @todo: Define map<SubnetID, ClientClass, IOAddress> somewhere in the
+    ///        AllocEngine::IterativeAllocator and keep the data there
+    /// @param addr address/prefix to that was tried last
+    /// @param type lease type to be set
+    void setLastAllocatedLocked(Lease::Type type,
+                                const isc::asiolink::IOAddress& addr);
 
     /// @brief Returns unique ID for that subnet
     /// @return unique ID for that subnet

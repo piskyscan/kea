@@ -91,6 +91,8 @@ AllocEngineHooks Hooks;
 namespace isc {
 namespace dhcp {
 
+std::mutex AllocEngine::mutex_;
+
 AllocEngine::IterativeAllocator::IterativeAllocator(Lease::Type lease_type)
     : Allocator(lease_type) {
 }
@@ -171,7 +173,7 @@ AllocEngine::IterativeAllocator::pickAddressInternal(const SubnetPtr& subnet,
     // Let's get the last allocated address. It is usually set correctly,
     // but there are times when it won't be (like after removing a pool or
     // perhaps restarting the server).
-    IOAddress last = subnet->getLastAllocated(pool_type_);
+    IOAddress last = subnet->getLastAllocatedLocked(pool_type_);
     bool valid = true;
     bool retrying = false;
 
@@ -225,19 +227,19 @@ AllocEngine::IterativeAllocator::pickAddressInternal(const SubnetPtr& subnet,
             }
         }
 
-        last = (*it)->getLastAllocated();
-        valid = (*it)->isLastAllocatedValid();
+        last = (*it)->getLastAllocatedLocked();
+        valid = (*it)->isLastAllocatedValidLocked();
         if (!valid && (last == (*it)->getFirstAddress())) {
             // Pool was (re)initialized
-            (*it)->setLastAllocated(last);
-            subnet->setLastAllocated(pool_type_, last);
+            (*it)->setLastAllocatedLocked(last);
+            subnet->setLastAllocatedLocked(pool_type_, last);
             return (last);
         }
         // still can be bogus
         if (valid && !(*it)->inRange(last)) {
             valid = false;
-            (*it)->resetLastAllocated();
-            (*it)->setLastAllocated((*it)->getFirstAddress());
+            (*it)->resetLastAllocatedLocked();
+            (*it)->setLastAllocatedLocked((*it)->getFirstAddress());
         }
 
         if (valid) {
@@ -259,8 +261,8 @@ AllocEngine::IterativeAllocator::pickAddressInternal(const SubnetPtr& subnet,
             if ((*it)->inRange(next)) {
                 // the next one is in the pool as well, so we haven't hit
                 // pool boundary yet
-                (*it)->setLastAllocated(next);
-                subnet->setLastAllocated(pool_type_, next);
+                (*it)->setLastAllocatedLocked(next);
+                subnet->setLastAllocatedLocked(pool_type_, next);
                 return (next);
             }
 
@@ -275,15 +277,15 @@ AllocEngine::IterativeAllocator::pickAddressInternal(const SubnetPtr& subnet,
     // Let's rewind to the beginning.
     for (it = first; it != pools.end(); ++it) {
         if ((*it)->clientSupported(client_classes)) {
-            (*it)->setLastAllocated((*it)->getFirstAddress());
-            (*it)->resetLastAllocated();
+            (*it)->setLastAllocatedLocked((*it)->getFirstAddress());
+            (*it)->resetLastAllocatedLocked();
         }
     }
 
     // ok to access first element directly. We checked that pools is non-empty
-    last = (*first)->getLastAllocated();
-    (*first)->setLastAllocated(last);
-    subnet->setLastAllocated(pool_type_, last);
+    last = (*first)->getLastAllocatedLocked();
+    (*first)->setLastAllocatedLocked(last);
+    subnet->setLastAllocatedLocked(pool_type_, last);
     return (last);
 }
 
