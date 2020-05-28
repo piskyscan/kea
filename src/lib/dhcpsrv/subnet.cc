@@ -13,6 +13,7 @@
 #include <dhcpsrv/shared_network.h>
 #include <dhcpsrv/subnet.h>
 #include <util/multi_threading_mgr.h>
+#include <util/safe_guard.h>
 #include <boost/lexical_cast.hpp>
 #include <boost/make_shared.hpp>
 #include <algorithm>
@@ -87,7 +88,7 @@ Subnet::inRange(const IOAddress& addr) const {
 
 IOAddress Subnet::getLastAllocated(Lease::Type type) const {
     if (MultiThreadingMgr::instance().getMode()) {
-        std::lock_guard<std::mutex> lock(AllocEngine::getAllocatorMutex());
+        SafeGuard lock(AllocEngine::getAllocatorMutex());
         return (getLastAllocatedLocked(type));
     } else {
         return (getLastAllocatedLocked(type));
@@ -114,7 +115,7 @@ IOAddress Subnet::getLastAllocatedLocked(Lease::Type type) const {
 boost::posix_time::ptime
 Subnet::getLastAllocatedTime(const Lease::Type& lease_type) const {
     if (MultiThreadingMgr::instance().getMode()) {
-        std::lock_guard<std::mutex> lock(AllocEngine::getAllocatorMutex());
+        SafeGuard lock(AllocEngine::getAllocatorMutex());
         return (getLastAllocatedTimeLocked(lease_type));
     } else {
         return (getLastAllocatedTimeLocked(lease_type));
@@ -136,7 +137,7 @@ Subnet::getLastAllocatedTimeLocked(const Lease::Type& lease_type) const {
 
 void Subnet::setLastAllocated(Lease::Type type, const IOAddress& addr) {
     if (MultiThreadingMgr::instance().getMode()) {
-        std::lock_guard<std::mutex> lock(AllocEngine::getAllocatorMutex());
+        SafeGuard lock(AllocEngine::getAllocatorMutex());
         setLastAllocatedLocked(type, addr);
     } else {
         setLastAllocatedLocked(type, addr);

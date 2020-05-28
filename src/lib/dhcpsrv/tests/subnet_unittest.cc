@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2012-2020 Internet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -15,9 +15,11 @@
 #include <dhcp/option_definition.h>
 #include <dhcp/dhcp6.h>
 #include <dhcp/option_space.h>
+#include <dhcpsrv/alloc_engine.h>
 #include <dhcpsrv/shared_network.h>
 #include <dhcpsrv/subnet.h>
 #include <exceptions/exceptions.h>
+#include <util/multi_threading_mgr.h>
 
 #include <boost/pointer_cast.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -30,6 +32,7 @@ using boost::scoped_ptr;
 using namespace isc;
 using namespace isc::dhcp;
 using namespace isc::asiolink;
+using namespace isc::util;
 
 namespace {
 
@@ -700,7 +703,7 @@ TEST(Subnet4Test, lastAllocated) {
     EXPECT_EQ(addr.toText(), subnet->getLastAllocated(Lease::TYPE_V4).toText());
 
     // No, you can't set the last allocated IPv6 address in IPv4 subnet
-    EXPECT_THROW(subnet->setLastAllocated(Lease::TYPE_TA, addr), BadValue);
+    EXPECT_THROW(subnet->setLastAllocated(Lease::TYPE_NA, addr), BadValue);
     EXPECT_THROW(subnet->setLastAllocated(Lease::TYPE_TA, addr), BadValue);
     EXPECT_THROW(subnet->setLastAllocated(Lease::TYPE_PD, addr), BadValue);
 }
@@ -1784,4 +1787,66 @@ TEST(SubnetFetcherTest, getSubnet6ById) {
     EXPECT_EQ("2001:db8:2::/64", subnet->toText());
 }
 
-};
+// This test verifies that LastAllocated methods are Kea thread safe.
+TEST(SubnetThreadTest, lastAllocated) {
+    IOAddress a4("192.0.2.17");
+    IOAddress ia("2001:db8:1::1");
+    IOAddress ta("2001:db8:1::abcd");
+    IOAddress pd("2001:db8:1::1234:5678");
+
+    Subnet4Ptr subnet4(new Subnet4(IOAddress("192.0.2.0"), 24, 1, 2, 3));
+    Subnet6Ptr subnet6(new Subnet6(IOAddress("2001:db8:1::"), 64, 1, 2, 3, 4));
+
+    auto now = boost::posix_time::microsec_clock::universal_time();
+
+    MultiThreadingMgr::instance().setMode(true);
+    std::lock_guard<std::mutex> lock(AllocEngine::getAllocatorMutex());
+
+    // Only Locked variants work, others throw.
+
+    EXPECT_THROW(subnet4->setLastAllocated(Lease::TYPE_V4, a4), InvalidOperation);
+    EXPECT_NO_THROW(subnet4->setLastAllocatedLocked(Lease::TYPE_V4, a4));
+    EXPECT_THROW(subnet6->setLastAllocated(Lease::TYPE_NA, ia), InvalidOperation);
+    EXPECT_NO_THROW(subnet6->setLastAllocatedLocked(Lease::TYPE_NA, ia));
+    EXPECT_THROW(subnet6->setLastAllocated(Lease::TYPE_TA, ta), InvalidOperation);
+    EXPECT_NO_THROW(subnet6->setLastAllocatedLocked(Lease::TYPE_TA, ta));
+    EXPECT_THROW(subnet6->setLastAllocated(Lease::TYPE_PD, pd), InvalidOperation);
+    EXPECT_NO_THROW(subnet6->setLastAllocatedLocked(Lease::TYPE_PD, pd));
+
+    IOAddress addr("0.0.0.0");
+    EXPECT_THROW(subnet4->getLastAllocated(Lease::TYPE_V4), InvalidOperation);
+    EXPECT_NO_THROW(addr = subnet4->getLastAllocatedLocked(Lease::TYPE_V4));
+    EXPECT_EQ(a4, addr);
+    EXPECT_THROW(subnet6->getLastAllocated(Lease::TYPE_NA), InvalidOperation);
+    EXPECT_NO_THROW(addr = subnet6->getLastAllocatedLocked(Lease::TYPE_NA));
+    EXPECT_EQ(ia, addr);
+    EXPECT_THROW(subnet6->getLastAllocated(Lease::TYPE_TA), InvalidOperation);
+    EXPECT_NO_THROW(addr = subnet6->getLastAllocatedLocked(Lease::TYPE_TA));
+    EXPECT_EQ(ta, addr);
+    EXPECT_THROW(subnet6->getLastAllocated(Lease::TYPE_PD), InvalidOperation);
+    EXPECT_NO_THROW(addr = subnet6->getLastAllocatedLocked(Lease::TYPE_PD));
+    EXPECT_EQ(pd, addr);
+
+    boost::posix_time::ptime t;
+    boost::posix_time::time_duration td;
+    EXPECT_THROW(subnet4->getLastAllocatedTime(Lease::TYPE_V4), InvalidOperation);
+    EXPECT_NO_THROW(t = subnet4->getLastAllocatedTimeLocked(Lease::TYPE_V4));
+    td = t - now;
+    EXPECT_GE(10, td.seconds());
+    EXPECT_THROW(subnet6->getLastAllocatedTime(Lease::TYPE_NA), InvalidOperation);
+    EXPECT_NO_THROW(t = subnet6->getLastAllocatedTimeLocked(Lease::TYPE_NA));
+    td = t - now;
+    EXPECT_GE(10, td.seconds());
+    EXPECT_THROW(subnet6->getLastAllocatedTime(Lease::TYPE_TA), InvalidOperation);
+    EXPECT_NO_THROW(t = subnet6->getLastAllocatedTimeLocked(Lease::TYPE_TA));
+    td = t - now;
+    EXPECT_GE(10, td.seconds());
+    EXPECT_THROW(subnet6->getLastAllocatedTime(Lease::TYPE_PD), InvalidOperation);
+    EXPECT_NO_THROW(t = subnet6->getLastAllocatedTimeLocked(Lease::TYPE_PD));
+    td = t - now;
+    EXPECT_GE(10, td.seconds());
+
+    MultiThreadingMgr::instance().setMode(false);
+}
+
+} // end of anonymous namespace

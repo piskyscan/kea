@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2012-2020 Internet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -9,8 +9,10 @@
 #include <asiolink/io_address.h>
 #include <cc/data.h>
 #include <dhcp/option6_pdexclude.h>
+#include <dhcpsrv/alloc_engine.h>
 #include <dhcpsrv/pool.h>
 #include <testutils/test_to_element.h>
+#include <util/multi_threading_mgr.h>
 
 #include <boost/scoped_ptr.hpp>
 
@@ -25,6 +27,7 @@ using namespace isc;
 using namespace isc::dhcp;
 using namespace isc::data;
 using namespace isc::asiolink;
+using namespace isc::util;
 
 namespace {
 
@@ -748,4 +751,63 @@ TEST(Pool6Test, lastAllocated) {
     EXPECT_FALSE(pool.isLastAllocatedValid());
 }
 
-}; // end of anonymous namespace
+// This test verifies that LastAllocated methods are Kea thread safe.
+TEST(PoolThreadTest, lastAllocated) {
+    IOAddress a4("192.0.2.17");
+    IOAddress ia("2001:db8:1::1");
+    IOAddress pd("2001:db8:1::1234:0");
+
+    Pool4Ptr pool4(new Pool4(IOAddress("192.0.2.0"),
+                             IOAddress("192.0.2.255")));
+    Pool6Ptr poolIa(new Pool6(Lease::TYPE_NA, IOAddress("2001:db8::1"),
+                             IOAddress("2001:db8::200")));
+    Pool6Ptr poolPd(new Pool6(IOAddress("2001:db8:1::"), 96, 112,
+                              IOAddress::IPV6_ZERO_ADDRESS(), 0));
+
+    auto now = boost::posix_time::microsec_clock::universal_time();
+
+    MultiThreadingMgr::instance().setMode(true);
+    std::lock_guard<std::mutex> lock(AllocEngine::getAllocatorMutex());
+
+    // Only Locked variants work, others throw.
+
+    EXPECT_THROW(pool4->setLastAllocated(a4), InvalidOperation);
+    EXPECT_NO_THROW(pool4->setLastAllocatedLocked(a4));
+    EXPECT_THROW(poolIa->setLastAllocated(ia), InvalidOperation);
+    EXPECT_NO_THROW(poolIa->setLastAllocatedLocked(ia));
+    EXPECT_THROW(poolPd->setLastAllocated(pd), InvalidOperation);
+    EXPECT_NO_THROW(poolPd->setLastAllocatedLocked(pd));
+
+    IOAddress addr("0.0.0.0");
+    EXPECT_THROW(pool4->getLastAllocated(), InvalidOperation);
+    EXPECT_NO_THROW(addr = pool4->getLastAllocatedLocked());
+    EXPECT_EQ(a4, addr);
+    EXPECT_THROW(poolIa->getLastAllocated(), InvalidOperation);
+    EXPECT_NO_THROW(addr = poolIa->getLastAllocatedLocked());
+    EXPECT_EQ(ia, addr);
+    EXPECT_THROW(poolPd->getLastAllocated(), InvalidOperation);
+    EXPECT_NO_THROW(addr = poolPd->getLastAllocatedLocked());
+    EXPECT_EQ(pd, addr);
+
+    bool valid;
+    EXPECT_THROW(pool4->isLastAllocatedValid(), InvalidOperation);
+    EXPECT_NO_THROW(valid = pool4->isLastAllocatedValidLocked());
+    EXPECT_TRUE(valid);
+    EXPECT_THROW(poolIa->isLastAllocatedValid(), InvalidOperation);
+    EXPECT_NO_THROW(valid = poolIa->isLastAllocatedValidLocked());
+    EXPECT_TRUE(valid);
+    EXPECT_THROW(poolPd->isLastAllocatedValid(), InvalidOperation);
+    EXPECT_NO_THROW(valid = poolPd->isLastAllocatedValidLocked());
+    EXPECT_TRUE(valid);
+
+    EXPECT_THROW(pool4->resetLastAllocated(), InvalidOperation);
+    EXPECT_NO_THROW(pool4->resetLastAllocatedLocked());
+    EXPECT_THROW(poolIa->resetLastAllocated(), InvalidOperation);
+    EXPECT_NO_THROW(poolIa->resetLastAllocatedLocked());
+    EXPECT_THROW(poolPd->resetLastAllocated(), InvalidOperation);
+    EXPECT_NO_THROW(poolPd->resetLastAllocatedLocked());
+
+    MultiThreadingMgr::instance().setMode(false);
+}
+
+} // end of anonymous namespace

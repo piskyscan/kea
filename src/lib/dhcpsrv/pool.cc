@@ -11,6 +11,7 @@
 #include <dhcpsrv/alloc_engine.h>
 #include <dhcpsrv/pool.h>
 #include <util/multi_threading_mgr.h>
+#include <util/safe_guard.h>
 #include <boost/make_shared.hpp>
 #include <sstream>
 
@@ -42,7 +43,7 @@ void Pool::allowClientClass(const ClientClass& class_name) {
 
 IOAddress Pool::getLastAllocated() const {
     if (MultiThreadingMgr::instance().getMode()) {
-        std::lock_guard<std::mutex> lock(AllocEngine::getAllocatorMutex());
+        SafeGuard lock(AllocEngine::getAllocatorMutex());
         return (getLastAllocatedLocked());
     } else {
         return (getLastAllocatedLocked());
@@ -51,7 +52,7 @@ IOAddress Pool::getLastAllocated() const {
 
 bool Pool::isLastAllocatedValid() const {
     if (MultiThreadingMgr::instance().getMode()) {
-        std::lock_guard<std::mutex> lock(AllocEngine::getAllocatorMutex());
+        SafeGuard lock(AllocEngine::getAllocatorMutex());
         return (isLastAllocatedValidLocked());
     } else {
         return (isLastAllocatedValidLocked());
@@ -60,7 +61,7 @@ bool Pool::isLastAllocatedValid() const {
 
 void Pool::setLastAllocated(const IOAddress& addr) {
     if (MultiThreadingMgr::instance().getMode()) {
-        std::lock_guard<std::mutex> lock(AllocEngine::getAllocatorMutex());
+        SafeGuard lock(AllocEngine::getAllocatorMutex());
         setLastAllocatedLocked(addr);
     } else {
         setLastAllocatedLocked(addr);
@@ -69,7 +70,7 @@ void Pool::setLastAllocated(const IOAddress& addr) {
 
 void Pool::resetLastAllocated() {
     if (MultiThreadingMgr::instance().getMode()) {
-        std::lock_guard<std::mutex> lock(AllocEngine::getAllocatorMutex());
+        SafeGuard lock(AllocEngine::getAllocatorMutex());
         resetLastAllocatedLocked();
     } else {
         resetLastAllocatedLocked();
