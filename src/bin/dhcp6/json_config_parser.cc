@@ -267,6 +267,8 @@ public:
     sharedNetworksSanityChecks(const SharedNetwork6Collection& networks,
                                ConstElementPtr json) {
 
+        auto no_inherit = Network::Inheritance::NONE;
+
         /// @todo: in case of errors, use json to extract line numbers.
         if (!json) {
             // No json? That means that the shared-networks was never specified
@@ -278,76 +280,79 @@ public:
         std::set<string> names;
 
         // Let's go through all the networks one by one
-        for (auto net = networks.begin(); net != networks.end(); ++net) {
+        for (auto net : networks) {
             string txt;
 
             // Let's check if all subnets have either the same interface
             // or don't have the interface specified at all.
-            string iface = (*net)->getIface();
+            string iface = net->getIface(no_inherit);
+            bool iface_set = !iface.empty();
 
-            const Subnet6SimpleCollection* subnets = (*net)->getAllSubnets();
+            const Subnet6SimpleCollection* subnets = net->getAllSubnets();
             if (subnets) {
 
                 bool rapid_commit = false;
+                bool first = true;
 
                 // For each subnet, add it to a list of regular subnets.
-                for (auto subnet = subnets->begin(); subnet != subnets->end(); ++subnet) {
-
-                    // Rapid commit must either be enabled or disabled in all subnets
-                    // in the shared network.
-                    if (subnet == subnets->begin()) {
-                        // If this is the first subnet, remember the value.
-                        rapid_commit = (*subnet)->getRapidCommit();
-                    } else {
-                        // Ok, this is the second or following subnets. The value
-                        // must match what was set in the first subnet.
-                        if (rapid_commit != (*subnet)->getRapidCommit()) {
-                            isc_throw(DhcpConfigError, "All subnets in a shared network "
-                                      "must have the same rapid-commit value. Subnet "
-                                      << (*subnet)->toText()
-                                      << " has specified rapid-commit "
-                                      << ( (*subnet)->getRapidCommit() ? "true" : "false")
-                                      << ", but earlier subnet in the same shared-network"
-                                      << " or the shared-network itself used rapid-commit "
-                                      << (rapid_commit ? "true" : "false"));
-                        }
-                    }
-
-                    if (iface.empty()) {
-                        iface = (*subnet)->getIface();
-                        continue;
-                    }
-
-                    if ((*subnet)->getIface().empty()) {
-                        continue;
-                    }
-
-                    if ((*subnet)->getIface() != iface) {
-                        isc_throw(DhcpConfigError, "Subnet " << (*subnet)->toText()
-                                  << " has specified interface " << (*subnet)->getIface()
-                                  << ", but earlier subnet in the same shared-network"
-                                  << " or the shared-network itself used " << iface);
-                    }
+                for (auto subnet : *subnets) {
 
                     // Let's collect the subnets in case we later find out the
                     // subnet doesn't have a mandatory name.
-                    txt += (*subnet)->toText() + " ";
+                    txt += subnet->toText() + " ";
+
+                    // Rapid commit must either be enabled or disabled in all subnets
+                    // in the shared network.
+                    if (first) {
+                        // If this is the first subnet, remember the value.
+                        rapid_commit = subnet->getRapidCommit();
+                        first = false;
+                    } else {
+                        // Ok, this is the second or following subnets. The value
+                        // must match what was set in the first subnet.
+                        if (rapid_commit != subnet->getRapidCommit()) {
+                            isc_throw(DhcpConfigError, "All subnets in a shared network "
+                                      "must have the same rapid-commit value. Subnet "
+                                      << subnet->toText() << boolalpha
+                                      << " has specified rapid-commit "
+                                      << subnet->getRapidCommit()
+                                      << ", but earlier subnet in the same shared-network"
+                                      << " or the shared-network itself used rapid-commit "
+                                      << rapid_commit);
+                        }
+                    }
+
+                    if (subnet->getIface(no_inherit).unspecified()) {
+                        continue;
+                    }
+
+                    if (!iface_set) {
+                        iface = subnet->getIface(no_inherit);
+                        iface_set = true;
+                        continue;
+                    }
+
+                    if (subnet->getIface(no_inherit) != iface) {
+                        isc_throw(DhcpConfigError, "Subnet " << subnet->toText()
+                                  << " has specified interface " << subnet->getIface()
+                                  << ", but earlier subnet in the same shared-network"
+                                  << " or the shared-network itself used " << iface);
+                    }
                 }
             }
 
             // Next, let's check name of the shared network.
-            if ((*net)->getName().empty()) {
+            if (net->getName().empty()) {
                 isc_throw(DhcpConfigError, "Shared-network with subnets "
                           << txt << " is missing mandatory 'name' parameter");
             }
 
             // Is it unique?
-            if (names.find((*net)->getName()) != names.end()) {
+            if (names.find(net->getName()) != names.end()) {
                 isc_throw(DhcpConfigError, "A shared-network with "
-                          "name " << (*net)->getName() << " defined twice.");
+                          "name " << net->getName() << " defined twice.");
             }
-            names.insert((*net)->getName());
-
+            names.insert(net->getName());
         }
     }
 };

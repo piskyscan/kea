@@ -227,8 +227,6 @@ const SimpleKeywords SimpleParser6::SUBNET6_PARAMETERS = {
 /// defined on global level.
 const SimpleDefaults SimpleParser6::SUBNET6_DEFAULTS = {
     { "id",               Element::integer, "0" }, // 0 means autogenerate
-    { "interface",        Element::string,  "" },
-    { "client-class",     Element::string,  "" },
     { "rapid-commit",     Element::boolean, "false" }, // rapid-commit disabled by default
     { "interface-id",     Element::string,  "" }
 };
@@ -239,8 +237,6 @@ const SimpleDefaults SimpleParser6::SUBNET6_DEFAULTS = {
 /// This is mostly the same as @ref SUBNET6_DEFAULTS, except the parameters
 /// that can be derived from shared-network, but cannot from global scope.
 const SimpleDefaults SimpleParser6::SHARED_NETWORK6_DEFAULTS = {
-    { "client-class",     Element::string,  "" },
-    { "interface",        Element::string,  "" },
     { "interface-id",     Element::string,  "" },
     { "rapid-commit",     Element::boolean, "false" } // rapid-commit disabled by default
 };

@@ -556,8 +556,8 @@ TEST(SharedNetwork4Test, sanityChecks) {
     EXPECT_NO_THROW(network->sanityChecks(subnet));
 
     subnet->setIface("foo");
-    expected = "subnet 10.0.0.0/8 has different interface foo ";
-    expected += "than the shared-network frog: eth";
+    expected = "subnet 10.0.0.0/8 has different interface 'foo' ";
+    expected += "than the shared-network frog: 'eth'";
     EXPECT_THROW_MSG(network->sanityChecks(subnet), BadValue, expected);
 
     network->setIface("");
@@ -573,8 +573,8 @@ TEST(SharedNetwork4Test, sanityChecks) {
     EXPECT_NO_THROW(network->sanityChecks(subnet));
 
     subnet->setIface("foo");
-    expected = "subnet 10.0.0.0/8 has different interface foo ";
-    expected += "than the subnet 10.0.0.1/8 of the shared-network frog: eth";
+    expected = "subnet 10.0.0.0/8 has different interface 'foo' ";
+    expected += "than the subnet 10.0.0.1/8 of the shared-network frog: 'eth'";
     EXPECT_THROW_MSG(network->sanityChecks(subnet), BadValue, expected);
 
     subnet->setIface("eth");
@@ -591,8 +591,8 @@ TEST(SharedNetwork4Test, sanityChecks) {
     same_id->setIface("foo");
     EXPECT_THROW(network->sanityChecks(subnet), BadValue);
     EXPECT_NO_THROW(network->sanityChecks(subnet, true));
-
     same_id->setIface("");
+
     Subnet4Ptr same_pfx(new Subnet4(IOAddress("10.0.0.0"), 8, 10, 20, 30, 3));
     network->add(same_pfx);
     EXPECT_NO_THROW(network->sanityChecks(subnet));
@@ -1284,8 +1284,8 @@ TEST(SharedNetwork6Test, sanityChecks) {
     EXPECT_NO_THROW(network->sanityChecks(subnet));
 
     subnet->setIface("foo");
-    expected = "subnet 2001:db8:1::/64 has different interface foo ";
-    expected += "than the shared-network frog: eth";
+    expected = "subnet 2001:db8:1::/64 has different interface 'foo' ";
+    expected += "than the shared-network frog: 'eth'";
     EXPECT_THROW_MSG(network->sanityChecks(subnet), BadValue, expected);
 
     network->setIface("");
@@ -1300,9 +1300,9 @@ TEST(SharedNetwork6Test, sanityChecks) {
     EXPECT_NO_THROW(network->sanityChecks(subnet));
 
     subnet->setIface("foo");
-    expected = "subnet 2001:db8:1::/64 has different interface foo ";
+    expected = "subnet 2001:db8:1::/64 has different interface 'foo' ";
     expected += "than the subnet 2001:db8:1::1/64 of ";
-    expected += "the shared-network frog: eth";
+    expected += "the shared-network frog: 'eth'";
     EXPECT_THROW_MSG(network->sanityChecks(subnet), BadValue, expected);
 
     subnet->setIface("eth");

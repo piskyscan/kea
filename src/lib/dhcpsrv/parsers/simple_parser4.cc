@@ -234,8 +234,6 @@ const SimpleKeywords SimpleParser4::SUBNET4_PARAMETERS = {
 /// interface and reservation-mode
 const SimpleDefaults SimpleParser4::SUBNET4_DEFAULTS = {
     { "id",               Element::integer, "0" }, // 0 means autogenerate
-    { "interface",        Element::string,  "" },
-    { "client-class",     Element::string,  "" },
     { "4o6-interface",    Element::string,  "" },
     { "4o6-interface-id", Element::string,  "" },
     { "4o6-subnet",       Element::string,  "" },
@@ -334,8 +332,6 @@ const SimpleKeywords SimpleParser4::SHARED_NETWORK4_PARAMETERS = {
 
 /// @brief This table defines default values for each IPv4 shared network.
 const SimpleDefaults SimpleParser4::SHARED_NETWORK4_DEFAULTS = {
-    { "client-class",     Element::string, "" },
-    { "interface",        Element::string, "" }
 };
 
 /// @brief This table defines default values for interfaces for DHCPv4.

@@ -435,21 +435,20 @@ SharedNetwork4::sanityChecks(const Subnet4Ptr& subnet, bool exclude) const {
     }
 
     // Check the interface (must be not different inside the shared network).
-    if (subnet->getIface().empty()) {
+    if (subnet->getIface(Inheritance::NONE).unspecified()) {
         return;
     }
-    std::string iface = getIface();
-    if (!iface.empty() && (subnet->getIface() != iface)) {
+    std::string iface = getIface(Inheritance::NONE);
+    if (!iface.empty() && (subnet->getIface(Inheritance::NONE) != iface)) {
         isc_throw(BadValue, "subnet " << subnet->toText()
-                  << " has different interface " << subnet->getIface()
-                  << " than the shared-network " << getName()
-                  << ": " << getIface());
+                  << " has different interface '" << subnet->getIface()
+                  << "' than the shared-network " << getName()
+                  << ": '" << iface << "'");
     }
     if (iface.empty()) {
         // Find the first subnet with an interface.
         for (auto sub : *getAllSubnets()) {
-            iface = sub->getIface();
-            if (iface.empty()) {
+            if (sub->getIface(Inheritance::NONE).unspecified()) {
                 continue;
             }
             // Exclude the subnet itself when wanted.
@@ -458,15 +457,16 @@ SharedNetwork4::sanityChecks(const Subnet4Ptr& subnet, bool exclude) const {
                  (sub->toText() == subnet->toText()))) {
                 continue;
             }
-            if (subnet->getIface() == iface) {
+            iface = sub->getIface(Inheritance::NONE);
+            if (subnet->getIface(Inheritance::NONE) == iface) {
                 return;
             }
             // Different interface.
             isc_throw(BadValue, "subnet " << subnet->toText()
-                      << " has different interface " << subnet->getIface()
-                      << " than the subnet " << sub->toText()
+                      << " has different interface '" << subnet->getIface()
+                      << "' than the subnet " << sub->toText()
                       << " of the shared-network " << getName()
-                      <<  ": " << iface);
+                      <<  ": '" << iface << "'");
         }
     }
 }
@@ -600,21 +600,20 @@ SharedNetwork6::sanityChecks(const Subnet6Ptr& subnet, bool exclude) const {
     }
 
     // Check the interface (must be not different inside the shared network).
-    if (subnet->getIface().empty()) {
+    if (subnet->getIface(Inheritance::NONE).unspecified()) {
         return;
     }
-    std::string iface = getIface();
-    if (!iface.empty() && (subnet->getIface() != iface)) {
+    std::string iface = getIface(Inheritance::NONE);
+    if (!iface.empty() && (subnet->getIface(Inheritance::NONE) != iface)) {
         isc_throw(BadValue, "subnet " << subnet->toText()
-                  << " has different interface " << subnet->getIface()
-                  << " than the shared-network " << getName()
-                  << ": " << getIface());
+                  << " has different interface '" << subnet->getIface()
+                  << "' than the shared-network " << getName()
+                  << ": '" << iface << "'");
     }
     if (iface.empty()) {
         // Find the first subnet with an interface.
         for (auto sub : *getAllSubnets()) {
-            iface = sub->getIface();
-            if (iface.empty()) {
+            if (sub->getIface(Inheritance::NONE).unspecified()) {
                 continue;
             }
             // Exclude the subnet itself when wanted.
@@ -623,15 +622,16 @@ SharedNetwork6::sanityChecks(const Subnet6Ptr& subnet, bool exclude) const {
                  (sub->toText() == subnet->toText()))) {
                 continue;
             }
-            if (subnet->getIface() == iface) {
+            iface = sub->getIface(Inheritance::NONE);
+            if (subnet->getIface(Inheritance::NONE) == iface) {
                 return;
             }
             // Different interface.
             isc_throw(BadValue, "subnet " << subnet->toText()
-                      << " has different interface " << subnet->getIface()
-                      << " than the subnet " << sub->toText()
+                      << " has different interface '" << subnet->getIface()
+                      << "' than the subnet " << sub->toText()
                       << " of the shared-network " << getName()
-                      <<  ": " << iface);
+                      <<  ": '" << iface << "'");
         }
     }
 }

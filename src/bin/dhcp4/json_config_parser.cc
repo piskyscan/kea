@@ -181,6 +181,8 @@ public:
     sharedNetworksSanityChecks(const SharedNetwork4Collection& networks,
                                ConstElementPtr json) {
 
+        auto no_inherit = Network::Inheritance::NONE;
+
         /// @todo: in case of errors, use json to extract line numbers.
         if (!json) {
             // No json? That means that the shared-networks was never specified
@@ -192,62 +194,63 @@ public:
         std::set<string> names;
 
         // Let's go through all the networks one by one
-        for (auto net = networks.begin(); net != networks.end(); ++net) {
+        for (auto net : networks) {
             string txt;
 
             // Let's check if all subnets have either the same interface
             // or don't have the interface specified at all.
-            bool authoritative = (*net)->getAuthoritative();
-            string iface = (*net)->getIface();
+            bool authoritative = net->getAuthoritative();
+            string iface = net->getIface(no_inherit);
+            bool iface_set = !iface.empty();
 
-            const Subnet4SimpleCollection* subnets = (*net)->getAllSubnets();
+            const Subnet4SimpleCollection* subnets = net->getAllSubnets();
             if (subnets) {
                 // For each subnet, add it to a list of regular subnets.
-                for (auto subnet = subnets->begin(); subnet != subnets->end(); ++subnet) {
-                    if ((*subnet)->getAuthoritative() != authoritative) {
+                for (auto subnet : *subnets) {
+                    // Let's collect the subnets in case we later find out the
+                    // subnet doesn't have a mandatory name.
+                    txt += subnet->toText() + " ";
+
+                    if (subnet->getAuthoritative() != authoritative) {
                         isc_throw(DhcpConfigError, "Subnet " << boolalpha
-                                  << (*subnet)->toText()
+                                  << subnet->toText()
                                   << " has different authoritative setting "
-                                  << (*subnet)->getAuthoritative()
+                                  << subnet->getAuthoritative()
                                   << " than the shared-network itself: "
                                   << authoritative);
                     }
 
-                    if (iface.empty()) {
-                        iface = (*subnet)->getIface();
+                    if (subnet->getIface(no_inherit).unspecified()) {
                         continue;
                     }
 
-                    if ((*subnet)->getIface().empty()) {
+                    if (!iface_set) {
+                        iface = subnet->getIface(no_inherit);
+                        iface_set = true;
                         continue;
                     }
 
-                    if ((*subnet)->getIface() != iface) {
-                        isc_throw(DhcpConfigError, "Subnet " << (*subnet)->toText()
-                                  << " has specified interface " << (*subnet)->getIface()
+                    if (subnet->getIface(no_inherit) != iface) {
+                        isc_throw(DhcpConfigError, "Subnet " << subnet->toText()
+                                  << " has specified interface " << subnet->getIface()
                                   << ", but earlier subnet in the same shared-network"
                                   << " or the shared-network itself used " << iface);
                     }
-
-                    // Let's collect the subnets in case we later find out the
-                    // subnet doesn't have a mandatory name.
-                    txt += (*subnet)->toText() + " ";
                 }
             }
 
             // Next, let's check name of the shared network.
-            if ((*net)->getName().empty()) {
+            if (net->getName().empty()) {
                 isc_throw(DhcpConfigError, "Shared-network with subnets "
                           << txt << " is missing mandatory 'name' parameter");
             }
 
             // Is it unique?
-            if (names.find((*net)->getName()) != names.end()) {
+            if (names.find(net->getName()) != names.end()) {
                 isc_throw(DhcpConfigError, "A shared-network with "
-                          "name " << (*net)->getName() << " defined twice.");
+                          "name " << net->getName() << " defined twice.");
             }
-            names.insert((*net)->getName());
-
+            names.insert(net->getName());
         }
     }
 };

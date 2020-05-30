@@ -93,13 +93,10 @@ CfgSubnets6::merge(CfgOptionDefPtr cfg_def, CfgSharedNetworks6Ptr networks,
     // Iterate over the subnets to be merged. They will replace the existing
     // subnets with the same id. All new subnets will be inserted into the
     // configuration into which we're merging.
-    auto other_subnets = other.getAll();
-    for (auto other_subnet = other_subnets->begin();
-         other_subnet != other_subnets->end();
-         ++other_subnet) {
+    for (auto other_subnet : *other.getAll()) {
 
         // Check if there is a subnet with the same ID.
-        auto subnet_it = index_id.find((*other_subnet)->getID());
+        auto subnet_it = index_id.find(other_subnet->getID());
         if (subnet_it != index_id.end()) {
 
             // Subnet found.
@@ -107,7 +104,7 @@ CfgSubnets6::merge(CfgOptionDefPtr cfg_def, CfgSharedNetworks6Ptr networks,
 
             // If the existing subnet and other subnet
             // are the same instance skip it.
-            if (existing_subnet == *other_subnet) {
+            if (existing_subnet == other_subnet) {
                 continue;
             }
 
@@ -125,7 +122,7 @@ CfgSubnets6::merge(CfgOptionDefPtr cfg_def, CfgSharedNetworks6Ptr networks,
         }
 
         // Check if there is a subnet with the same prefix.
-        auto subnet_prefix_it = index_prefix.find((*other_subnet)->toText());
+        auto subnet_prefix_it = index_prefix.find(other_subnet->toText());
         if (subnet_prefix_it != index_prefix.end()) {
 
             // Subnet found.
@@ -149,38 +146,38 @@ CfgSubnets6::merge(CfgOptionDefPtr cfg_def, CfgSharedNetworks6Ptr networks,
         }
 
         // Create the subnet's options based on the given definitions.
-        (*other_subnet)->getCfgOption()->createOptions(cfg_def);
+        other_subnet->getCfgOption()->createOptions(cfg_def);
 
         // Create the options for pool based on the given definitions.
-        for (auto pool : (*other_subnet)->getPoolsWritable(Lease::TYPE_NA)) {
+        for (auto pool : other_subnet->getPoolsWritable(Lease::TYPE_NA)) {
             pool->getCfgOption()->createOptions(cfg_def);
         }
 
-        for (auto pool : (*other_subnet)->getPoolsWritable(Lease::TYPE_PD)) {
+        for (auto pool : other_subnet->getPoolsWritable(Lease::TYPE_PD)) {
             pool->getCfgOption()->createOptions(cfg_def);
         }
 
         // Add the "other" subnet to the our collection of subnets.
-        static_cast<void>(subnets_.push_back(*other_subnet));
+        static_cast<void>(subnets_.push_back(other_subnet));
 
         // If it belongs to a shared network, find the network and
         // add the subnet to it
-        std::string network_name = (*other_subnet)->getSharedNetworkName();
+        std::string network_name = other_subnet->getSharedNetworkName();
         if (!network_name.empty()) {
             SharedNetwork6Ptr network = networks->getByName(network_name);
             if (network) {
                 try {
-                    network->sanityChecks(*other_subnet, true);
+                    network->sanityChecks(other_subnet, true);
                 } catch (const BadValue& ex) {
                     LOG_WARN(dhcpsrv_logger, DHCPSRV_CFGMGR_MERGE_SUBNET6)
                         .arg(ex.what());
                 }
-                network->add(*other_subnet);
+                network->add(other_subnet);
             } else {
                 // This implies the shared-network collection we were given
                 // is out of sync with the subnets we were given.
                 isc_throw(InvalidOperation, "Cannot assign subnet ID of "
-                          << (*other_subnet)->getID()
+                          << other_subnet->getID()
                           << " to shared network: " << network_name
                           << ", network does not exist");
             }
@@ -275,44 +272,42 @@ CfgSubnets6::selectSubnet(const asiolink::IOAddress& address,
     // If the specified address is a relay address we first need to match
     // it with the relay addresses specified for all subnets.
     if (is_relay_address) {
-        for (Subnet6Collection::const_iterator subnet = subnets_.begin();
-             subnet != subnets_.end(); ++subnet) {
+        for (const auto& subnet : subnets_) {
 
             // If the specified address matches a relay address, return this
             // subnet.
-            if ((*subnet)->hasRelays()) {
-                if (!(*subnet)->hasRelayAddress(address)) {
+            if (subnet->hasRelays()) {
+                if (!subnet->hasRelayAddress(address)) {
                     continue;
                 }
 
             } else {
                 SharedNetwork6Ptr network;
-                (*subnet)->getSharedNetwork(network);
+                subnet->getSharedNetwork(network);
                 if (!network || !network->hasRelayAddress(address)) {
                     continue;
                 }
             }
 
-            if ((*subnet)->clientSupported(client_classes)) {
+            if (subnet->clientSupported(client_classes)) {
                 // The relay address is matching the one specified for a subnet
                 // or its shared network.
                 LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE,
                           DHCPSRV_CFGMGR_SUBNET6_RELAY)
-                    .arg((*subnet)->toText()).arg(address.toText());
-                return (*subnet);
+                    .arg(subnet->toText()).arg(address.toText());
+                return (subnet);
             }
         }
     }
 
     // No success so far. Check if the specified address is in range
     // with any subnet.
-    for (Subnet6Collection::const_iterator subnet = subnets_.begin();
-         subnet != subnets_.end(); ++subnet) {
-        if ((*subnet)->inRange(address) &&
-            (*subnet)->clientSupported(client_classes)) {
+    for (const auto& subnet : subnets_) {
+        if (subnet->inRange(address) &&
+            subnet->clientSupported(client_classes)) {
             LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE, DHCPSRV_CFGMGR_SUBNET6)
-                      .arg((*subnet)->toText()).arg(address.toText());
-            return (*subnet);
+                      .arg(subnet->toText()).arg(address.toText());
+            return (subnet);
         }
     }
 
@@ -327,19 +322,18 @@ CfgSubnets6::selectSubnet(const std::string& iface_name,
 
     // If empty interface specified, we can't select subnet by interface.
     if (!iface_name.empty()) {
-        for (Subnet6Collection::const_iterator subnet = subnets_.begin();
-             subnet != subnets_.end(); ++subnet) {
+        for (const auto& subnet : subnets_) {
 
             // If interface name matches with the one specified for the subnet
             // and the client is not rejected based on the classification,
             // return the subnet.
-            if (((*subnet)->getIface() == iface_name) &&
-                (*subnet)->clientSupported(client_classes)) {
+            if ((subnet->getIface() == iface_name) &&
+                subnet->clientSupported(client_classes)) {
 
                 LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE,
                           DHCPSRV_CFGMGR_SUBNET6_IFACE)
-                    .arg((*subnet)->toText()).arg(iface_name);
-                return (*subnet);
+                    .arg(subnet->toText()).arg(iface_name);
+                return (subnet);
             }
         }
     }
@@ -354,19 +348,18 @@ CfgSubnets6::selectSubnet(const OptionPtr& interface_id,
     // We can only select subnet using an interface id, if the interface
     // id is known.
     if (interface_id) {
-        for (Subnet6Collection::const_iterator subnet = subnets_.begin();
-             subnet != subnets_.end(); ++subnet) {
+        for (const auto& subnet : subnets_) {
 
             // If interface id matches for the subnet and the subnet is not
             // rejected based on the classification.
-            if ((*subnet)->getInterfaceId() &&
-                (*subnet)->getInterfaceId()->equals(interface_id) &&
-                (*subnet)->clientSupported(client_classes)) {
+            if (subnet->getInterfaceId() &&
+                subnet->getInterfaceId()->equals(interface_id) &&
+                subnet->clientSupported(client_classes)) {
 
                 LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE,
                       DHCPSRV_CFGMGR_SUBNET6_IFACE_ID)
-                    .arg((*subnet)->toText());
-                return (*subnet);
+                    .arg(subnet->toText());
+                return (subnet);
             }
         }
     }
@@ -377,12 +370,11 @@ CfgSubnets6::selectSubnet(const OptionPtr& interface_id,
 Subnet6Ptr
 CfgSubnets6::getSubnet(const SubnetID id) const {
 
-    /// @todo: Once this code is migrated to multi-index container, use
-    /// an index rather than full scan.
-    for (auto subnet = subnets_.begin(); subnet != subnets_.end(); ++subnet) {
-        if ((*subnet)->getID() == id) {
-            return (*subnet);
-        }
+    // Use the by identifier unique index.
+    const auto& index = subnets_.get<SubnetSubnetIdIndexTag>();
+    auto subnet_it = index.find(id);
+    if (subnet_it != index.end()) {
+        return (*subnet_it);
     }
     return (Subnet6Ptr());
 }
@@ -393,9 +385,8 @@ CfgSubnets6::removeStatistics() {
 
     StatsMgr& stats_mgr = StatsMgr::instance();
     // For each v6 subnet currently configured, remove the statistics.
-    for (Subnet6Collection::const_iterator subnet6 = subnets_.begin();
-         subnet6 != subnets_.end(); ++subnet6) {
-        SubnetID subnet_id = (*subnet6)->getID();
+    for (const auto& subnet6 : subnets_) {
+        SubnetID subnet_id = subnet6->getID();
         stats_mgr.del(StatsMgr::generateName("subnet", subnet_id, "total-nas"));
 
         stats_mgr.del(StatsMgr::generateName("subnet", subnet_id,
@@ -429,19 +420,18 @@ CfgSubnets6::updateStatistics() {
 
     StatsMgr& stats_mgr = StatsMgr::instance();
     // For each v6 subnet currently configured, calculate totals
-    for (Subnet6Collection::const_iterator subnet6 = subnets_.begin();
-         subnet6 != subnets_.end(); ++subnet6) {
-        SubnetID subnet_id = (*subnet6)->getID();
+    for (const auto& subnet6 : subnets_) {
+        SubnetID subnet_id = subnet6->getID();
 
         stats_mgr.setValue(StatsMgr::generateName("subnet", subnet_id,
                                                   "total-nas"),
                            static_cast<int64_t>
-                           ((*subnet6)->getPoolCapacity(Lease::TYPE_NA)));
+                           (subnet6->getPoolCapacity(Lease::TYPE_NA)));
 
         stats_mgr.setValue(StatsMgr::generateName("subnet", subnet_id,
                                                   "total-pds"),
                             static_cast<int64_t>
-                            ((*subnet6)->getPoolCapacity(Lease::TYPE_PD)));
+                            (subnet6->getPoolCapacity(Lease::TYPE_PD)));
 
         const std::string& name_nas =
             StatsMgr::generateName("subnet", subnet_id, "cumulative-assigned-nas");
@@ -457,8 +447,8 @@ CfgSubnets6::updateStatistics() {
     }
 
     // Only recount the stats if we have subnets.
-    if (subnets_.begin() != subnets_.end()) {
-            LeaseMgrFactory::instance().recountLeaseStats6();
+    if (!subnets_.empty()) {
+        LeaseMgrFactory::instance().recountLeaseStats6();
     }
 }
 
@@ -466,9 +456,8 @@ ElementPtr
 CfgSubnets6::toElement() const {
     ElementPtr result = Element::createList();
     // Iterate subnets
-    for (Subnet6Collection::const_iterator subnet = subnets_.cbegin();
-         subnet != subnets_.cend(); ++subnet) {
-        result->add((*subnet)->toElement());
+    for (const auto& subnet : subnets_) {
+        result->add(subnet->toElement());
     }
     return (result);
 }
