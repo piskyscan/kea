@@ -225,7 +225,7 @@ public:
         for (auto net = networks->begin(); net != networks->end(); ++net) {
 
             // For each network go through all the subnets in it.
-            const Subnet6Collection* subnets = (*net)->getAllSubnets();
+            const Subnet6SimpleCollection* subnets = (*net)->getAllSubnets();
             if (!subnets) {
                 // Shared network without subnets it weird, but we decided to
                 // accept such configurations.
@@ -285,7 +285,7 @@ public:
             // or don't have the interface specified at all.
             string iface = (*net)->getIface();
 
-            const Subnet6Collection* subnets = (*net)->getAllSubnets();
+            const Subnet6SimpleCollection* subnets = (*net)->getAllSubnets();
             if (subnets) {
 
                 bool rapid_commit = false;
