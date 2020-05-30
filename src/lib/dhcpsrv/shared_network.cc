@@ -344,6 +344,7 @@ SharedNetwork4::replace(const Subnet4Ptr& subnet) {
         isc_throw(BadValue, "null pointer specified when adding a subnet"
                   " to a shared network");
     }
+    sanityChecks(subnet);
     const Subnet4Ptr& old = getSubnet(subnet->getID());
     bool ret = Impl::replace(subnets_, subnet);
     if (ret) {
@@ -417,6 +418,59 @@ SharedNetwork4::subnetsAllHRGlobal() const {
     return (Subnet4Ptr());
 }
 
+void
+SharedNetwork4::sanityChecks(const Subnet4Ptr& subnet, bool exclude) const {
+    if (!subnet) {
+        return;
+    }
+
+    // Check authoritative flag (must be the same as the shared network).
+    bool authoritative = getAuthoritative();
+    if (subnet->getAuthoritative() != authoritative) {
+        isc_throw(BadValue, "subnet " << subnet->toText()
+                  << " has different authoritative setting "
+                  << std::boolalpha << subnet->getAuthoritative()
+                  << " than the shared-network " << getName()
+                  << ": " << authoritative);
+    }
+
+    // Check the interface (must be not different inside the shared network).
+    if (subnet->getIface().empty()) {
+        return;
+    }
+    std::string iface = getIface();
+    if (!iface.empty() && (subnet->getIface() != iface)) {
+        isc_throw(BadValue, "subnet " << subnet->toText()
+                  << " has different interface " << subnet->getIface()
+                  << " than the shared-network " << getName()
+                  << ": " << getIface());
+    }
+    if (iface.empty()) {
+        // Find the first subnet with an interface.
+        for (auto sub : *getAllSubnets()) {
+            iface = sub->getIface();
+            if (iface.empty()) {
+                continue;
+            }
+            // Exclude the subnet itself when wanted.
+            if (exclude &&
+                ((sub->getId() == subnet->getId()) ||
+                 (sub->toText() == subnet->toText()))) {
+                continue;
+            }
+            if (subnet->getIface() == iface) {
+                return;
+            }
+            // Different interface.
+            isc_throw(BadValue, "subnet " << subnet->toText()
+                      << " has different interface " << subnet->getIface()
+                      << " than the subnet " << sub->toText()
+                      << " of the shared-network " << getName()
+                      <<  ": " << iface);
+        }
+    }
+}
+
 ElementPtr
 SharedNetwork4::toElement() const {
     ElementPtr map = Network4::toElement();
@@ -456,6 +510,7 @@ SharedNetwork6::replace(const Subnet6Ptr& subnet) {
         isc_throw(BadValue, "null pointer specified when adding a subnet"
                   " to a shared network");
     }
+    sanityChecks(subnet);
     const Subnet6Ptr& old = getSubnet(subnet->getID());
     bool ret = Impl::replace(subnets_, subnet);
     if (ret) {
@@ -514,6 +569,71 @@ SharedNetwork6::subnetsAllHRGlobal() const {
         }
     }
     return (Subnet6Ptr());
+}
+
+void
+SharedNetwork6::sanityChecks(const Subnet6Ptr& subnet, bool exclude) const {
+    if (!subnet) {
+        return;
+    }
+
+    // Check the rapid-commit flag (all subnets must have the same value).
+    bool rapid_commit = false;
+    for (auto sub : *getAllSubnets()) {
+        // Exclude the subnet itself when wanted.
+        if (exclude &&
+            ((sub->getId() == subnet->getId()) ||
+             (sub->toText() == subnet->toText()))) {
+            continue;
+        }
+        rapid_commit = sub->getRapidCommit();
+        if (subnet->getRapidCommit() == rapid_commit) {
+            break;
+        }
+        // Different rapid-commit.
+        isc_throw(BadValue, "subnet " << subnet->toText()
+                  << " has different rapid-commit setting "
+                  << std::boolalpha << subnet->getRapidCommit()
+                  << " than the subnet " << sub->toText()
+                  << " of the shared-network " << getName()
+                  << ": " << rapid_commit);
+    }
+
+    // Check the interface (must be not different inside the shared network).
+    if (subnet->getIface().empty()) {
+        return;
+    }
+    std::string iface = getIface();
+    if (!iface.empty() && (subnet->getIface() != iface)) {
+        isc_throw(BadValue, "subnet " << subnet->toText()
+                  << " has different interface " << subnet->getIface()
+                  << " than the shared-network " << getName()
+                  << ": " << getIface());
+    }
+    if (iface.empty()) {
+        // Find the first subnet with an interface.
+        for (auto sub : *getAllSubnets()) {
+            iface = sub->getIface();
+            if (iface.empty()) {
+                continue;
+            }
+            // Exclude the subnet itself when wanted.
+            if (exclude &&
+                ((sub->getId() == subnet->getId()) ||
+                 (sub->toText() == subnet->toText()))) {
+                continue;
+            }
+            if (subnet->getIface() == iface) {
+                return;
+            }
+            // Different interface.
+            isc_throw(BadValue, "subnet " << subnet->toText()
+                      << " has different interface " << subnet->getIface()
+                      << " than the subnet " << sub->toText()
+                      << " of the shared-network " << getName()
+                      <<  ": " << iface);
+        }
+    }
 }
 
 ElementPtr

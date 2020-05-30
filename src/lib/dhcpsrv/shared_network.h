@@ -103,7 +103,7 @@ public:
     ///
     /// @param subnet Pointer to a subnet replacing the subnet with the same ID
     /// in this shared network.
-    /// @throw isc::BadValue if subnet is null.
+    /// @throw isc::BadValue if subnet is null or does not pass sanity checks.
     /// @throw InvalidOperation if a subnet is already associated with some
     /// shared network.
     /// @return true if the operation succeeded, false otherwise.
@@ -200,6 +200,14 @@ public:
     ///
     /// @return First subnet which has not a global host reservation mode.
     Subnet4Ptr subnetsAllHRGlobal() const;
+
+    /// @brief Checks if a new subnet can be sanely added or replaced.
+    ///
+    /// @param subnet Pointer to a new subnet.
+    /// @param exclude True if a subnet with the same identifier or prefix
+    /// must be excluded from sanity checks, false otherwise.
+    /// @throw isc::BadValue if sanity checks do not pass.
+    void sanityChecks(const Subnet4Ptr& subnet, bool exclude = false) const;
 
     /// @brief Unparses shared network object.
     ///
@@ -319,7 +327,7 @@ public:
     ///
     /// @param subnet Pointer to a subnet replacing the subnet with the same ID
     /// in this shared network.
-    /// @throw isc::BadValue if subnet is null.
+    /// @throw isc::BadValue if subnet is null or does not pass sanity checks.
     /// @throw InvalidOperation if a subnet is already associated with some
     /// shared network.
     /// @return true if the operation succeeded, false otherwise.
@@ -404,6 +412,14 @@ public:
     ///
     /// @return First subnet which has not a global host reservation mode.
     Subnet6Ptr subnetsAllHRGlobal() const;
+
+    /// @brief Checks if a new subnet can be sanely added or replaced.
+    ///
+    /// @param subnet Pointer to a new subnet.
+    /// @param exclude True if a subnet with the same identifier or prefix
+    /// must be excluded from sanity checks, false otherwise.
+    /// @throw isc::BadValue if sanity checks do not pass.
+    void sanityChecks(const Subnet6Ptr& subnet, bool exclude = false) const;
 
     /// @brief Unparses shared network object.
     ///

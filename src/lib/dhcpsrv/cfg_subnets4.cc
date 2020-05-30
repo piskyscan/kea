@@ -167,6 +167,12 @@ CfgSubnets4::merge(CfgOptionDefPtr cfg_def, CfgSharedNetworks4Ptr networks,
         if (!network_name.empty()) {
             SharedNetwork4Ptr network = networks->getByName(network_name);
             if (network) {
+                try {
+                    network->sanityChecks(*other_subnet, true);
+                } catch (const BadValue& ex) {
+                    LOG_WARN(dhcpsrv_logger, DHCPSRV_CFGMGR_MERGE_SUBNET4)
+                        .arg(ex.what());
+                }
                 network->add(*other_subnet);
             } else {
                 // This implies the shared-network collection we were given

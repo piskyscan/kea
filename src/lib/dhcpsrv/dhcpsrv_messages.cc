@@ -1,4 +1,4 @@
-// File created from ../../../src/lib/dhcpsrv/dhcpsrv_messages.mes on Thu Dec 05 2019 16:13
+// File created from ../../../src/lib/dhcpsrv/dhcpsrv_messages.mes on Sat May 30 2020 20:16
 
 #include <cstddef>
 #include <log/message_types.h>
@@ -20,6 +20,8 @@ extern const isc::log::MessageID DHCPSRV_CFGMGR_DDNS_PARAMETER_IGNORED = "DHCPSR
 extern const isc::log::MessageID DHCPSRV_CFGMGR_DDNS_PARAMETER_MOVED = "DHCPSRV_CFGMGR_DDNS_PARAMETER_MOVED";
 extern const isc::log::MessageID DHCPSRV_CFGMGR_DEL_SUBNET4 = "DHCPSRV_CFGMGR_DEL_SUBNET4";
 extern const isc::log::MessageID DHCPSRV_CFGMGR_DEL_SUBNET6 = "DHCPSRV_CFGMGR_DEL_SUBNET6";
+extern const isc::log::MessageID DHCPSRV_CFGMGR_MERGE_SUBNET4 = "DHCPSRV_CFGMGR_MERGE_SUBNET4";
+extern const isc::log::MessageID DHCPSRV_CFGMGR_MERGE_SUBNET6 = "DHCPSRV_CFGMGR_MERGE_SUBNET6";
 extern const isc::log::MessageID DHCPSRV_CFGMGR_NEW_SUBNET4 = "DHCPSRV_CFGMGR_NEW_SUBNET4";
 extern const isc::log::MessageID DHCPSRV_CFGMGR_NEW_SUBNET6 = "DHCPSRV_CFGMGR_NEW_SUBNET6";
 extern const isc::log::MessageID DHCPSRV_CFGMGR_NO_SUBNET4 = "DHCPSRV_CFGMGR_NO_SUBNET4";
@@ -264,6 +266,8 @@ const char* values[] = {
     "DHCPSRV_CFGMGR_DDNS_PARAMETER_MOVED", "dhcp-ddns:%1 is deprecated, moving it to global:%2",
     "DHCPSRV_CFGMGR_DEL_SUBNET4", "IPv4 subnet %1 removed",
     "DHCPSRV_CFGMGR_DEL_SUBNET6", "IPv6 subnet %1 removed",
+    "DHCPSRV_CFGMGR_MERGE_SUBNET4", "a problem was detected during configuration merge: %1",
+    "DHCPSRV_CFGMGR_MERGE_SUBNET6", "a problem was detected during configuration merge: %1",
     "DHCPSRV_CFGMGR_NEW_SUBNET4", "a new subnet has been added to configuration: %1",
     "DHCPSRV_CFGMGR_NEW_SUBNET6", "a new subnet has been added to configuration: %1",
     "DHCPSRV_CFGMGR_NO_SUBNET4", "no suitable subnet is defined for address hint %1",

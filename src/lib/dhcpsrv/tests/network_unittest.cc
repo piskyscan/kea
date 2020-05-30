@@ -160,7 +160,6 @@ TEST_F(NetworkTest, hrModeFromString) {
 // network parameters.
 TEST_F(NetworkTest, inheritanceSupport4) {
     // Set global values for each parameter.
-    globals_->set("interface", Element::create("g"));
     globals_->set("valid-lifetime", Element::create(80));
     globals_->set("renew-timer", Element::create(80));
     globals_->set("rebind-timer", Element::create(80));
@@ -186,11 +185,6 @@ TEST_F(NetworkTest, inheritanceSupport4) {
     // For each parameter for which inheritance is supported run
     // the test that checks if the values are inherited properly.
 
-    {
-        SCOPED_TRACE("interface");
-        testNetworkInheritance<TestNetwork>(&Network::getIface, &Network::setIface,
-                                            "n", "g");
-    }
     {
         SCOPED_TRACE("client_class");
         testNetworkInheritance<TestNetwork>(&Network::getClientClass,
@@ -292,7 +286,7 @@ TEST_F(NetworkTest, inheritanceSupport4) {
         testNetworkInheritance<TestNetwork4>(&Network4::getDdnsReplaceClientNameMode,
                                              &Network4::setDdnsReplaceClientNameMode,
                                              D2ClientConfig::RCM_WHEN_PRESENT,
-                                             D2ClientConfig::RCM_ALWAYS); 
+                                             D2ClientConfig::RCM_ALWAYS);
     }
     {
         SCOPED_TRACE("ddns-generated-prefix");
@@ -381,7 +375,7 @@ TEST_F(NetworkTest, inheritanceSupport6) {
         testNetworkInheritance<TestNetwork4>(&Network4::getDdnsReplaceClientNameMode,
                                              &Network4::setDdnsReplaceClientNameMode,
                                              D2ClientConfig::RCM_WHEN_PRESENT,
-                                             D2ClientConfig::RCM_ALWAYS); 
+                                             D2ClientConfig::RCM_ALWAYS);
     }
     {
         SCOPED_TRACE("ddns-generated-prefix");
@@ -521,16 +515,16 @@ TEST_F(NetworkTest, getPropertyParentChild) {
 TEST_F(NetworkTest, getPropertyGlobalNoParentNoChild) {
     TestNetworkPtr net_child(new TestNetwork());
 
-    globals_->set("interface", Element::create("global_iface"));
+    globals_->set("ddns-generated-prefix", Element::create("global_prefix"));
 
     net_child->setFetchGlobalsFn(getFetchGlobalsFn());
 
-    EXPECT_FALSE(net_child->getIface().unspecified());
-    EXPECT_TRUE(net_child->getIface(Network::Inheritance::NONE).unspecified());
-    EXPECT_TRUE(net_child->getIface(Network::Inheritance::PARENT_NETWORK).unspecified());
-    EXPECT_FALSE(net_child->getIface(Network::Inheritance::GLOBAL).unspecified());
+    EXPECT_FALSE(net_child->getDdnsGeneratedPrefix().unspecified());
+    EXPECT_TRUE(net_child->getDdnsGeneratedPrefix(Network::Inheritance::NONE).unspecified());
+    EXPECT_TRUE(net_child->getDdnsGeneratedPrefix(Network::Inheritance::PARENT_NETWORK).unspecified());
+    EXPECT_FALSE(net_child->getDdnsGeneratedPrefix(Network::Inheritance::GLOBAL).unspecified());
 
-    EXPECT_EQ("global_iface", net_child->getIface().get());
+    EXPECT_EQ("global_prefix", net_child->getDdnsGeneratedPrefix().get());
 }
 
 // Test that getSiaddr() never fails.
