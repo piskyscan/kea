@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2019 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2017-2020 Internet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -190,6 +190,7 @@ public:
 
                 auto copy_subnets(*subnets);
                 for (auto subnet = copy_subnets.cbegin(); subnet != copy_subnets.cend(); ++subnet) {
+                    (*other_network)->sanityChecks(*subnet);
                     (*existing_network)->del((*subnet)->getID());
                     (*other_network)->add(*subnet);
                 }

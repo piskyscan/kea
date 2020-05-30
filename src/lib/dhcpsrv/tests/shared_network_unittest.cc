@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2019 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2017-2020 Internet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -11,6 +11,7 @@
 #include <dhcpsrv/subnet_id.h>
 #include <dhcpsrv/triplet.h>
 #include <exceptions/exceptions.h>
+#include <testutils/gtest_utils.h>
 #include <testutils/test_to_element.h>
 #include <gtest/gtest.h>
 #include <cstdint>
@@ -525,6 +526,80 @@ TEST(SharedNetwork4Test, relayInfoList) {
     EXPECT_TRUE(network->hasRelayAddress(IOAddress("192.168.2.2")));
     EXPECT_TRUE(network->hasRelayAddress(IOAddress("192.168.2.3")));
     EXPECT_FALSE(network->hasRelayAddress(IOAddress("192.168.2.4")));
+}
+
+// This test verifies the sanity checks
+TEST(SharedNetwork4Test, sanityChecks) {
+    SharedNetwork4Ptr network(new SharedNetwork4("frog"));
+    Subnet4Ptr subnet(new Subnet4(IOAddress("10.0.0.0"), 8, 10, 20, 30, 1));
+
+    // Authoritative must match.
+    network->setAuthoritative(false);
+    subnet->setAuthoritative(false);
+    EXPECT_NO_THROW(network->sanityChecks(subnet));
+
+    network->setAuthoritative(true);
+    std::string expected = "subnet 10.0.0.0/8 ";
+    expected += "has different authoritative setting false ";
+    expected += "than the shared-network frog: true";
+    EXPECT_THROW_MSG(network->sanityChecks(subnet), BadValue, expected);
+
+    network->setAuthoritative(false);
+    subnet->setAuthoritative(true);
+    EXPECT_THROW(network->sanityChecks(subnet), BadValue);
+
+    network->setAuthoritative(true);
+    EXPECT_NO_THROW(network->sanityChecks(subnet));
+
+    // When interface is set on the shared network it must match.
+    network->setIface("eth");
+    EXPECT_NO_THROW(network->sanityChecks(subnet));
+
+    subnet->setIface("foo");
+    expected = "subnet 10.0.0.0/8 has different interface foo ";
+    expected += "than the shared-network frog: eth";
+    EXPECT_THROW_MSG(network->sanityChecks(subnet), BadValue, expected);
+
+    network->setIface("");
+    subnet->setIface("eth");
+    EXPECT_NO_THROW(network->sanityChecks(subnet));
+
+    // When there is a subnet in the shared network interface must match.
+    Subnet4Ptr member(new Subnet4(IOAddress("10.0.0.1"), 8, 10, 20, 30, 2));
+    network->add(member);
+    EXPECT_NO_THROW(network->sanityChecks(subnet));
+
+    member->setIface("eth");
+    EXPECT_NO_THROW(network->sanityChecks(subnet));
+
+    subnet->setIface("foo");
+    expected = "subnet 10.0.0.0/8 has different interface foo ";
+    expected += "than the subnet 10.0.0.1/8 of the shared-network frog: eth";
+    EXPECT_THROW_MSG(network->sanityChecks(subnet), BadValue, expected);
+
+    subnet->setIface("eth");
+    EXPECT_NO_THROW(network->sanityChecks(subnet));
+
+    member->setIface("");
+    EXPECT_NO_THROW(network->sanityChecks(subnet));
+
+    // Exclude ignores any subnet with the same identifier or prefix.
+    Subnet4Ptr same_id(new Subnet4(IOAddress("10.0.0.2"), 8, 10, 20, 30, 1));
+    network->add(same_id);
+    EXPECT_NO_THROW(network->sanityChecks(subnet));
+
+    same_id->setIface("foo");
+    EXPECT_THROW(network->sanityChecks(subnet), BadValue);
+    EXPECT_NO_THROW(network->sanityChecks(subnet, true));
+
+    same_id->setIface("");
+    Subnet4Ptr same_pfx(new Subnet4(IOAddress("10.0.0.0"), 8, 10, 20, 30, 3));
+    network->add(same_pfx);
+    EXPECT_NO_THROW(network->sanityChecks(subnet));
+
+    same_pfx->setIface("foo");
+    EXPECT_THROW(network->sanityChecks(subnet), BadValue);
+    EXPECT_NO_THROW(network->sanityChecks(subnet, true));
 }
 
 // This test verifies that unparsing shared network returns valid structure.
@@ -1143,6 +1218,114 @@ TEST(SharedNetwork6Test, relayInfoList) {
     EXPECT_TRUE(network->hasRelayAddress(IOAddress("2001:db8:2::2")));
     EXPECT_TRUE(network->hasRelayAddress(IOAddress("2001:db8:2::3")));
     EXPECT_FALSE(network->hasRelayAddress(IOAddress("2001:db8:2::4")));
+}
+
+// This test verifies the sanity checks
+TEST(SharedNetwork6Test, sanityChecks) {
+    SharedNetwork6Ptr network(new SharedNetwork6("frog"));
+    Subnet6Ptr subnet(new Subnet6(IOAddress("2001:db8:1::"),
+                                  64, 10, 20, 30, 40, 1));
+
+    // Rapid-commit must match between subnets.
+    subnet->setRapidCommit(false);
+    EXPECT_NO_THROW(network->sanityChecks(subnet));
+
+    Subnet6Ptr member(new Subnet6(IOAddress("2001:db8:1::1"),
+                                  64, 10, 20, 30, 40, 2));
+    network->add(member);
+    EXPECT_NO_THROW(network->sanityChecks(subnet));
+
+    member->setRapidCommit(true);
+    std::string expected = "subnet 2001:db8:1::/64 ";
+    expected += "has different rapid-commit setting false ";
+    expected += "than the subnet 2001:db8:1::1/64 ";
+    expected += "of the shared-network frog: true";
+    EXPECT_THROW_MSG(network->sanityChecks(subnet), BadValue, expected);
+
+    member->setRapidCommit(false);
+    subnet->setRapidCommit(true);
+    EXPECT_THROW(network->sanityChecks(subnet), BadValue);
+
+    subnet->setRapidCommit(true);
+    member->setRapidCommit(true);
+    EXPECT_NO_THROW(network->sanityChecks(subnet));
+
+    // Exclude ignores any subnet with the same identifier or prefix.
+    network.reset(new SharedNetwork6("frog"));
+    Subnet6Ptr same_id(new Subnet6(IOAddress("2001:db8:1::2"),
+                                   64, 10, 20, 30, 40, 1));
+    network->add(same_id);
+    EXPECT_THROW(network->sanityChecks(subnet), BadValue);
+    EXPECT_NO_THROW(network->sanityChecks(subnet, true));
+
+    same_id->setRapidCommit(true);
+    EXPECT_NO_THROW(network->sanityChecks(subnet));
+
+    network.reset(new SharedNetwork6("frog"));
+    Subnet6Ptr same_pfx(new Subnet6(IOAddress("2001:db8:1::"),
+                                    64, 10, 20, 30, 40, 3));
+    network->add(same_pfx);
+    EXPECT_THROW(network->sanityChecks(subnet), BadValue);
+    EXPECT_NO_THROW(network->sanityChecks(subnet, true));
+
+    same_pfx->setRapidCommit(true);
+    EXPECT_NO_THROW(network->sanityChecks(subnet));
+    subnet->setRapidCommit(false);
+
+    subnet->setRapidCommit(false);
+    member->setRapidCommit(false);
+    same_id->setRapidCommit(false);
+    same_pfx->setRapidCommit(false);
+    EXPECT_NO_THROW(network->sanityChecks(subnet));
+
+    // When interface is set on the shared network it must match.
+    network.reset(new SharedNetwork6("frog"));
+    network->setIface("eth");
+    EXPECT_NO_THROW(network->sanityChecks(subnet));
+
+    subnet->setIface("foo");
+    expected = "subnet 2001:db8:1::/64 has different interface foo ";
+    expected += "than the shared-network frog: eth";
+    EXPECT_THROW_MSG(network->sanityChecks(subnet), BadValue, expected);
+
+    network->setIface("");
+    subnet->setIface("eth");
+    EXPECT_NO_THROW(network->sanityChecks(subnet));
+
+    // When there is a subnet in the shared network interface must match.
+    network->add(member);
+    EXPECT_NO_THROW(network->sanityChecks(subnet));
+
+    member->setIface("eth");
+    EXPECT_NO_THROW(network->sanityChecks(subnet));
+
+    subnet->setIface("foo");
+    expected = "subnet 2001:db8:1::/64 has different interface foo ";
+    expected += "than the subnet 2001:db8:1::1/64 of ";
+    expected += "the shared-network frog: eth";
+    EXPECT_THROW_MSG(network->sanityChecks(subnet), BadValue, expected);
+
+    subnet->setIface("eth");
+    EXPECT_NO_THROW(network->sanityChecks(subnet));
+
+    member->setIface("");
+    EXPECT_NO_THROW(network->sanityChecks(subnet));
+
+    // Exclude ignores any subnet with the same identifier or prefix.
+    network->add(same_id);
+    EXPECT_NO_THROW(network->sanityChecks(subnet));
+
+    same_id->setIface("foo");
+    EXPECT_THROW(network->sanityChecks(subnet), BadValue);
+    EXPECT_NO_THROW(network->sanityChecks(subnet, true));
+    same_id->setIface("");
+
+    network->add(same_pfx);
+    EXPECT_NO_THROW(network->sanityChecks(subnet));
+
+    same_pfx->setIface("foo");
+    EXPECT_THROW(network->sanityChecks(subnet), BadValue);
+    EXPECT_NO_THROW(network->sanityChecks(subnet, true));
 }
 
 // This test verifies that unparsing shared network returns valid structure.

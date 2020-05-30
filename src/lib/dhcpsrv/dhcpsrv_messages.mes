@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2019 Internet Systems Consortium, Inc. ("ISC")
+# Copyright (C) 2012-2020 Internet Systems Consortium, Inc. ("ISC")
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -79,6 +79,16 @@ server configuration. The argument identifies the subnet removed.
 
 % DHCPSRV_CFGMGR_DEL_SUBNET6 IPv6 subnet %1 removed
 This debug message is issued when a subnet is successfully removed from the
+
+% DHCPSRV_CFGMGR_MERGE_SUBNET4 a problem was detected during configuration merge: %1
+This warning message is issued when sanity checks failed. The displayed
+problem can lead to incorrect behavior when it is not fixed by another
+update.
+
+% DHCPSRV_CFGMGR_MERGE_SUBNET6 a problem was detected during configuration merge: %1
+This warning message is issued when sanity checks failed. The displayed
+problem can lead to incorrect behavior when it is not fixed by another
+update.
 
 % DHCPSRV_CFGMGR_NEW_SUBNET4 a new subnet has been added to configuration: %1
 This is an informational message reporting that the configuration has
