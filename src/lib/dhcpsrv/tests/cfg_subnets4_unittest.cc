@@ -503,7 +503,7 @@ TEST(CfgSubnets4Test, selectSharedNetworkByIface) {
     ASSERT_TRUE(network_returned);
     EXPECT_EQ(network, network_returned);
 
-    const Subnet4Collection* subnets_eth1 = network_returned->getAllSubnets();
+    const Subnet4SimpleCollection* subnets_eth1 = network_returned->getAllSubnets();
     EXPECT_EQ(2, subnets_eth1->size());
     ASSERT_TRUE(network_returned->getSubnet(SubnetID(1)));
     ASSERT_TRUE(network_returned->getSubnet(SubnetID(2)));

@@ -459,6 +459,8 @@ public:
 
     /// @brief Checks if specified subnet is part of the collection
     ///
+    /// @tparam CollectionType type of subnet6 collections i.e.
+    /// either Subnet6SimpleCollection or Subnet6Collection
     /// @param col collection of subnets to be inspected
     /// @param subnet text notation (e.g. 192.0.2.0/24)
     /// @param t1 expected renew-timer value
@@ -474,12 +476,13 @@ public:
     /// @param max_valid expected max-valid-lifetime value
     ///        (0 (default) means same as valid)
     /// @return the subnet that was examined
+    template <typename CollectionType>
     Subnet6Ptr
-    checkSubnet(const Subnet6Collection& col, std::string subnet,
+    checkSubnet(const CollectionType& col, std::string subnet,
                 uint32_t t1, uint32_t t2, uint32_t pref, uint32_t valid,
                 uint32_t min_pref = 0, uint32_t max_pref = 0,
                 uint32_t min_valid = 0, uint32_t max_valid = 0) {
-        const auto& index = col.get<SubnetPrefixIndexTag>();
+        const auto& index = col.template get<SubnetPrefixIndexTag>();
         auto subnet_it = index.find(subnet);
         if (subnet_it == index.cend()) {
             ADD_FAILURE() << "Unable to find expected subnet " << subnet;
@@ -6503,7 +6506,7 @@ TEST_F(Dhcp6ParserTest, sharedNetworksName) {
     EXPECT_EQ("foo", net->getName());
 
     // Verify that there are no subnets in this shared-network
-    const Subnet6Collection * subs = net->getAllSubnets();
+    const Subnet6SimpleCollection* subs = net->getAllSubnets();
     ASSERT_TRUE(subs);
     EXPECT_EQ(0, subs->size());
 }
@@ -6539,7 +6542,7 @@ TEST_F(Dhcp6ParserTest, sharedNetworks1subnet) {
     EXPECT_EQ("foo", net->getName());
 
     // It should have one subnet. The subnet should have default values.
-    const Subnet6Collection * subs = net->getAllSubnets();
+    const Subnet6SimpleCollection* subs = net->getAllSubnets();
     ASSERT_TRUE(subs);
     EXPECT_EQ(1, subs->size());
     checkSubnet(*subs, "2001:db8::/48", 0, 0, 3600, 7200);
@@ -6615,7 +6618,7 @@ TEST_F(Dhcp6ParserTest, sharedNetworks3subnets) {
 
     EXPECT_EQ("foo", net->getName());
 
-    const Subnet6Collection * subs = net->getAllSubnets();
+    const Subnet6SimpleCollection* subs = net->getAllSubnets();
     ASSERT_TRUE(subs);
     EXPECT_EQ(3, subs->size());
     checkSubnet(*subs, "2001:db1::/48",
@@ -6743,7 +6746,7 @@ TEST_F(Dhcp6ParserTest, sharedNetworksDerive) {
     SharedNetwork6Ptr net = nets->at(0);
     ASSERT_TRUE(net);
 
-    const Subnet6Collection * subs = net->getAllSubnets();
+    const Subnet6SimpleCollection* subs = net->getAllSubnets();
     ASSERT_TRUE(subs);
     EXPECT_EQ(2, subs->size());
 
@@ -6847,7 +6850,7 @@ TEST_F(Dhcp6ParserTest, sharedNetworksDeriveInterfaces) {
     SharedNetwork6Ptr net = nets->at(0);
     ASSERT_TRUE(net);
 
-    const Subnet6Collection * subs = net->getAllSubnets();
+    const Subnet6SimpleCollection* subs = net->getAllSubnets();
     ASSERT_TRUE(subs);
     EXPECT_EQ(2, subs->size());
 
@@ -6957,7 +6960,7 @@ TEST_F(Dhcp6ParserTest, sharedNetworksDeriveClientClass) {
     ASSERT_TRUE(net);
     EXPECT_EQ("alpha", net->getClientClass().get());
 
-    const Subnet6Collection * subs = net->getAllSubnets();
+    const Subnet6SimpleCollection* subs = net->getAllSubnets();
     ASSERT_TRUE(subs);
     EXPECT_EQ(2, subs->size());
 
@@ -7035,7 +7038,7 @@ TEST_F(Dhcp6ParserTest, sharedNetworksRapidCommit) {
     SharedNetwork6Ptr net = nets->at(0);
     ASSERT_TRUE(net);
 
-    const Subnet6Collection * subs = net->getAllSubnets();
+    const Subnet6SimpleCollection* subs = net->getAllSubnets();
     ASSERT_TRUE(subs);
     ASSERT_EQ(2, subs->size());
     EXPECT_TRUE(subs->at(0)->getRapidCommit());
@@ -7240,7 +7243,7 @@ TEST_F(Dhcp6ParserTest, comments) {
     EXPECT_EQ("\"A shared network\"", ctx_net->get("comment")->str());
 
     // The shared network has a subnet.
-    const Subnet6Collection* subs = net->getAllSubnets();
+    const Subnet6SimpleCollection* subs = net->getAllSubnets();
     ASSERT_TRUE(subs);
     ASSERT_EQ(1, subs->size());
     Subnet6Ptr sub = subs->at(0);
