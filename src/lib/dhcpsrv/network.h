@@ -237,10 +237,15 @@ public:
     /// If the interface is specified, the server will use the network
     /// associated with this local interface to allocate IP addresses and
     /// other resources to a client.
+    /// Empty values are translated into unspecified.
     ///
     /// @param iface_name Interface name.
     void setIface(const util::Optional<std::string>& iface_name) {
-        iface_name_ = iface_name;
+        if (iface_name.empty()) {
+            iface_name_ = util::Optional<std::string>("", true);
+        } else {
+            iface_name_ = iface_name;
+        }
     }
 
     /// @brief Returns name of the local interface for which this network is
