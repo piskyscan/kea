@@ -697,9 +697,10 @@ Dhcpv4Srv::selectSubnet(const Pkt4Ptr& query, bool& drop,
 
     Subnet4Ptr subnet;
 
-    const SubnetSelector& selector = CfgSubnets4::initSelector(query);
+    SubnetSelector selector = CfgSubnets4::initSelector(query);
 
     CfgMgr& cfgmgr = CfgMgr::instance();
+    selector.cfg_shared_network4_ = cfgmgr.getCurrentCfg()->getCfgSharedNetworks4();
     subnet = cfgmgr.getCurrentCfg()->getCfgSubnets4()->selectSubnet(selector);
 
     // Let's execute all callouts registered for subnet4_select

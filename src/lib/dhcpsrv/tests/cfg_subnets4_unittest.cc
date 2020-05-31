@@ -467,6 +467,7 @@ TEST(CfgSubnets4Test, selectSharedNetworkByIface) {
     IfaceMgrTestConfig config(true);
 
     CfgSubnets4 cfg;
+    CfgSharedNetworks4Ptr networks(new CfgSharedNetworks4());
 
     // Create 3 subnets.
     Subnet4Ptr subnet1(new Subnet4(IOAddress("172.16.2.0"), 24, 1, 2, 3,
@@ -485,9 +486,11 @@ TEST(CfgSubnets4Test, selectSharedNetworkByIface) {
     network->setIface("eth1");
     ASSERT_NO_THROW(network->add(subnet1));
     ASSERT_NO_THROW(network->add(subnet2));
+    ASSERT_NO_THROW(networks->add(network));
 
     // Make sure that initially the subnets don't exist.
     SubnetSelector selector;
+    selector.cfg_shared_network4_ = networks;
     // Set an interface to a name that is not defined in the config.
     // Subnet selection should fail.
     selector.iface_name_ = "eth0";
@@ -518,8 +521,12 @@ TEST(CfgSubnets4Test, selectSharedNetworkByIface) {
     // Try selecting by eth1 again, but this time set subnet specific
     // interface name to eth0. Subnet selection should fail.
     selector.iface_name_ = "eth1";
+    ASSERT_NO_THROW(cfg.del(1));
+    ASSERT_NO_THROW(cfg.del(3));
     subnet1->setIface("eth0");
     subnet3->setIface("eth0");
+    ASSERT_NO_THROW(cfg.add(subnet1));
+    ASSERT_NO_THROW(cfg.add(subnet3));
     selected = cfg.selectSubnet(selector);
     ASSERT_FALSE(selected);
 
@@ -610,6 +617,7 @@ TEST(CfgSubnets4Test, selectSharedNetworkByClasses) {
     IfaceMgrTestConfig config(true);
 
     CfgSubnets4 cfg;
+    CfgSharedNetworks4Ptr networks(new CfgSharedNetworks4());
 
     // Create 3 subnets.
     Subnet4Ptr subnet1(new Subnet4(IOAddress("192.0.2.0"), 26, 1, 2, 3));
@@ -627,16 +635,18 @@ TEST(CfgSubnets4Test, selectSharedNetworkByClasses) {
     network1->allowClientClass("device-type1");
     ASSERT_NO_THROW(network1->add(subnet1));
     ASSERT_NO_THROW(network1->add(subnet2));
-
+    ASSERT_NO_THROW(networks->add(network1));
     // Create second network and add last subnet there.
     SharedNetwork4Ptr network2(new SharedNetwork4("network2"));
     network2->setIface("eth1");
     network2->allowClientClass("device-type2");
     ASSERT_NO_THROW(network2->add(subnet3));
+    ASSERT_NO_THROW(networks->add(network2));
 
     // Use interface name as a selector. This guarantees that subnet
     // selection will be made based on the classification.
     SubnetSelector selector;
+    selector.cfg_shared_network4_ = networks;
     selector.iface_name_ = "eth1";
 
     // If the client has "device-type2" class, it is expected that the

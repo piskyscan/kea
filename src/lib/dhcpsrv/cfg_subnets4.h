@@ -15,6 +15,7 @@
 #include <dhcpsrv/subnet_id.h>
 #include <dhcpsrv/subnet_selector.h>
 #include <boost/shared_ptr.hpp>
+#include <cstddef>
 #include <string>
 
 namespace isc {
@@ -202,14 +203,6 @@ public:
     ///
     /// If the address matches with a subnet, the subnet is returned.
     ///
-    /// @todo This method requires performance improvement! It currently
-    /// iterates over all existing subnets (possibly a couple of times)
-    /// to find the one which fulfills the search criteria. The subnet storage
-    /// is implemented as a simple STL vector which precludes fast searches
-    /// using specific keys. Hence, full scan is required. To improve the
-    /// search performance a different container type is required, e.g.
-    /// multi-index container, or something of a similar functionality.
-    ///
     /// @param selector Const reference to the selector structure which holds
     /// various information extracted from the client's packet which are used
     /// to find appropriate subnet.
@@ -269,10 +262,12 @@ public:
     /// @param iface name of the interface to be matched.
     /// @param client_classes Optional parameter specifying the classes that
     /// the client belongs to.
+    /// @param networks Optional SharedNetwork4Collection
     ///
     /// @return Pointer to the selected subnet or NULL if no subnet found.
     Subnet4Ptr selectSubnet(const std::string& iface,
-                            const ClientClasses& client_classes) const;
+                            const ClientClasses& client_classes,
+                            const SharedNetwork4Collection* networks) const;
 
     /// @brief Attempts to do subnet selection based on DHCP4o6 information
     ///
@@ -319,6 +314,40 @@ public:
     virtual isc::data::ElementPtr toElement() const;
 
 private:
+
+    /// @brief Returns the order of the subnet in the container
+    /// using the random index.
+    ///
+    /// This template is used to select the first inserted subnet
+    /// from a range i.e. a pair of iterators. It projects the
+    /// iterator argument to the random index and returns the distance
+    /// from the beginning.
+    ///
+    /// @tparam SubnetIndex Type of the value identifying the subnet e.g.
+    /// a container iterator pointing to it.
+    /// @param it A value of type SubnetIndex.
+    /// @return The distance between the subnet and the beginning of the
+    /// container.
+    template <typename SubnetIndex>
+    ptrdiff_t getOrder(const SubnetIndex& it) const {
+        return (subnets_.project<SubnetRandomAccessIndexTag>(it) - subnets_.begin());
+    }
+
+    /// @brief Specialization of @ref getOrder for SubnetID.
+    ///
+    /// @param subnet_id Subnet identifier.
+    /// @return The distance between the subnet and the beginning of the
+    /// container.
+    /// @throw NotFound when the subnet is not in the container.
+    ptrdiff_t getOrder(const SubnetID& subnet_id) const {
+        // Use the by identifier unique index.
+        const auto& index = subnets_.get<SubnetSubnetIdIndexTag>();
+        auto it = index.find(subnet_id);
+        if (it == index.end()) {
+            isc_throw(NotFound, "There is no IPv4 subnet with ID " << subnet_id);
+        }
+        return (getOrder(it));
+    }
 
     /// @brief A container for IPv4 subnets.
     Subnet4Collection subnets_;

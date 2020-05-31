@@ -16,12 +16,13 @@
 #include <dhcpsrv/pool.h>
 #include <dhcpsrv/subnet_id.h>
 #include <dhcpsrv/triplet.h>
-#include <boost/multi_index/mem_fun.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/indexed_by.hpp>
+#include <boost/multi_index/mem_fun.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/random_access_index.hpp>
 #include <boost/multi_index_container.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/pointer_cast.hpp>
 #include <boost/shared_ptr.hpp>
 #include <cstdint>
@@ -739,6 +740,9 @@ struct SubnetPrefixIndexTag { };
 /// @brief Tag for the index for searching by server identifier.
 struct SubnetServerIdIndexTag { };
 
+/// @brief Tag for the index for searching by interface name.
+struct SubnetIfNameIndexTag { };
+
 /// @brief Tag for the index for searching by subnet modification time.
 struct SubnetModificationTimeIndexTag { };
 
@@ -814,15 +818,19 @@ typedef boost::multi_index_container<
             boost::multi_index::tag<SubnetPrefixIndexTag>,
             boost::multi_index::const_mem_fun<Subnet, std::string, &Subnet::toText>
         >,
-
         // Fourth index allows for searching using an output from getServerId.
         boost::multi_index::ordered_non_unique<
             boost::multi_index::tag<SubnetServerIdIndexTag>,
             boost::multi_index::const_mem_fun<Network4, asiolink::IOAddress,
                                               &Network4::getServerId>
         >,
-
-        // Fifth index allows for searching using subnet modification time.
+        // Fifth index allows for searching using from interface name.
+        boost::multi_index::hashed_non_unique<
+            boost::multi_index::tag<SubnetIfNameIndexTag>,
+            boost::multi_index::const_mem_fun<Network, std::string,
+                                              &Network::getIfName>
+        >,
+        // Sixth index allows for searching using subnet modification time.
         boost::multi_index::ordered_non_unique<
             boost::multi_index::tag<SubnetModificationTimeIndexTag>,
             boost::multi_index::const_mem_fun<data::BaseStampedElement,
@@ -857,13 +865,6 @@ typedef boost::multi_index_container<
         boost::multi_index::ordered_unique<
             boost::multi_index::tag<SubnetPrefixIndexTag>,
             boost::multi_index::const_mem_fun<Subnet, std::string, &Subnet::toText>
-        >,
-        // Fourth index allows for searching using subnet modification time.
-        boost::multi_index::ordered_non_unique<
-            boost::multi_index::tag<SubnetModificationTimeIndexTag>,
-            boost::multi_index::const_mem_fun<data::BaseStampedElement,
-                                              boost::posix_time::ptime,
-                                              &data::BaseStampedElement::getModificationTime>
         >
     >
 > Subnet6SimpleCollection;
@@ -910,7 +911,13 @@ typedef boost::multi_index_container<
             boost::multi_index::tag<SubnetPrefixIndexTag>,
             boost::multi_index::const_mem_fun<Subnet, std::string, &Subnet::toText>
         >,
-        // Fourth index allows for searching using subnet modification time.
+        // Fourth index allows for searching using from interface name.
+        boost::multi_index::hashed_non_unique<
+            boost::multi_index::tag<SubnetIfNameIndexTag>,
+            boost::multi_index::const_mem_fun<Network, std::string,
+                                              &Network::getIfName>
+        >,
+        // Fifth index allows for searching using subnet modification time.
         boost::multi_index::ordered_non_unique<
             boost::multi_index::tag<SubnetModificationTimeIndexTag>,
             boost::multi_index::const_mem_fun<data::BaseStampedElement,

@@ -6542,18 +6542,18 @@ TEST_F(Dhcp6ParserTest, sharedNetworks1subnet) {
     EXPECT_EQ("foo", net->getName());
 
     // It should have one subnet. The subnet should have default values.
-    const Subnet6SimpleCollection* subs = net->getAllSubnets();
-    ASSERT_TRUE(subs);
-    EXPECT_EQ(1, subs->size());
-    checkSubnet(*subs, "2001:db8::/48", 0, 0, 3600, 7200);
+    const Subnet6SimpleCollection* nsubs = net->getAllSubnets();
+    ASSERT_TRUE(nsubs);
+    EXPECT_EQ(1, nsubs->size());
+    checkSubnet(*nsubs, "2001:db8::/48", 0, 0, 3600, 7200);
 
     // Now make sure the subnet was added to global list of subnets.
     CfgSubnets6Ptr subnets6 = CfgMgr::instance().getStagingCfg()->getCfgSubnets6();
     ASSERT_TRUE(subnets6);
 
-    subs = subnets6->getAll();
-    ASSERT_TRUE(subs);
-    checkSubnet(*subs, "2001:db8::/48", 0, 0, 3600, 7200);
+    const Subnet6Collection* gsubs = subnets6->getAll();
+    ASSERT_TRUE(gsubs);
+    checkSubnet(*gsubs, "2001:db8::/48", 0, 0, 3600, 7200);
 }
 
 // Test verifies that a proper shared-network (three subnets) is
@@ -6618,16 +6618,16 @@ TEST_F(Dhcp6ParserTest, sharedNetworks3subnets) {
 
     EXPECT_EQ("foo", net->getName());
 
-    const Subnet6SimpleCollection* subs = net->getAllSubnets();
-    ASSERT_TRUE(subs);
-    EXPECT_EQ(3, subs->size());
-    checkSubnet(*subs, "2001:db1::/48",
+    const Subnet6SimpleCollection* nsubs = net->getAllSubnets();
+    ASSERT_TRUE(nsubs);
+    EXPECT_EQ(3, nsubs->size());
+    checkSubnet(*nsubs, "2001:db1::/48",
                 1000, 2000, 3000, 4000,
                 2000, 4000, 3000, 5000);
-    checkSubnet(*subs, "2001:db2::/48",
+    checkSubnet(*nsubs, "2001:db2::/48",
                 2, 22, 222, 2222,
                 111, 333, 1111, 3333);
-    checkSubnet(*subs, "2001:db3::/48",
+    checkSubnet(*nsubs, "2001:db3::/48",
                 1000, 2000, 3000, 4000,
                 2000, 4000, 3000, 5000);
 
@@ -6635,15 +6635,15 @@ TEST_F(Dhcp6ParserTest, sharedNetworks3subnets) {
     CfgSubnets6Ptr subnets6 = CfgMgr::instance().getStagingCfg()->getCfgSubnets6();
     ASSERT_TRUE(subnets6);
 
-    subs = subnets6->getAll();
-    ASSERT_TRUE(subs);
-    checkSubnet(*subs, "2001:db1::/48",
+    const Subnet6Collection* gsubs = subnets6->getAll();
+    ASSERT_TRUE(gsubs);
+    checkSubnet(*gsubs, "2001:db1::/48",
                 1000, 2000, 3000, 4000,
                 2000, 4000, 3000, 5000);
-    checkSubnet(*subs, "2001:db2::/48",
+    checkSubnet(*gsubs, "2001:db2::/48",
                 2, 22, 222, 2222,
                 111, 333, 1111, 3333);
-    checkSubnet(*subs, "2001:db3::/48",
+    checkSubnet(*gsubs, "2001:db3::/48",
                 1000, 2000, 3000, 4000,
                 2000, 4000, 3000, 5000);
 }

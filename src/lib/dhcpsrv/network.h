@@ -252,12 +252,20 @@ public:
     /// selected.
     ///
     /// @param inheritance inheritance mode to be used.
-    /// @return Interface name as text.
+    /// @return Interface name as optional text.
     util::Optional<std::string>
     getIface(const Inheritance& inheritance = Inheritance::ALL) const {
         return (getProperty<Network>(&Network::getIface, iface_name_,
                                      inheritance));
     };
+
+    /// @brief Returns name of the local interface for which this network is
+    /// selected with no inheritance.
+    ///
+    /// @return Interface name as text or empty.
+    std::string getIfName() const {
+        return (iface_name_);
+    }
 
     /// @brief Sets information about relay
     ///

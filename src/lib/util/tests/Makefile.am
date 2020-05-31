@@ -46,6 +46,7 @@ run_unittests_SOURCES += memory_segment_common_unittest.h
 run_unittests_SOURCES += memory_segment_common_unittest.cc
 run_unittests_SOURCES += multi_threading_mgr_unittest.cc
 run_unittests_SOURCES += optional_unittest.cc
+run_unittests_SOURCES += patricia_tree_unittest.cc
 run_unittests_SOURCES += pid_file_unittest.cc
 run_unittests_SOURCES += process_spawn_unittest.cc
 run_unittests_SOURCES += qid_gen_unittest.cc

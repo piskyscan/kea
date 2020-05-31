@@ -295,6 +295,14 @@ CfgSubnets4::selectSubnet4o6(const SubnetSelector& selector) const {
 
 Subnet4Ptr
 CfgSubnets4::selectSubnet(const SubnetSelector& selector) const {
+    // Get the shared network collection.
+    const SharedNetwork4Collection* networks = 0;
+    if (selector.cfg_shared_network4_) {
+        networks = selector.cfg_shared_network4_->getAll();
+        if (networks && networks->empty()) {
+            networks = 0;
+        }
+    }
 
     // First use RAI link select sub-option or subnet select option
     if (!selector.option_select_.isV4Zero()) {
@@ -359,7 +367,7 @@ CfgSubnets4::selectSubnet(const SubnetSelector& selector) const {
         IfacePtr iface = IfaceMgr::instance().getIface(selector.iface_name_);
         // This should never happen in the real life. Hence we throw an
         // exception.
-        if (iface == NULL) {
+        if (!iface) {
             isc_throw(isc::BadValue, "interface " << selector.iface_name_
                       << " doesn't exist and therefore it is impossible"
                       " to find a suitable subnet for its IPv4 address");
@@ -367,7 +375,8 @@ CfgSubnets4::selectSubnet(const SubnetSelector& selector) const {
 
         // Attempt to select subnet based on the interface name.
         Subnet4Ptr subnet = selectSubnet(selector.iface_name_,
-                                         selector.client_classes_);
+                                         selector.client_classes_,
+                                         networks);
 
         // If it matches - great. If not, we'll try to use a different
         // selection criteria below.
@@ -392,29 +401,66 @@ CfgSubnets4::selectSubnet(const SubnetSelector& selector) const {
 
 Subnet4Ptr
 CfgSubnets4::selectSubnet(const std::string& iface,
-                          const ClientClasses& client_classes) const {
+                          const ClientClasses& client_classes,
+                          const SharedNetwork4Collection* networks) const {
 
     // If empty interface specified, we can't select subnet by interface.
-    if (!iface.empty()) {
-        for (const auto& subnet : subnets_) {
+    if (iface.empty()) {
+        return (Subnet4Ptr());
+    }
 
-            // If interface name matches with the one specified for the subnet
-            // and the client is not rejected based on the classification,
-            // return the subnet.
-            if ((subnet->getIface() == iface) &&
-                (subnet->clientSupported(client_classes))) {
+    // Use the subnet interface name index.
+    const auto& sidx = subnets_.get<SubnetIfNameIndexTag>();
+    const auto& srange = sidx.equal_range(iface);
+    auto subnet = sidx.end();
 
-                LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE,
-                          DHCPSRV_CFGMGR_SUBNET4_IFACE)
-                    .arg(subnet->toText())
-                    .arg(iface);
-                return (subnet);
-            }
+    // Iterate over the subnets with the interface name.
+    for (auto it = srange.first; it != srange.second; ++it) {
+        // Skip subnets based on the classification.
+        if (!(*it)->clientSupported(client_classes)) {
+            continue;
+        }
+        if ((subnet == sidx.end()) ||
+            (getOrder(it) < (getOrder(subnet)))) {
+            subnet = it;
         }
     }
 
-    // No subnet found for this interface name.
-    return (Subnet4Ptr());
+    // Iterate over the subnets of the shared networks with the interface name.
+    if (networks) {
+        const auto& nidx = networks->get<SharedNetworkIfNameIndexTag>();
+        const auto& nrange = nidx.equal_range(iface);
+        const auto& iidx = subnets_.get<SubnetSubnetIdIndexTag>();
+        for (auto net = nrange.first; net != nrange.second; ++net) {
+            for (auto sub : *(*net)->getAllSubnets()) {
+                // Already seen?
+                if (!sub->getIfName().empty()) {
+                    continue;
+                }
+                // Skip subnets based on the classification.
+                if (!sub->clientSupported(client_classes)) {
+                    continue;
+                }
+                auto it = iidx.find(sub->getID());
+                if (it == iidx.end()) {
+                    // should not happen.
+                    continue;
+                }
+                if ((subnet == sidx.end()) ||
+                    (getOrder(it) < (getOrder(subnet)))) {
+                    subnet = subnets_.project<SubnetIfNameIndexTag>(it);
+                }
+            }
+        }
+    }
+    if (subnet == sidx.end()) {
+        // No subnet found for this interface name.
+        return (Subnet4Ptr());
+    }
+    LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE, DHCPSRV_CFGMGR_SUBNET4_IFACE)
+        .arg((*subnet)->toText())
+        .arg(iface);
+    return (*subnet);
 }
 
 Subnet4Ptr

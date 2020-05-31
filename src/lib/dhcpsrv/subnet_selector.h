@@ -1,4 +1,4 @@
-// Copyright (C) 2014-2016 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2014-2020 Internet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -10,10 +10,17 @@
 #include <asiolink/io_address.h>
 #include <dhcp/classify.h>
 #include <dhcp/option.h>
+#include <boost/shared_ptr.hpp>
 #include <string>
 
 namespace isc {
 namespace dhcp {
+
+/// @brief Forward declaration configuration of IPv4 shared networks.
+class CfgSharedNetworks4;
+
+/// @brief Forward declaration configuration of IPv6 shared networks.
+class CfgSharedNetworks6;
 
 /// @brief Subnet selector used to specify parameters used to select a subnet.
 ///
@@ -29,6 +36,8 @@ struct SubnetSelector {
     asiolink::IOAddress giaddr_;
     /// @brief RAI link select or subnet select option
     asiolink::IOAddress option_select_;
+    /// @brief IPv4 shared network configuration
+    boost::shared_ptr<CfgSharedNetworks4> cfg_shared_network4_;
     //@}
 
     /// @name DHCPv6 specific parameters.
@@ -37,6 +46,8 @@ struct SubnetSelector {
     OptionPtr interface_id_;
     /// @brief First relay link address.
     asiolink::IOAddress first_relay_linkaddr_;
+    /// @brief IPv6 shared network configuration
+    boost::shared_ptr<CfgSharedNetworks6> cfg_shared_network6_;
     //@}
 
     /// @brief Address on which the message was received.
