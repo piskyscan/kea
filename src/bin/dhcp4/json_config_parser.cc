@@ -139,7 +139,7 @@ public:
         for (auto net = networks->begin(); net != networks->end(); ++net) {
 
             // For each network go through all the subnets in it.
-            const Subnet4SimpleCollection* subnets = (*net)->getAllSubnets();
+            const Subnet4Collection* subnets = (*net)->getAllSubnets();
             if (!subnets) {
                 // Shared network without subnets it weird, but we decided to
                 // accept such configurations.
@@ -203,7 +203,7 @@ public:
             string iface = net->getIface(no_inherit);
             bool iface_set = !iface.empty();
 
-            const Subnet4SimpleCollection* subnets = net->getAllSubnets();
+            const Subnet4Collection* subnets = net->getAllSubnets();
             if (subnets) {
                 // For each subnet, add it to a list of regular subnets.
                 for (auto subnet : *subnets) {
