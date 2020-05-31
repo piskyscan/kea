@@ -47,10 +47,10 @@ Lease4Parser::parse(ConstSrvConfigPtr& cfg,
     if (lease_info->contains("subnet-id")) {
         subnet_id = getUint32(lease_info, "subnet-id");
     }
-    Subnet4Ptr subnet;
+    ConstSubnet4Ptr subnet;
     if (subnet_id) {
         // If subnet-id is specified, it has to match.
-        subnet = cfg->getCfgSubnets4()->getSubnet(subnet_id);
+        subnet = cfg->getCfgSubnets4()->getBySubnetId(subnet_id);
         if (!subnet) {
             isc_throw(BadValue, "Invalid subnet-id: No IPv4 subnet with subnet-id="
                       << subnet_id << " currently configured.");
@@ -224,10 +224,10 @@ Lease6Parser::parse(ConstSrvConfigPtr& cfg,
     }
 
     // Check if the subnet-id specified is sane.
-    Subnet6Ptr subnet;
+    ConstSubnet6Ptr subnet;
     if (subnet_id) {
         // If subnet-id is specified, it has to match.
-        subnet = cfg->getCfgSubnets6()->getSubnet(subnet_id);
+        subnet = cfg->getCfgSubnets6()->getBySubnetId(subnet_id);
         if (!subnet) {
             isc_throw(BadValue, "Invalid subnet-id: No IPv6 subnet with subnet-id="
                       << subnet_id << " currently configured.");
