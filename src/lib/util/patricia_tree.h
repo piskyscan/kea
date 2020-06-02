@@ -273,14 +273,17 @@ public:
         NodePtr node = root_;
         while (node->bit_ < len) {
             if ((addr[node->bit_ >> 3] & (0x80 >> (node->bit_ & 7)))) {
+                // take right.
                 node = node->right_;
             } else {
+                // take left.
                 node = node->left_;
             }
             if (!node) {
                 return (NodePtr());
             }
         }
+        // stop.
         if ((node->bit_ > len) || node->addr_.empty()) {
             return (NodePtr());
         }
@@ -290,6 +293,7 @@ public:
         }
 #endif
         if (compare(node->addr_, addr, len)) {
+            // found.
             return (node);
         }
         return (NodePtr());
@@ -316,11 +320,14 @@ public:
         std::stack<NodePtr> stack;
         while (node->bit_ < len) {
             if (!node->addr_.empty()) {
+                // push.
                 stack.push(node);
             }
             if ((addr[node->bit_ >> 3] & (0x80 >> (node->bit_ & 7)))) {
+                // take right.
                 node = node->right_;
             } else {
+                // take left.
                 node = node->left_;
             }
             if (!node) {
@@ -333,14 +340,17 @@ public:
             stack.push(node);
         }
 
+        // stop.
         if (stack.empty()) {
             return (NodePtr());
         }
         while (!stack.empty()) {
+            // pop.
             node = stack.top();
             stack.pop();
             if (compare(node->addr_, addr, node->len_) &&
                 (node->len_ <= len)) {
+                // found.
                 return (node);
             }
         }
@@ -367,20 +377,25 @@ public:
         while (node->bit_ < max_bit_count_) {
             if (!node->addr_.empty() &&
                 compare(node->addr_, addr, node->len_)) {
+                // found.
                 fun(node);
             }
             if ((addr[node->bit_ >> 3] & (0x80 >> (node->bit_ & 7)))) {
+                // take right.
                 node = node->right_;
             } else {
+                // take left.
                 node = node->left_;
             }
             if (!node) {
                 break;
             }
         }
+        // stop.
         if (node && !node->addr_.empty() &&
             compare(node->addr_, addr, node->len_) &&
             (node->len_ <= max_bit_count_)) {
+            // found best.
             fun(node);
         }
     }
@@ -405,6 +420,7 @@ public:
             node->addr_ = addr;
             node->len_ = len;
             root_ = node;
+            // new node #0 (head).
             ++nodes_;
             return (node);
         }
@@ -416,11 +432,13 @@ public:
                 if (!node->right_) {
                     break;
                 }
+                // take rigth.
                 node = node->right_;
             } else {
                 if (!node->left_) {
                     break;
                 }
+                // take left.
                 node = node->left_;
             }
 
@@ -431,6 +449,7 @@ public:
 #endif
         }
 
+        // stop.
 #ifdef ENABLE_DEBUG
         if (node->addr_.empty()) {
             std::cerr << "insert failure 2" << std::endl;
@@ -446,6 +465,7 @@ public:
                 differ = (i + 1) * 8;
                 continue;
             }
+            // I know the better way, but for now.
             uint8_t j = 0;
             for (; j < 8; ++j) {
                 if (r & (0x80 >> j)) {
@@ -461,6 +481,7 @@ public:
             differ = i * 8 + j;
             break;
         }
+        // got differ bit.
         if (differ > check) {
             differ = check;
         }
@@ -469,10 +490,12 @@ public:
         while (parent && (parent->bit_ >= differ)) {
             node = parent;
             parent = node->parent_;
+            // up to node bit.
         }
 
         if ((differ == len) && (node->bit_ == len)) {
             if (!node->addr_.empty()) {
+                // found.
                 return (node);
             }
             node->addr_ = addr;
@@ -482,6 +505,7 @@ public:
                 std::cerr << "insert failure 4" << std::endl;
             }
 #endif
+            // new node #1 (glue mod).
             return (node);
         }
 
@@ -509,6 +533,7 @@ public:
 #endif
                 node->left_ = new_node;
             }
+            // new node #2 (child).
             return (new_node);
         }
 
@@ -532,6 +557,7 @@ public:
             } else {
                 node->parent_->left_ = new_node;
             }
+            // new node #3 (parent).
             node->parent_ = new_node;
         } else {
             NodePtr glue(new Node());
@@ -539,7 +565,7 @@ public:
             glue->parent_ = node->parent_;
             ++nodes_;
             if ((differ < max_bit_count_) &&
-                (addr[node->bit_ >> 3] & (0x80 >> (node->bit_ & 7)))) {
+                (addr[differ >> 3] & (0x80 >> (differ & 7)))) {
                 glue->right_ = new_node;
                 glue->left_ = node;
             } else {
@@ -562,6 +588,7 @@ public:
             }
             node->parent_ = glue;
         }
+        // new node #4 (glue and node).
         return (new_node);
     }
 
@@ -573,6 +600,8 @@ public:
         if (!node) {
             isc_throw(BadValue, "null node (remove)");
         }
+
+        // remove #0 (right and left).
         if (node->right_ && node->left_) {
 
             // this might be a glue node.
@@ -585,6 +614,7 @@ public:
 
         NodePtr parent;
         NodePtr child;
+        // remove #1 (!right and !left).
         if (!node->right_ && !node->left_) {
             parent = node->parent_;
             node->addr_.clear();
@@ -652,6 +682,7 @@ public:
             return;
         }
 
+        // remove #2 (either right or left).
         if (node->right_) {
             child = node->right_;
         } else {

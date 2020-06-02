@@ -85,7 +85,10 @@ public:
         default:
             isc_throw(BadValue, "unknown family " << family);
         }
-        return (string(inet_ntop(family, &addr[0], buf, len)));
+        if (!inet_ntop(family, &addr[0], buf, sizeof(buf))) {
+            isc_throw(BadValue, "bad address");
+        }
+        return (string(buf));
     }
 
     /// @brief Node prefix to text.
@@ -111,13 +114,13 @@ public:
     bool searchRemove(int family, const string& addr, uint8_t len) {
         auto pref = pton(family, addr);
         if (family == AF_INET) {
-            auto node = tree4_.findExact(pton(AF_INET, addr), len);
+            auto node = tree4_.findExact(pref, len);
             if (node) {
                 tree4_.remove(node);
                 return (true);
             }
         } else {
-            auto node = tree6_.findExact(pton(AF_INET6, addr), len);
+            auto node = tree6_.findExact(pref, len);
             if (node) {
                 tree6_.remove(node);
                 return (true);
@@ -143,6 +146,11 @@ TEST(PatriciaTest, empty6) {
     PatriciaTree<Node<X> > pt6(16);
 }
 
+TEST_F(PatriciaTreeTest, tools) {
+    auto addr = pton(AF_INET, "127.0.0.1");
+    EXPECT_EQ("127.0.0.1", ntop(AF_INET, addr));
+}
+
 TEST_F(PatriciaTreeTest, basic4) {
     auto pref = pton(AF_INET, "127.0.0.0");
     auto node = tree4_.insert(pref, 8);
@@ -153,12 +161,95 @@ TEST_F(PatriciaTreeTest, basic4) {
     EXPECT_TRUE(tree4_.find(addr, 32));
     addr = pton(AF_INET, "10.0.0.1");
     EXPECT_FALSE(tree4_.find(addr, 32));
+    addr = pton(AF_INET, "0.0.0.42");
+    EXPECT_FALSE(tree4_.find(addr, 32));
 }
 
 TEST_F(PatriciaTreeTest, basic6) {
     auto addr = pton(AF_INET6, "2001:db8:0:1::");
     auto node = tree6_.insert(addr, 64);
     EXPECT_TRUE(node);
+}
+
+TEST_F(PatriciaTreeTest, complex4) {
+    auto pref = pton(AF_INET, "127.0.0.0");
+    EXPECT_TRUE(tree4_.insert(pref, 8));
+    pref = pton(AF_INET, "10.0.0.0");
+    EXPECT_TRUE(tree4_.insert(pref, 8));
+
+    pref = pton(AF_INET, "10.42.42.0");
+    EXPECT_TRUE(tree4_.insert(pref, 31));
+    EXPECT_TRUE(tree4_.insert(pref, 26));
+    EXPECT_TRUE(tree4_.insert(pref, 24));
+    EXPECT_TRUE(tree4_.insert(pref, 32));
+    pref = pton(AF_INET, "10.42.69.0");
+    EXPECT_TRUE(tree4_.insert(pref, 24));
+
+    auto addr = pton(AF_INET, "10.42.42.0");
+    EXPECT_TRUE(tree4_.find(addr, 24));
+    addr = pton(AF_INET, "10.42.69.0");
+    EXPECT_TRUE(tree4_.find(addr, 24));
+    addr = pton(AF_INET, "10.10.10.10");
+    EXPECT_TRUE(tree4_.find(addr, 32));
+    addr = pton(AF_INET, "10.0.0.1");
+    EXPECT_TRUE(tree4_.find(addr, 32));
+
+    addr = pton(AF_INET, "10.0.0.0");
+    EXPECT_TRUE(tree4_.findExact(addr, 8));
+
+    pref = pton(AF_INET, "42.0.0.0");
+    auto node = tree4_.findExact(pref, 8);
+    ASSERT_FALSE(node);
+    pref = pton(AF_INET, "10.0.0.0");
+    node = tree4_.findExact(pref, 8);
+    ASSERT_TRUE(node);
+    tree4_.remove(node);
+    EXPECT_FALSE(tree4_.findExact(pref, 8));
+
+    size_t cnt = tree4_.walkInOrder(NodePtr(), [] (const NodePtr&) { });
+    EXPECT_EQ(6, cnt);
+    cnt = 0;
+    tree4_.walk([&cnt] (const NodePtr&) { ++cnt; }, true);
+    EXPECT_EQ(cnt, tree4_.getNodeCount());
+}
+
+TEST_F(PatriciaTreeTest, cidr4) {
+    auto pref = pton(AF_INET, "0.0.0.0");
+    EXPECT_TRUE(tree4_.insert(pref, 0));
+    auto addr = pton(AF_INET, "10.0.0.1");
+    EXPECT_TRUE(tree4_.find(addr, 32));
+
+    pref = pton(AF_INET, "211.200.0.0");
+    EXPECT_TRUE(tree4_.insert(pref, 14));
+    pref = pton(AF_INET, "211.204.0.0");
+    EXPECT_TRUE(tree4_.insert(pref, 15));
+    addr = pton(AF_INET, "211.205.255.255");
+    auto node = tree4_.find(addr, 32);
+    EXPECT_EQ("211.204.0.0/15", ntop(AF_INET, node));
+    addr = pton(AF_INET, "211.206.0.0");
+    node = tree4_.find(addr, 32);
+    EXPECT_EQ("0.0.0.0/0", ntop(AF_INET, node));
+
+    addr = pton(AF_INET, "211.202.0.1");
+    EXPECT_TRUE(tree4_.find(addr, 32));
+    vector<NodePtr> prefs;
+    tree4_.path(addr,
+                [&prefs] (const NodePtr& node) { prefs.push_back(node); });
+    ASSERT_EQ(2, prefs.size());
+    EXPECT_EQ("0.0.0.0/0", ntop(AF_INET, prefs[0]));
+    EXPECT_EQ("211.200.0.0/14", ntop(AF_INET, prefs[1]));
+    prefs.clear();
+
+#if 0
+    tree4_.walk([ ] (const NodePtr& node) {
+        cout << "node<" << static_cast<unsigned>(node->bit_) << "> "
+             << ntop(AF_INET, node) << endl;
+    }, true);
+#endif
+
+    EXPECT_TRUE(searchRemove(AF_INET, "211.204.0.0", 15));
+    EXPECT_TRUE(searchRemove(AF_INET, "211.200.0.0", 14));
+    EXPECT_EQ(1, tree4_.getNodeCount());
 }
 
 TEST_F(PatriciaTreeTest, demo) {
@@ -180,6 +271,8 @@ TEST_F(PatriciaTreeTest, demo) {
 
     size_t cnt = tree4_.walkInOrder(NodePtr(), [] (const NodePtr&) { });
     EXPECT_LE(cnt, tree4_.getNodeCount());
+    cnt = tree4_.walkInOrder(NodePtr(), [] (const NodePtr&) { }, true);
+    EXPECT_EQ(cnt, tree4_.getNodeCount());
 
     EXPECT_FALSE(searchRemove(AF_INET, "42.0.0.0", 8));
     EXPECT_TRUE(searchRemove(AF_INET, "10.0.0.0", 8));
@@ -187,33 +280,10 @@ TEST_F(PatriciaTreeTest, demo) {
 
     cnt = tree4_.walkInOrder(NodePtr(), [] (const NodePtr&) { });
     EXPECT_LE(cnt, tree4_.getNodeCount());
+    cnt = tree4_.walkInOrder(NodePtr(), [] (const NodePtr&) { }, true);
+    EXPECT_EQ(cnt, tree4_.getNodeCount());
 
     tree4_.clear();
 }
 
 } // end of anonymous space.
-
-/*
-add 127.0.0.0/8
-search 127.0.0.1 -> 127.0.0.0/8
-search 10.0.0.1 -> null
-search 0.0.0.42 -> null
-add 10.0.0.0/8
-add 10.42.42.0/31 10.42.42.0/26 10.42.42.0/24 10.42.42.0/32 10.42.69.0/24
-search 10.42.42.0/24 10.42.69.0/24 -> them
-search 10.10.10.10 -> 10.0.0.0/8
-search 10.0.0.1 -> 10.0.0.0/8
-search exact 10.0.0.0/8
-remove 42.0.0.0/8 -> not in
-remove 10.0.0.0/8 -> removed
-search exact 10.0.0.0/8 -> null
-clim inorder
-clim
-add 0.0.0.0/0
-search 10.0.0.1 -> 0.0.0.0/0
-add cidr 211.200.0.0-211.205.255.255 (211.200.0.0/14 & 211.204.0.0/15)
-search 211.202.0.1 -> 211.200.0.0/14
-remove cidr 211.200.0.0-211.205.255.255
-add 2001:220::/35
-search 2001:220:: -> 2001:220::/35
-*/
