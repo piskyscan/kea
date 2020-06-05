@@ -1883,12 +1883,13 @@ Package:
 END
 if test "$PREMIUM" != ""; then
 cat >> config.report << END
-  Premium hooks:     yes
+  Premium:           yes
   Included Hooks:   ${INCLUDED_HOOKS}
+  Included Tools:   ${INCLUDED_TOOLS}
 END
 else
 cat >> config.report << END
-  Premium hooks:     no
+  Premium:           no
 END
 fi
 
