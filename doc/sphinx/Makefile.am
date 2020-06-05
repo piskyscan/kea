@@ -2,17 +2,6 @@ EXTRA_DIST =
 sphinxbuilddir = $(builddir)/_build
 abs_sphinxbuilddir = $(abs_builddir)/_build
 
-# list of api files that are used to generate api.rst
-api_files =
-include $(srcdir)/api/api_files.mk
-
-EXTRA_DIST += api/api_files.mk
-EXTRA_DIST += api/README
-EXTRA_DIST += api/_template.json
-EXTRA_DIST += api/generate-templates
-EXTRA_DIST += api/cmds-list
-EXTRA_DIST += $(api_files)
-
 if GENERATE_DOCS
 
 sphinxopts =
@@ -74,9 +63,13 @@ mes-files.txt: mes_files.mk
 $(srcdir)/kea-messages.rst: $(mes_files) mes2doc.py
 	$(PYTHON) $(srcdir)/mes2doc.py -o $@ $(mes_files)
 
+# list of api files that are used to generate api.rst
+api_files =
+include $(top_srcdir)/src/share/api/api_files.mk
+
 # build the list of api files
-api-files.txt: api/api_files.mk
-	@sed 's;_files .*%/;/;' $< > $@
+api-files.txt: $(top_srcdir)/src/share/api/api_files.mk
+	@sed 's;api_files .*)/;;' $< > $@
 
 # this rule is only used for development purposes and is not used in official
 # build process as api.rst is always generated via sphinx's conf.py
@@ -147,12 +140,9 @@ if INSTALL_MANS
 	${INSTALL_DATA} $(sphinxbuilddir)/man/*.8 ${DESTDIR}${mandir}/man8/
 endif
 endif
-	mkdir -p $(DESTDIR)$(datarootdir)/${PACKAGE_NAME}/api
-	cp $(api_files) $(DESTDIR)$(datarootdir)/${PACKAGE_NAME}/api
 
 uninstall-local:
 	rm -rf $(DESTDIR)$(docdir)
-	rm -rf $(DESTDIR)$(datarootdir)/${PACKAGE_NAME}/api
 
 # There are sometimes conflicts when more then one sphinx-build is run at a time.
 # This target blocks running anything in parallel in this Makefile,

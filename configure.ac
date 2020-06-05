@@ -1716,6 +1716,7 @@ AC_CONFIG_FILES([Makefile
                  src/lib/yang/tests/Makefile
                  src/lib/yang/testutils/Makefile
                  src/share/Makefile
+                 src/share/api/Makefile
                  src/share/database/Makefile
                  src/share/database/scripts/Makefile
                  src/share/database/scripts/cql/Makefile
