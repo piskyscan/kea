@@ -1,5 +1,6 @@
 src/share/api/build-report.json
 src/share/api/cache-clear.json
+src/share/api/cache-flush.json
 src/share/api/cache-get-by-id.json
 src/share/api/cache-get.json
 src/share/api/cache-insert.json

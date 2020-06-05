@@ -1,5 +1,6 @@
 build-report
 cache-clear
+cache-flush
 cache-get
 cache-get-by-id
 cache-insert

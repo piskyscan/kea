@@ -1,5 +1,6 @@
 api_files += $(top_srcdir)/src/share/api/build-report.json
 api_files += $(top_srcdir)/src/share/api/cache-clear.json
+api_files += $(top_srcdir)/src/share/api/cache-flush.json
 api_files += $(top_srcdir)/src/share/api/cache-get-by-id.json
 api_files += $(top_srcdir)/src/share/api/cache-get.json
 api_files += $(top_srcdir)/src/share/api/cache-insert.json
