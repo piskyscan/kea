@@ -2,6 +2,17 @@ EXTRA_DIST =
 sphinxbuilddir = $(builddir)/_build
 abs_sphinxbuilddir = $(abs_builddir)/_build
 
+# list of api files that are used to generate api.rst
+api_files =
+include $(srcdir)/api/api_files.mk
+
+EXTRA_DIST += api/api_files.mk
+EXTRA_DIST += api/README
+EXTRA_DIST += api/_template.json
+EXTRA_DIST += api/generate-templates
+EXTRA_DIST += api/cmds-list
+EXTRA_DIST += $(api_files)
+
 if GENERATE_DOCS
 
 sphinxopts =
@@ -47,17 +58,6 @@ mes_files =
 include $(srcdir)/mes_files.mk
 
 EXTRA_DIST += mes_files.mk
-
-# list of api files that are used to generate api.rst
-api_files =
-include $(srcdir)/api/api_files.mk
-
-EXTRA_DIST += api/api_files.mk
-EXTRA_DIST += api/README
-EXTRA_DIST += api/_template.json
-EXTRA_DIST += api/generate-templates
-EXTRA_DIST += api/cmds-list
-EXTRA_DIST += $(api_files)
 
 if HAVE_PDFLATEX
 all: html mans pdf
@@ -147,9 +147,12 @@ if INSTALL_MANS
 	${INSTALL_DATA} $(sphinxbuilddir)/man/*.8 ${DESTDIR}${mandir}/man8/
 endif
 endif
+	mkdir -p $(DESTDIR)$(datarootdir)/${PACKAGE_NAME}/api
+	cp $(api_files) $(DESTDIR)$(datarootdir)/${PACKAGE_NAME}/api
 
 uninstall-local:
 	rm -rf $(DESTDIR)$(docdir)
+	rm -rf $(DESTDIR)$(datarootdir)/${PACKAGE_NAME}/api
 
 # There are sometimes conflicts when more then one sphinx-build is run at a time.
 # This target blocks running anything in parallel in this Makefile,
