@@ -19,6 +19,7 @@
 #include <sstream>
 #include <fstream>
 #include <errno.h>
+#include <thread>
 
 using namespace isc::data;
 
@@ -39,6 +40,17 @@ Daemon::Daemon()
     : signal_set_(), signal_handler_(), config_file_(""),
       pid_file_dir_(DATA_DIR), pid_file_(), am_file_author_(false),
       exit_value_(EXIT_SUCCESS) {
+
+    static int32_t data;
+
+    auto f = [&]() {
+        data++;
+    };
+
+    thread left(f);
+    thread right(f);
+    left.join();
+    right.join();
 
     // The pid_file_dir can be overridden via environment variable
     // This is primarily intended to simplify testing
