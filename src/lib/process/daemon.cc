@@ -47,8 +47,8 @@ Daemon::Daemon()
         data++;
     };
 
-    thread left(f);
-    thread right(f);
+    std::thread left(f);
+    std::thread right(f);
     left.join();
     right.join();
 
