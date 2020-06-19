@@ -95,6 +95,9 @@ HooksManager::loadLibrariesInternal(const HookLibsCollection& libraries) {
     }
 
     ServerHooks::getServerHooks().getParkingLotsPtr()->clear();
+    if (lm_collection_) {
+        lm_collection_->unloadLibraries();
+    }
 
     // Create the library manager and load the libraries.
     lm_collection_.reset(new LibraryManagerCollection(libraries));
@@ -171,6 +174,9 @@ void
 HooksManager::init() {
     // Nothing present, so create the collection with any empty set of
     // libraries, and get the CalloutManager.
+    if (lm_collection_) {
+        lm_collection_->unloadLibraries();
+    }
     HookLibsCollection libraries;
     lm_collection_.reset(new LibraryManagerCollection(libraries));
     lm_collection_->loadLibraries();

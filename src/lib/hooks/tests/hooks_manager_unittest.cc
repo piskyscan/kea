@@ -243,11 +243,11 @@ TEST_F(HooksManagerTest, CalloutHandleUnloadLibrary) {
     // memory allocated by the library.
     HooksManager::callCallouts(ServerHooks::CONTEXT_CREATE, *handle);
 
-    // Unload the libraries.
-    HooksManager::unloadLibraries();
-
     // Deleting the callout handle should not cause a segmentation fault.
     handle.reset();
+
+    // Unload the libraries.
+    HooksManager::unloadLibraries();
 }
 
 // Test that we can load a new set of libraries while we have a CalloutHandle
@@ -284,6 +284,9 @@ TEST_F(HooksManagerTest, CalloutHandleLoadLibrary) {
     new_library_names.push_back(make_pair(std::string(BASIC_CALLOUT_LIBRARY),
                                           data::ConstElementPtr()));
 
+    // Deleting the old callout handle should not cause a segmentation fault.
+    handle.reset();
+
     // Load the libraries.
     EXPECT_TRUE(HooksManager::loadLibraries(new_library_names));
 
@@ -293,9 +296,6 @@ TEST_F(HooksManagerTest, CalloutHandleLoadLibrary) {
         SCOPED_TRACE("Calculation with basic callout library loaded");
         executeCallCallouts(10, 7, 17, 3, 51, 16, 35);
     }
-
-    // Deleting the old callout handle should not cause a segmentation fault.
-    handle.reset();
 }
 
 // This is effectively the same test as the LoadLibraries test.
@@ -816,6 +816,12 @@ TEST_F(HooksManagerTest, Parking) {
     unpark_trigger_func2();
     EXPECT_TRUE(unparked);
 
+    unpark_trigger_func1 = std::function<void()>();
+
+    unpark_trigger_func2 = std::function<void()>();
+
+    handle.reset();
+
     // Try unloading the libraries.
     EXPECT_NO_THROW(HooksManager::unloadLibraries());
 }
@@ -862,6 +868,8 @@ TEST_F(HooksManagerTest, ServerUnpark) {
 
     EXPECT_TRUE(unparked);
 
+    handle.reset();
+
     // Try unloading the libraries.
     EXPECT_NO_THROW(HooksManager::unloadLibraries());
 }
@@ -907,6 +915,8 @@ TEST_F(HooksManagerTest, ServerDropParked) {
     // An attempt to unpark the packet should return false, as this packet
     // is not parked anymore.
     EXPECT_FALSE(HooksManager::unpark<std::string>("hookpt_one", "foo"));
+
+    handle.reset();
 
     // Try unloading the libraries.
     EXPECT_NO_THROW(HooksManager::unloadLibraries());
@@ -957,6 +967,5 @@ TEST_F(HooksManagerTest, UnloadBeforeUnpark) {
     // Callback should not be called.
     EXPECT_FALSE(unparked);
 }
-
 
 } // Anonymous namespace

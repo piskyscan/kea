@@ -144,7 +144,6 @@ public:
     static std::vector<std::string>
     validateLibraries(const std::vector<std::string>& libraries);
 
-protected:
     /// @brief Unload libraries
     ///
     /// Unloads and closes all loaded libraries.  They are unloaded in the
