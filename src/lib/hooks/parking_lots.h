@@ -172,6 +172,12 @@ public:
         return (false);
     }
 
+    /// @brief Returns the current number of objects.
+    size_t size() {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return (parking_.size());
+    }
+
 private:
 
     /// @brief Holds information about parked object.

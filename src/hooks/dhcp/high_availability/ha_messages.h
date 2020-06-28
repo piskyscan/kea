@@ -1,4 +1,4 @@
-// File created from ../../../../src/hooks/dhcp/high_availability/ha_messages.mes on Mon Jun 22 2020 17:34
+// File created from ../../../../src/hooks/dhcp/high_availability/ha_messages.mes on Sun Jun 28 2020 16:49
 
 #ifndef HA_MESSAGES_H
 #define HA_MESSAGES_H
@@ -75,6 +75,8 @@ extern const isc::log::MessageID HA_MAINTENANCE_STARTED;
 extern const isc::log::MessageID HA_MAINTENANCE_STARTED_IN_PARTNER_DOWN;
 extern const isc::log::MessageID HA_MAINTENANCE_START_HANDLER_FAILED;
 extern const isc::log::MessageID HA_MISSING_CONFIGURATION;
+extern const isc::log::MessageID HA_QUERY4_QUEUE_FULL;
+extern const isc::log::MessageID HA_QUERY6_QUEUE_FULL;
 extern const isc::log::MessageID HA_SCOPES_HANDLER_FAILED;
 extern const isc::log::MessageID HA_SERVICE_STARTED;
 extern const isc::log::MessageID HA_STATE_MACHINE_CONTINUED;

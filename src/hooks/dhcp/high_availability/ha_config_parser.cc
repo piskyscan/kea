@@ -22,6 +22,7 @@ namespace {
 const SimpleDefaults HA_CONFIG_DEFAULTS = {
     { "heartbeat-delay", Element::integer, "10000" },
     { "max-ack-delay", Element::integer, "10000" },
+    { "max-query-queue-size", Element::integer, "0" },
     { "max-response-delay", Element::integer, "60000" },
     { "max-unacked-clients", Element::integer, "10" },
     { "send-lease-updates", Element::boolean, "true" },
@@ -157,6 +158,10 @@ HAConfigParser::parseInternal(const HAConfigPtr& config_storage,
     // Get 'max-unacked-clients'.
     uint32_t max_unacked_clients = getAndValidateInteger<uint32_t>(c, "max-unacked-clients");
     config_storage->setMaxUnackedClients(max_unacked_clients);
+
+    // Get 'max-query-queue-size'.
+    uint32_t max_query_queue_size = getAndValidateInteger<uint32_t>(c, "max-query-queue-size");
+    config_storage->setMaxQueryQueueSize(max_query_queue_size);
 
     // Get 'wait-backup-ack'.
     config_storage->setWaitBackupAck(getBoolean(c, "wait-backup-ack"));

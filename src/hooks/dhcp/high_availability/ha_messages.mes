@@ -421,6 +421,16 @@ This error message is issued to indicate that the configuration for the
 High Availability hooks library hasn't been specified. The 'high-availability'
 parameter must be specified for the hooks library to load properly.
 
+% HA_QUERY4_QUEUE_FULL query queue is full and received query was dropped: %1
+This debug message is issued when the queue used for queries waiting for
+an answer from a peer reached its configured maximum size. The query was
+dropped and should be retransmitted by the client.
+
+% HA_QUERY6_QUEUE_FULL query queue is full and received query was dropped: %1
+This debug message is issued when the queue used for queries waiting for
+an answer from a peer reached its configured maximum size. The query was
+dropped and should be retransmitted by the client.
+
 % HA_SCOPES_HANDLER_FAILED ha-scopes command failed: %1
 This error message is issued to indicate that the ha-scopes command handler
 failed while processing the command. The argument provides reason for

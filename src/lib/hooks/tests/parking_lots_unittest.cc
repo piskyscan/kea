@@ -30,6 +30,10 @@ TEST(ParkingLotsTest, createGetParkingLot) {
     ASSERT_TRUE(parking_lot1);
     ASSERT_TRUE(parking_lot2);
 
+    EXPECT_EQ(0, parking_lot0->size());
+    EXPECT_EQ(0, parking_lot1->size());
+    EXPECT_EQ(0, parking_lot2->size());
+
     EXPECT_FALSE(parking_lot0 == parking_lot1);
     EXPECT_TRUE(parking_lot0 == parking_lot2);
 
@@ -55,6 +59,7 @@ TEST(ParkingLotTest, unpark) {
     ParkingLotPtr parking_lot = boost::make_shared<ParkingLot>();
     ParkingLotHandlePtr parking_lot_handle =
         boost::make_shared<ParkingLotHandle>(parking_lot);
+    EXPECT_EQ(0, parking_lot->size());
 
     std::string parked_object = "foo";
 
@@ -62,6 +67,7 @@ TEST(ParkingLotTest, unpark) {
     // reference counting works fine.
     ASSERT_NO_THROW(parking_lot_handle->reference(parked_object));
     ASSERT_NO_THROW(parking_lot_handle->reference(parked_object));
+    EXPECT_EQ(1, parking_lot->size());
 
     // This flag will indicate if the callback has been called.
     bool unparked = false;
@@ -73,11 +79,13 @@ TEST(ParkingLotTest, unpark) {
     // unpark the packet yet.
     EXPECT_TRUE(parking_lot_handle->unpark(parked_object));
     EXPECT_FALSE(unparked);
+    EXPECT_EQ(1, parking_lot->size());
 
     // Try to unpark the object. This time it should be successful, because the
     // reference count goes to 0.
     EXPECT_TRUE(parking_lot_handle->unpark(parked_object));
     EXPECT_TRUE(unparked);
+    EXPECT_EQ(0, parking_lot->size());
 
     // Calling unpark again should return false to indicate that the object is
     // not parked.
@@ -89,6 +97,7 @@ TEST(ParkingLotTest, drop) {
     ParkingLotPtr parking_lot = boost::make_shared<ParkingLot>();
     ParkingLotHandlePtr parking_lot_handle =
         boost::make_shared<ParkingLotHandle>(parking_lot);
+    EXPECT_EQ(0, parking_lot->size());
 
     std::string parked_object = "foo";
 
@@ -96,6 +105,7 @@ TEST(ParkingLotTest, drop) {
     // reference counting.
     ASSERT_NO_THROW(parking_lot_handle->reference(parked_object));
     ASSERT_NO_THROW(parking_lot_handle->reference(parked_object));
+    EXPECT_EQ(1, parking_lot->size());
 
     // This flag will indicate if the callback has been called.
     bool unparked = false;
@@ -106,6 +116,7 @@ TEST(ParkingLotTest, drop) {
     // Drop parked object. The callback should not be invoked.
     EXPECT_TRUE(parking_lot_handle->drop(parked_object));
     EXPECT_FALSE(unparked);
+    EXPECT_EQ(0, parking_lot->size());
 
     // Expect that an attempt to unpark return false, as the object
     // has been dropped.
@@ -119,6 +130,7 @@ TEST(ParkingLotTest, clear) {
     ASSERT_TRUE(parking_lot);
     ParkingLotHandlePtr parking_lot_handle =
         boost::make_shared<ParkingLotHandle>(parking_lot);
+    EXPECT_EQ(0, parking_lot->size());
 
     boost::shared_ptr<std::string> parked_object =
         boost::make_shared<std::string>("foo");
@@ -128,6 +140,7 @@ TEST(ParkingLotTest, clear) {
     // ignores reference counting.
     ASSERT_NO_THROW(parking_lot_handle->reference(parked_object));
     ASSERT_NO_THROW(parking_lot_handle->reference(parked_object));
+    EXPECT_EQ(1, parking_lot->size());
 
     // This flag will indicate if the callback has been called.
     bool unparked = false;

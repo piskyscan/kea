@@ -440,6 +440,22 @@ public:
         max_unacked_clients_ = max_unacked_clients;
     }
 
+    /// @brief Returns maximum number of queries waiting for a response
+    /// from peers.
+    ///
+    /// @return Maximum number of waiting queries. The value 0 means no limit.
+    uint32_t getMaxQueryQueueSize() const {
+        return (max_query_queue_size_);
+    }
+
+    /// @brief Set maximum number of queries waiting for a response from peers.
+    ///
+    /// @param max_query_queue_size maximum number of waiting queries.
+    /// The value 0 means no limit.
+    void setMaxQueryQueueSize(uint32_t max_query_queue_size) {
+        max_query_queue_size_ = max_query_queue_size;
+    }
+
     /// @brief Configures the server to wait/not wait for the lease update
     /// acknowledgments from the backup servers.
     ///
@@ -522,6 +538,7 @@ public:
     uint32_t max_response_delay_;         ///< Max delay in response to heartbeats.
     uint32_t max_ack_delay_;              ///< Maximum DHCP message ack delay.
     uint32_t max_unacked_clients_;        ///< Maximum number of unacked clients.
+    uint32_t max_query_queue_size_;       ///< Maximum number of waiting queries.
     bool wait_backup_ack_;                ///< Wait for lease update ack from backup?
     PeerConfigMap peers_;                 ///< Map of peers' configurations.
     StateMachineConfigPtr state_machine_; ///< State machine configuration.

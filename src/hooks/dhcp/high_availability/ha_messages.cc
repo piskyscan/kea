@@ -1,4 +1,4 @@
-// File created from ../../../../src/hooks/dhcp/high_availability/ha_messages.mes on Mon Jun 22 2020 17:34
+// File created from ../../../../src/hooks/dhcp/high_availability/ha_messages.mes on Sun Jun 28 2020 16:49
 
 #include <cstddef>
 #include <log/message_types.h>
@@ -74,6 +74,8 @@ extern const isc::log::MessageID HA_MAINTENANCE_STARTED = "HA_MAINTENANCE_STARTE
 extern const isc::log::MessageID HA_MAINTENANCE_STARTED_IN_PARTNER_DOWN = "HA_MAINTENANCE_STARTED_IN_PARTNER_DOWN";
 extern const isc::log::MessageID HA_MAINTENANCE_START_HANDLER_FAILED = "HA_MAINTENANCE_START_HANDLER_FAILED";
 extern const isc::log::MessageID HA_MISSING_CONFIGURATION = "HA_MISSING_CONFIGURATION";
+extern const isc::log::MessageID HA_QUERY4_QUEUE_FULL = "HA_QUERY4_QUEUE_FULL";
+extern const isc::log::MessageID HA_QUERY6_QUEUE_FULL = "HA_QUERY6_QUEUE_FULL";
 extern const isc::log::MessageID HA_SCOPES_HANDLER_FAILED = "HA_SCOPES_HANDLER_FAILED";
 extern const isc::log::MessageID HA_SERVICE_STARTED = "HA_SERVICE_STARTED";
 extern const isc::log::MessageID HA_STATE_MACHINE_CONTINUED = "HA_STATE_MACHINE_CONTINUED";
@@ -160,6 +162,8 @@ const char* values[] = {
     "HA_MAINTENANCE_STARTED_IN_PARTNER_DOWN", "the server is now in the partner-down mode as a result of requested maintenance",
     "HA_MAINTENANCE_START_HANDLER_FAILED", "ha-maintenance-start command failed: %1",
     "HA_MISSING_CONFIGURATION", "high-availability parameter not specified for High Availability hooks library",
+    "HA_QUERY4_QUEUE_FULL", "query queue is full and received query was dropped: %1",
+    "HA_QUERY6_QUEUE_FULL", "query queue is full and received query was dropped: %1",
     "HA_SCOPES_HANDLER_FAILED", "ha-scopes command failed: %1",
     "HA_SERVICE_STARTED", "started high availability service in %1 mode as %2 server",
     "HA_STATE_MACHINE_CONTINUED", "state machine is un-paused",

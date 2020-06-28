@@ -28,8 +28,20 @@ using namespace isc::dhcp;
 using namespace isc::ha;
 using namespace isc::ha::test;
 using namespace isc::hooks;
+using namespace isc::util;
 
 namespace {
+
+/// @brief Structure that holds registered hook indexes.
+struct TestHooks {
+    /// Constructor that registers hook points for the tests.
+    TestHooks() {
+        HooksManager::registerHook("leases4_committed");
+        HooksManager::registerHook("leases6_committed");
+    }
+};
+
+TestHooks testHooks;
 
 /// @brief Derivation of the @c HAImpl which provides access to protected
 /// methods and members.
@@ -451,6 +463,177 @@ TEST_F(HAImplTest, leases6Committed) {
     // be set to "park".
     EXPECT_EQ(CalloutHandle::NEXT_STEP_PARK, callout_handle->getStatus());
     EXPECT_TRUE(callout_handle->getParkingLotHandlePtr()->drop(query6));
+}
+
+// Test for DHCPv4 HA behavior under congestion.
+TEST_F(HAImplTest, congestion4) {
+    // Use hot-standby mode to make sure that this server instance is selected
+    // to process each received query. This is going to give predictable results.
+    ConstElementPtr ha_config = createValidJsonConfiguration(HAConfig::HOT_STANDBY);
+
+    // Create implementation object and configure it.
+    TestHAImpl ha_impl;
+    ASSERT_NO_THROW(ha_impl.configure(ha_config));
+
+    // Starting the service is required prior to running any callouts.
+    NetworkStatePtr network_state(new NetworkState(NetworkState::DHCPv4));
+    ASSERT_NO_THROW(ha_impl.startService(io_service_, network_state,
+                                         HAServerType::DHCPv4));
+
+    // Initially the HA service is in the waiting state and serves no scopes.
+    // We need to explicitly enable the scope to be served.
+    ha_impl.service_->serveDefaultScopes();
+
+    // Create callout handle to be used for passing arguments to the
+    // callout.
+    CalloutHandlePtr callout_handle = HooksManager::createCalloutHandle();
+    ASSERT_TRUE(callout_handle);
+
+    // query
+    Pkt4Ptr query = createMessage4(DHCPREQUEST, 1, 0, 0);
+    ASSERT_NO_THROW(query->pack());
+    const OutputBuffer& buffer = query->getBuffer();
+    Pkt4Ptr raw4(new Pkt4(reinterpret_cast<const uint8_t*>(buffer.getData()),
+                          buffer.getLength()));
+
+    // Set buffer4_receive callout arguments and invoke it.
+    callout_handle->setArgument("query4", raw4);
+    ASSERT_NO_THROW(ha_impl.buffer4Receive(*callout_handle));
+    EXPECT_EQ(CalloutHandle::NEXT_STEP_SKIP, callout_handle->getStatus());
+
+    // Make sure we wait for the acks from the backup server to be able to
+    // test the case of sending lease updates even though the service is
+    // in the state in which the lease updates are normally not sent.
+    ha_impl.config_->setWaitBackupAck(true);
+
+    // Prepare the second callout.
+    callout_handle->deleteAllArguments();
+
+    // Reset initial status.
+    callout_handle->setStatus(CalloutHandle::NEXT_STEP_CONTINUE);
+
+    // Set the hook index.
+    int index = ServerHooks::getServerHooks().getIndex("leases4_committed");
+    callout_handle->setCurrentHook(index);
+
+    // lease4
+    Lease4CollectionPtr leases4(new Lease4Collection());
+    HWAddrPtr hwaddr(new HWAddr(std::vector<uint8_t>(6, 1), HTYPE_ETHER));
+    Lease4Ptr lease4(new Lease4(IOAddress("192.1.2.3"), hwaddr,
+                                static_cast<const uint8_t*>(0), 0,
+                                60, 0, 1));
+    leases4->push_back(lease4);
+    callout_handle->setArgument("leases4", leases4);
+
+    // deleted_leases4
+    Lease4CollectionPtr deleted_leases4(new Lease4Collection());
+    callout_handle->setArgument("deleted_leases4", deleted_leases4);
+
+    // Invoke the lease4 committed callout.
+    ha_impl.config_->setSendLeaseUpdates(true);
+    callout_handle->setArgument("query4", query);
+    ASSERT_NO_THROW(ha_impl.leases4Committed(*callout_handle));
+    EXPECT_EQ(CalloutHandle::NEXT_STEP_PARK, callout_handle->getStatus());
+
+    // Set the maximum query queue size to 1.
+    ha_impl.config_->setMaxQueryQueueSize(1);
+
+    // Retry the buffer4 receive callout.
+    callout_handle->deleteAllArguments();
+    callout_handle->setStatus(CalloutHandle::NEXT_STEP_CONTINUE);
+    raw4.reset(new Pkt4(reinterpret_cast<const uint8_t*>(buffer.getData()),
+                        buffer.getLength()));
+    callout_handle->setArgument("query4", raw4);
+    ASSERT_NO_THROW(ha_impl.buffer4Receive(*callout_handle));
+
+    // The parking lot is full so the status is now drop.
+    EXPECT_EQ(CalloutHandle::NEXT_STEP_DROP, callout_handle->getStatus());
+    EXPECT_TRUE(callout_handle->getParkingLotHandlePtr()->drop(query));
+}
+
+// Test for DHCPv6 HA behavior under congestion.
+TEST_F(HAImplTest, congestion6) {
+    // Use hot-standby mode to make sure that this server instance is selected
+    // to process each received query. This is going to give predictable results.
+    ConstElementPtr ha_config = createValidJsonConfiguration(HAConfig::HOT_STANDBY);
+
+    // Create implementation object and configure it.
+    TestHAImpl ha_impl;
+    ASSERT_NO_THROW(ha_impl.configure(ha_config));
+
+    // Starting the service is required prior to running any callouts.
+    NetworkStatePtr network_state(new NetworkState(NetworkState::DHCPv6));
+    ASSERT_NO_THROW(ha_impl.startService(io_service_, network_state,
+                                         HAServerType::DHCPv6));
+
+    // Initially the HA service is in the waiting state and serves no scopes.
+    // We need to explicitly enable the scope to be served.
+    ha_impl.service_->serveDefaultScopes();
+
+    // Create callout handle to be used for passing arguments to the
+    // callout.
+    CalloutHandlePtr callout_handle = HooksManager::createCalloutHandle();
+    ASSERT_TRUE(callout_handle);
+
+    // query
+    Pkt6Ptr query = createMessage6(DHCPV6_REQUEST, 1, 0);
+    ASSERT_NO_THROW(query->pack());
+    const OutputBuffer& buffer = query->getBuffer();
+    Pkt6Ptr raw6(new Pkt6(reinterpret_cast<const uint8_t*>(buffer.getData()),
+                          buffer.getLength()));
+
+    // Set buffer6_receive callout arguments and invoke it.
+    callout_handle->setArgument("query6", raw6);
+    ASSERT_NO_THROW(ha_impl.buffer6Receive(*callout_handle));
+    EXPECT_EQ(CalloutHandle::NEXT_STEP_SKIP, callout_handle->getStatus());
+
+    // Make sure we wait for the acks from the backup server to be able to
+    // test the case of sending lease updates even though the service is
+    // in the state in which the lease updates are normally not sent.
+    ha_impl.config_->setWaitBackupAck(true);
+
+    // Prepare the second callout.
+    callout_handle->deleteAllArguments();
+
+    // Reset initial status.
+    callout_handle->setStatus(CalloutHandle::NEXT_STEP_CONTINUE);
+
+    // Set the hook index.
+    int index = ServerHooks::getServerHooks().getIndex("leases6_committed");
+    callout_handle->setCurrentHook(index);
+
+    // lease6
+    Lease6CollectionPtr leases6(new Lease6Collection());
+    DuidPtr duid(new DUID(std::vector<uint8_t>(8, 2)));
+    Lease6Ptr lease6(new Lease6(Lease::TYPE_NA, IOAddress("2001:db8:1::cafe"), duid,
+                                1234, 50, 60, 1));
+    leases6->push_back(lease6);
+    callout_handle->setArgument("leases6", leases6);
+
+    // deleted_leases6
+    Lease6CollectionPtr deleted_leases6(new Lease6Collection());
+    callout_handle->setArgument("deleted_leases6", deleted_leases6);
+
+    // Invoke the lease6 committed callout.
+    ha_impl.config_->setSendLeaseUpdates(true);
+    callout_handle->setArgument("query6", query);
+    ASSERT_NO_THROW(ha_impl.leases6Committed(*callout_handle));
+    EXPECT_EQ(CalloutHandle::NEXT_STEP_PARK, callout_handle->getStatus());
+
+    // Set the maximum query queue size to 1.
+    ha_impl.config_->setMaxQueryQueueSize(1);
+
+    // Retry the buffer6 receive callout.
+    callout_handle->deleteAllArguments();
+    callout_handle->setStatus(CalloutHandle::NEXT_STEP_CONTINUE);
+    raw6.reset(new Pkt6(reinterpret_cast<const uint8_t*>(buffer.getData()),
+                        buffer.getLength()));
+    callout_handle->setArgument("query6", raw6);
+    ASSERT_NO_THROW(ha_impl.buffer6Receive(*callout_handle));
+
+    // The parking lot is full so the status is now drop.
+    EXPECT_EQ(CalloutHandle::NEXT_STEP_DROP, callout_handle->getStatus());
+    EXPECT_TRUE(callout_handle->getParkingLotHandlePtr()->drop(query));
 }
 
 // Tests ha-sync command handler with correct and incorrect arguments.

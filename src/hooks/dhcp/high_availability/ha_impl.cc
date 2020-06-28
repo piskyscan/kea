@@ -15,6 +15,7 @@
 #include <dhcp/pkt4.h>
 #include <dhcp/pkt6.h>
 #include <dhcpsrv/lease.h>
+#include <hooks/server_hooks.h>
 #include <stats/stats_mgr.h>
 
 using namespace isc::asiolink;
@@ -50,6 +51,20 @@ void
 HAImpl::buffer4Receive(hooks::CalloutHandle& callout_handle) {
     Pkt4Ptr query4;
     callout_handle.getArgument("query4", query4);
+
+    // If the query queue i.e. the send update parking lot is full
+    // this query is dropped.
+    uint32_t max_parking_lot_size = config_->getMaxQueryQueueSize();
+    if (max_parking_lot_size) {
+        const auto& parking_lot = ServerHooks::getServerHooks().
+            getParkingLotPtr("leases4_committed");
+        if (parking_lot && (parking_lot->size() >= max_parking_lot_size)) {
+            LOG_DEBUG(ha_logger, DBGLVL_TRACE_BASIC, HA_QUERY4_QUEUE_FULL)
+                .arg(query4->getLabel());
+            callout_handle.setStatus(CalloutHandle::NEXT_STEP_DROP);
+            return;
+        }
+    }
 
     /// @todo Add unit tests to verify the behavior for different
     /// malformed packets.
@@ -157,6 +172,20 @@ void
 HAImpl::buffer6Receive(hooks::CalloutHandle& callout_handle) {
     Pkt6Ptr query6;
     callout_handle.getArgument("query6", query6);
+
+    // If the query queue i.e. the send update parking lot is full
+    // this query is dropped.
+    uint32_t max_parking_lot_size = config_->getMaxQueryQueueSize();
+    if (max_parking_lot_size) {
+        const auto& parking_lot = ServerHooks::getServerHooks().
+            getParkingLotPtr("leases6_committed");
+        if (parking_lot && (parking_lot->size() >= max_parking_lot_size)) {
+            LOG_DEBUG(ha_logger, DBGLVL_TRACE_BASIC, HA_QUERY4_QUEUE_FULL)
+                .arg(query6->getLabel());
+            callout_handle.setStatus(CalloutHandle::NEXT_STEP_DROP);
+            return;
+        }
+    }
 
     /// @todo Add unit tests to verify the behavior for different
     /// malformed packets.
