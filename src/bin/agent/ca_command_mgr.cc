@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2019 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2017-2020 Internet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -48,7 +48,7 @@ ConstElementPtr
 CtrlAgentCommandMgr::handleCommand(const std::string& cmd_name,
                                    const isc::data::ConstElementPtr& params,
                                    const isc::data::ConstElementPtr& original_cmd) {
-    ConstElementPtr answer = handleCommandInternal(cmd_name, params, original_cmd);
+    ElementPtr answer = handleCommandInternal(cmd_name, params, original_cmd);
 
     if (answer->getType() == Element::list) {
         return (answer);
@@ -59,13 +59,13 @@ CtrlAgentCommandMgr::handleCommand(const std::string& cmd_name,
     // e.g. 'list-commands', which may return a single answer not wrapped in
     // the list. Such answers need to be wrapped in the list here.
     ElementPtr answer_list = Element::createList();
-    answer_list->add(boost::const_pointer_cast<Element>(answer));
+    answer_list->add(answer);
 
     return (answer_list);
 }
 
 
-ConstElementPtr
+ElementPtr
 CtrlAgentCommandMgr::handleCommandInternal(std::string cmd_name,
                                            isc::data::ConstElementPtr params,
                                            isc::data::ConstElementPtr original_cmd) {
@@ -153,7 +153,7 @@ CtrlAgentCommandMgr::handleCommandInternal(std::string cmd_name,
     // For each value within 'service' we have to try forwarding the command.
     for (unsigned i = 0; i < services->size(); ++i) {
         if (original_cmd) {
-            ConstElementPtr answer;
+            ElementPtr answer;
             try {
                 LOG_DEBUG(agent_logger, isc::log::DBGLVL_COMMAND,
                           CTRL_AGENT_COMMAND_FORWARD_BEGIN)
@@ -169,14 +169,14 @@ CtrlAgentCommandMgr::handleCommandInternal(std::string cmd_name,
                 answer = createAnswer(CONTROL_RESULT_ERROR, ex.what());
             }
 
-            answer_list->add(boost::const_pointer_cast<Element>(answer));
+            answer_list->add(answer);
         }
     }
 
     return (answer_list);
 }
 
-ConstElementPtr
+ElementPtr
 CtrlAgentCommandMgr::forwardCommand(const std::string& service,
                                     const std::string& cmd_name,
                                     const isc::data::ConstElementPtr& command) {
@@ -251,7 +251,7 @@ CtrlAgentCommandMgr::forwardCommand(const std::string& service,
                   " received from the unix domain socket");
     }
 
-    ConstElementPtr answer;
+    ElementPtr answer;
     try {
         answer = received_feed->toElement();
 

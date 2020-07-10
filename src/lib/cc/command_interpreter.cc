@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2018 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2009-2020 Internet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -29,7 +29,7 @@ const char *CONTROL_ARGUMENTS = "arguments";
 const char *CONTROL_SERVICE = "service";
 
 // Full version, with status, text and arguments
-ConstElementPtr
+ElementPtr
 createAnswer(const int status_code, const std::string& text,
              const ConstElementPtr& arg) {
     if (status_code != 0 && text.empty()) {
@@ -49,17 +49,17 @@ createAnswer(const int status_code, const std::string& text,
     return (answer);
 }
 
-ConstElementPtr
+ElementPtr
 createAnswer() {
     return (createAnswer(0, string(""), ConstElementPtr()));
 }
 
-ConstElementPtr
+ElementPtr
 createAnswer(const int status_code, const std::string& text) {
     return (createAnswer(status_code, text, ElementPtr()));
 }
 
-ConstElementPtr
+ElementPtr
 createAnswer(const int status_code, const ConstElementPtr& arg) {
     return (createAnswer(status_code, "", arg));
 }
@@ -133,22 +133,22 @@ answerToText(const ConstElementPtr& msg) {
     return (txt.str());
 }
 
-ConstElementPtr
+ElementPtr
 createCommand(const std::string& command) {
     return (createCommand(command, ElementPtr(), ""));
 }
 
-ConstElementPtr
+ElementPtr
 createCommand(const std::string& command, ConstElementPtr arg) {
     return (createCommand(command, arg, ""));
 }
 
-ConstElementPtr
+ElementPtr
 createCommand(const std::string& command, const std::string& service) {
     return (createCommand(command, ElementPtr(), service));
 }
 
-ConstElementPtr
+ElementPtr
 createCommand(const std::string& command,
               ConstElementPtr arg,
               const std::string& service) {

@@ -23,20 +23,20 @@ public:
     /// @brief Creates dhcp-disable command for DHCP server.
     ///
     /// @return Pointer to the JSON representation of the command.
-    static data::ConstElementPtr
+    static data::ElementPtr
     createDHCPDisable(const unsigned int max_period,
                       const HAServerType& server_type);
 
     /// @brief Creates dhcp-enable command for DHCP server.
     ///
     /// @return Pointer to the JSON representation of the command.
-    static data::ConstElementPtr
+    static data::ElementPtr
     createDHCPEnable(const HAServerType& server_type);
 
     /// @brief Creates ha-heartbeat command for DHCP server.
     ///
     /// @return Pointer to the JSON representation of the command.
-    static data::ConstElementPtr
+    static data::ElementPtr
     createHeartbeat(const HAServerType& server_type);
 
     /// @brief Creates lease4-update command.
@@ -49,7 +49,7 @@ public:
     /// be created.
     ///
     /// @return Pointer to the JSON representation of the command.
-    static data::ConstElementPtr
+    static data::ElementPtr
     createLease4Update(const dhcp::Lease4& lease4);
 
     /// @brief Creates lease4-del command.
@@ -58,13 +58,13 @@ public:
     /// be created.
     ///
     /// @return Pointer to the JSON representation of the command.
-    static data::ConstElementPtr
+    static data::ElementPtr
     createLease4Delete(const dhcp::Lease4& lease4);
 
     /// @brief Creates lease4-get-all command.
     ///
     /// @return Pointer to the JSON representation of the command.
-    static data::ConstElementPtr
+    static data::ElementPtr
     createLease4GetAll();
 
     /// @brief Creates lease4-get-page command.
@@ -76,7 +76,7 @@ public:
     /// null.
     /// @param limit Limit of leases on the page.
     /// @return Pointer to the JSON representation of the command.
-    static data::ConstElementPtr
+    static data::ElementPtr
     createLease4GetPage(const dhcp::Lease4Ptr& lease4,
                         const uint32_t limit);
 
@@ -87,7 +87,7 @@ public:
     /// @param deleted_leases Pointer to the collection of leases to be
     /// deleted.
     /// @return Pointer to the JSON representation of the command.
-    static data::ConstElementPtr
+    static data::ElementPtr
     createLease6BulkApply(const dhcp::Lease6CollectionPtr& leases,
                           const dhcp::Lease6CollectionPtr& deleted_leases);
 
@@ -101,7 +101,7 @@ public:
     /// be created.
     ///
     /// @return Pointer to the JSON representation of the command.
-    static data::ConstElementPtr
+    static data::ElementPtr
     createLease6Update(const dhcp::Lease6& lease6);
 
     /// @brief Creates lease6-del command.
@@ -110,13 +110,13 @@ public:
     /// be created.
     ///
     /// @return Pointer to the JSON representation of the command.
-    static data::ConstElementPtr
+    static data::ElementPtr
     createLease6Delete(const dhcp::Lease6& lease6);
 
     /// @brief Creates lease6-get-all command.
     ///
     /// @return Pointer to the JSON representation of the command.
-    static data::ConstElementPtr
+    static data::ElementPtr
     createLease6GetAll();
 
     /// @brief Creates lease6-get-page command.
@@ -128,7 +128,7 @@ public:
     /// null.
     /// @param limit Limit of leases on the page.
     /// @return Pointer to the JSON representation of the command.
-    static data::ConstElementPtr
+    static data::ElementPtr
     createLease6GetPage(const dhcp::Lease6Ptr& lease6,
                         const uint32_t limit);
 
@@ -138,7 +138,7 @@ public:
     /// is being cancelled (true) or requested (false).
     /// @param server_type type of the DHCP server, i.e. v4 or v6.
     /// @return Pointer to the JSON representation of the command.
-    static data::ConstElementPtr
+    static data::ElementPtr
     createMaintenanceNotify(const bool cancel, const HAServerType& server_type);
 
 private:
@@ -174,8 +174,7 @@ private:
     ///
     /// @return Pointer to the command with service parameter inserted.
     static void
-    insertService(data::ConstElementPtr& command,
-                  const HAServerType& server_type);
+    insertService(data::ElementPtr& command, const HAServerType& server_type);
 };
 
 } // end of namespace ha

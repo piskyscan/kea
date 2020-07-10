@@ -102,7 +102,7 @@ public:
     /// @param new_config textual representation of the new configuration
     ///
     /// @return status of the config update
-    static isc::data::ConstElementPtr
+    static isc::data::ElementPtr
     processConfig(isc::data::ConstElementPtr new_config);
 
     /// @brief Configuration checker
@@ -112,7 +112,7 @@ public:
     /// @param new_config JSON representation of the new configuration
     ///
     /// @return status of the config check
-    isc::data::ConstElementPtr
+    isc::data::ElementPtr
     checkConfig(isc::data::ConstElementPtr new_config);
 
     /// @brief Returns pointer to the sole instance of Dhcpv4Srv

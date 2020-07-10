@@ -55,7 +55,7 @@ class Dhcpv4Srv;
 /// @param config_set a new configuration (JSON) for DHCPv4 server
 /// @param check_only whether this configuration is for testing only
 /// @return answer that contains result of reconfiguration
-isc::data::ConstElementPtr
+isc::data::ElementPtr
 configureDhcp4Server(Dhcpv4Srv&,
                      isc::data::ConstElementPtr config_set,
                      bool check_only = false);

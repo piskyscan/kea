@@ -40,7 +40,7 @@ class Dhcpv6Srv;
 /// @param check_only whether this configuration is for testing only
 /// @return answer that contains result of the reconfiguration.
 /// @throw Dhcp6ConfigError if trying to create a parser for NULL config.
-isc::data::ConstElementPtr
+isc::data::ElementPtr
 configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
                      bool check_only = false);
 

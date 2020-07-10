@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2017-2020 Internet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -82,7 +82,7 @@ private:
     /// to the command or a single response (not wrapped in a list). The
     /// @ref CtrlAgentCommandMgr::handleCommand will wrap non-list value returned
     /// in a single element list.
-    isc::data::ConstElementPtr
+    isc::data::ElementPtr
     handleCommandInternal(std::string cmd_name,
                           isc::data::ConstElementPtr params,
                           isc::data::ConstElementPtr original_cmd);
@@ -96,7 +96,7 @@ private:
     ///
     /// @return Response to forwarded command.
     /// @throw CommandForwardingError when an error occurred during forwarding.
-    isc::data::ConstElementPtr
+    isc::data::ElementPtr
     forwardCommand(const std::string& service, const std::string& cmd_name,
                    const isc::data::ConstElementPtr& command);
 

@@ -299,12 +299,12 @@ void configureCommandChannel() {
     }
 }
 
-isc::data::ConstElementPtr
+isc::data::ElementPtr
 configureDhcp4Server(Dhcpv4Srv& server, isc::data::ConstElementPtr config_set,
                      bool check_only) {
     if (!config_set) {
-        ConstElementPtr answer = isc::config::createAnswer(CONTROL_RESULT_ERROR,
-                                 string("Can't parse NULL config"));
+        ElementPtr answer = isc::config::createAnswer(CONTROL_RESULT_ERROR,
+            string("Can't parse NULL config"));
         return (answer);
     }
 
@@ -332,7 +332,7 @@ configureDhcp4Server(Dhcpv4Srv& server, isc::data::ConstElementPtr config_set,
     HostDataSourceFactory::printRegistered();
 
     // Answer will hold the result.
-    ConstElementPtr answer;
+    ElementPtr answer;
     // Rollback informs whether error occurred and original data
     // have to be restored to global storages.
     bool rollback = false;

@@ -57,7 +57,7 @@ Lease6Ptr createLease6() {
 /// @param lease_ptr Pointer to the lease.
 /// @return Pointer to the JSON representation of the lease.
 ElementPtr leaseAsJson(const LeasePtr& lease_ptr) {
-    ElementPtr lease = boost::const_pointer_cast<Element>(lease_ptr->toElement());
+    ElementPtr lease = lease_ptr->toElement();
     // Replace cltt with expiration time as this is what the lease_cmds hooks
     // library expects.
     int64_t cltt = lease->get("cltt")->intValue();

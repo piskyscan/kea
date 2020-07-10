@@ -181,18 +181,18 @@ main(int argc, char* argv[]) {
                 return (EXIT_FAILURE);
             }
             ControlledDhcpv4Srv server(0);
-            ConstElementPtr answer;
+            ElementPtr answer;
 
             // Now we pass the Dhcp4 configuration to the server, but
             // tell it to check the configuration only (check_only = true)
             answer = configureDhcp4Server(server, dhcp4, true);
 
             int status_code = 0;
-            answer = isc::config::parseAnswer(status_code, answer);
+            ConstElementPtr msg = isc::config::parseAnswer(status_code, answer);
             if (status_code == 0) {
                 return (EXIT_SUCCESS);
             } else {
-                cerr << "Error encountered: " << answer->stringValue() << endl;
+                cerr << "Error encountered: " << msg->stringValue() << endl;
                 return (EXIT_FAILURE);
             }
         } catch (const std::exception& ex) {

@@ -423,9 +423,8 @@ private:
             arguments->set("date-time", Element::create(HttpDateTime().rfc1123Format()));
         }
 
-        response_body->add(boost::const_pointer_cast<Element>
-                           (createAnswer(control_result, "response returned",
-                                         arguments)));
+        response_body->add(createAnswer(control_result, "response returned",
+                                        arguments));
         response->setBodyAsJson(response_body);
         response->finalize();
         return (response);

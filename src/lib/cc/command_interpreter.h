@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2018 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2009-2020 Internet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -60,7 +60,7 @@ public:
 /// @brief Creates a standard config/command level success answer message
 ///        (i.e. of the form { "result": 0 }
 /// @return Standard command/config success answer message
-isc::data::ConstElementPtr createAnswer();
+isc::data::ElementPtr createAnswer();
 
 /// @brief Creates a standard config/command level answer message
 /// (i.e. of the form { "result": 1, "text": "Invalid command received" }
@@ -68,8 +68,8 @@ isc::data::ConstElementPtr createAnswer();
 /// @param status_code The return code (0 for success)
 /// @param status_text A string to put into the "text" argument
 /// @return Standard command/config answer message
-isc::data::ConstElementPtr createAnswer(const int status_code,
-                                        const std::string& status_text);
+isc::data::ElementPtr createAnswer(const int status_code,
+                                   const std::string& status_text);
 
 /// @brief Creates a standard config/command level answer message
 /// (i.e. of the form { "result": status_code, "arguments": arg }
@@ -78,8 +78,8 @@ isc::data::ConstElementPtr createAnswer(const int status_code,
 /// @param arg The optional argument for the answer. This can be of
 ///        any Element type. May be NULL.
 /// @return Standard command/config answer message
-isc::data::ConstElementPtr createAnswer(const int status_code,
-                                        const isc::data::ConstElementPtr& arg);
+isc::data::ElementPtr createAnswer(const int status_code,
+                                   const isc::data::ConstElementPtr& arg);
 
 /// @brief Creates a standard config/command level answer message
 ///
@@ -88,9 +88,9 @@ isc::data::ConstElementPtr createAnswer(const int status_code,
 /// @param arg The optional argument for the answer. This can be of
 ///        any Element type. May be NULL.
 /// @return Standard command/config answer message
-isc::data::ConstElementPtr createAnswer(const int status_code,
-                                        const std::string& status,
-                                        const isc::data::ConstElementPtr& arg);
+isc::data::ElementPtr createAnswer(const int status_code,
+                                   const std::string& status,
+                                   const isc::data::ConstElementPtr& arg);
 
 /// @brief Parses a standard config/command level answer message.
 ///
@@ -112,7 +112,7 @@ std::string answerToText(const isc::data::ConstElementPtr& msg);
 ///
 /// @param command The command string
 /// @return The created message
-isc::data::ConstElementPtr createCommand(const std::string& command);
+isc::data::ElementPtr createCommand(const std::string& command);
 
 /// @brief Creates a standard command message with the
 /// given argument (of the form { "command": "my_command", "arguments": arg }
@@ -121,8 +121,8 @@ isc::data::ConstElementPtr createCommand(const std::string& command);
 /// @param arg The optional argument for the command. This can be of
 ///        any Element type. May be NULL.
 /// @return The created message
-isc::data::ConstElementPtr createCommand(const std::string& command,
-                                         isc::data::ConstElementPtr arg);
+isc::data::ElementPtr createCommand(const std::string& command,
+                                    isc::data::ConstElementPtr arg);
 
 /// @brief Creates a standard config/command command message with no
 /// argument and with the given service (of the form
@@ -131,8 +131,8 @@ isc::data::ConstElementPtr createCommand(const std::string& command,
 /// @param command The command string
 /// @param service The target service. May be empty.
 /// @return The created message
- isc::data::ConstElementPtr createCommand(const std::string& command,
-                                          const std::string& service);
+ isc::data::ElementPtr createCommand(const std::string& command,
+                                     const std::string& service);
 
 /// @brief Creates a standard config/command command message with the
 /// given argument and given service (of the form
@@ -143,9 +143,9 @@ isc::data::ConstElementPtr createCommand(const std::string& command,
 ///        any Element type. May be NULL.
 /// @param service The target service. May be empty.
 /// @return The created message
-isc::data::ConstElementPtr createCommand(const std::string& command,
-                                         isc::data::ConstElementPtr arg,
-                                         const std::string& service);
+isc::data::ElementPtr createCommand(const std::string& command,
+                                    isc::data::ConstElementPtr arg,
+                                    const std::string& service);
 
 /// @brief Parses the given command into a string containing the actual
 ///        command and an ElementPtr containing the optional argument.
@@ -195,7 +195,7 @@ isc::data::ConstElementPtr
 combineCommandsLists(const isc::data::ConstElementPtr& response1,
                      const isc::data::ConstElementPtr& response2);
 
-}; // end of namespace isc::config
-}; // end of namespace isc
+} // end of namespace isc::config
+} // end of namespace isc
 
 #endif // COMMAND_INTERPRETER_H

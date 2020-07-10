@@ -17,7 +17,7 @@ using namespace isc::dhcp;
 namespace isc {
 namespace ha {
 
-ConstElementPtr
+ElementPtr
 CommandCreator::createDHCPDisable(const unsigned int max_period,
                                   const HAServerType& server_type) {
     ElementPtr args;
@@ -26,52 +26,52 @@ CommandCreator::createDHCPDisable(const unsigned int max_period,
         args = Element::createMap();
         args->set("max-period", Element::create(static_cast<long int>(max_period)));
     }
-    ConstElementPtr command = config::createCommand("dhcp-disable", args);
+    ElementPtr command = config::createCommand("dhcp-disable", args);
     insertService(command, server_type);
     return (command);
 }
 
-ConstElementPtr
+ElementPtr
 CommandCreator::createDHCPEnable(const HAServerType& server_type) {
-    ConstElementPtr command = config::createCommand("dhcp-enable");
+    ElementPtr command = config::createCommand("dhcp-enable");
     insertService(command, server_type);
     return (command);
 }
 
-ConstElementPtr
+ElementPtr
 CommandCreator::createHeartbeat(const HAServerType& server_type) {
-    ConstElementPtr command = config::createCommand("ha-heartbeat");
+    ElementPtr command = config::createCommand("ha-heartbeat");
     insertService(command, server_type);
     return (command);
 }
 
-ConstElementPtr
+ElementPtr
 CommandCreator::createLease4Update(const Lease4& lease4) {
     ElementPtr lease_as_json = lease4.toElement();
     insertLeaseExpireTime(lease_as_json);
     lease_as_json->set("force-create", Element::create(true));
-    ConstElementPtr command = config::createCommand("lease4-update", lease_as_json);
+    ElementPtr command = config::createCommand("lease4-update", lease_as_json);
     insertService(command, HAServerType::DHCPv4);
     return (command);
 }
 
-ConstElementPtr
+ElementPtr
 CommandCreator::createLease4Delete(const Lease4& lease4) {
     ElementPtr lease_as_json = lease4.toElement();
     insertLeaseExpireTime(lease_as_json);
-    ConstElementPtr command = config::createCommand("lease4-del", lease_as_json);
+    ElementPtr command = config::createCommand("lease4-del", lease_as_json);
     insertService(command, HAServerType::DHCPv4);
     return (command);
 }
 
-ConstElementPtr
+ElementPtr
 CommandCreator::createLease4GetAll() {
-    ConstElementPtr command = config::createCommand("lease4-get-all");
+    ElementPtr command = config::createCommand("lease4-get-all");
     insertService(command, HAServerType::DHCPv4);
     return (command);
 }
 
-ConstElementPtr
+ElementPtr
 CommandCreator::createLease4GetPage(const Lease4Ptr& last_lease4,
                                     const uint32_t limit) {
     // Zero value is not allowed.
@@ -91,12 +91,12 @@ CommandCreator::createLease4GetPage(const Lease4Ptr& last_lease4,
     args->set("limit", limit_element);
 
     // Create the command.
-    ConstElementPtr command = config::createCommand("lease4-get-page", args);
+    ElementPtr command = config::createCommand("lease4-get-page", args);
     insertService(command, HAServerType::DHCPv4);
     return (command);
 }
 
-ConstElementPtr
+ElementPtr
 CommandCreator::createLease6BulkApply(const Lease6CollectionPtr& leases,
                                       const Lease6CollectionPtr& deleted_leases) {
     ElementPtr deleted_leases_list = Element::createList();
@@ -119,38 +119,38 @@ CommandCreator::createLease6BulkApply(const Lease6CollectionPtr& leases,
     args->set("deleted-leases", deleted_leases_list);
     args->set("leases", leases_list);
 
-    ConstElementPtr command = config::createCommand("lease6-bulk-apply", args);
+    ElementPtr command = config::createCommand("lease6-bulk-apply", args);
     insertService(command, HAServerType::DHCPv6);
     return (command);
 }
 
-ConstElementPtr
+ElementPtr
 CommandCreator::createLease6Update(const Lease6& lease6) {
     ElementPtr lease_as_json = lease6.toElement();
     insertLeaseExpireTime(lease_as_json);
     lease_as_json->set("force-create", Element::create(true));
-    ConstElementPtr command = config::createCommand("lease6-update", lease_as_json);
+    ElementPtr command = config::createCommand("lease6-update", lease_as_json);
     insertService(command, HAServerType::DHCPv6);
     return (command);
 }
 
-ConstElementPtr
+ElementPtr
 CommandCreator::createLease6Delete(const Lease6& lease6) {
     ElementPtr lease_as_json = lease6.toElement();
     insertLeaseExpireTime(lease_as_json);
-    ConstElementPtr command = config::createCommand("lease6-del", lease_as_json);
+    ElementPtr command = config::createCommand("lease6-del", lease_as_json);
     insertService(command, HAServerType::DHCPv6);
     return (command);
 }
 
-ConstElementPtr
+ElementPtr
 CommandCreator::createLease6GetAll() {
-    ConstElementPtr command = config::createCommand("lease6-get-all");
+    ElementPtr command = config::createCommand("lease6-get-all");
     insertService(command, HAServerType::DHCPv6);
     return (command);
 }
 
-ConstElementPtr
+ElementPtr
 CommandCreator::createLease6GetPage(const Lease6Ptr& last_lease6,
                                     const uint32_t limit) {
     // Zero value is not allowed.
@@ -170,16 +170,16 @@ CommandCreator::createLease6GetPage(const Lease6Ptr& last_lease6,
     args->set("limit", limit_element);
 
     // Create the command.
-    ConstElementPtr command = config::createCommand("lease6-get-page", args);
+    ElementPtr command = config::createCommand("lease6-get-page", args);
     insertService(command, HAServerType::DHCPv6);
     return (command);
 }
 
-ConstElementPtr
+ElementPtr
 CommandCreator::createMaintenanceNotify(const bool cancel, const HAServerType& server_type) {
-    auto args = Element::createMap();
+    ElementPtr args = Element::createMap();
     args->set("cancel", Element::create(cancel));
-    auto command = config::createCommand("ha-maintenance-notify", args);
+    ElementPtr command = config::createCommand("ha-maintenance-notify", args);
     insertService(command, server_type);
     return (command);
 }
@@ -201,18 +201,12 @@ CommandCreator::insertLeaseExpireTime(ElementPtr& lease) {
 }
 
 void
-CommandCreator::insertService(ConstElementPtr& command,
+CommandCreator::insertService(ElementPtr& command,
                               const HAServerType& server_type) {
     ElementPtr service = Element::createList();
     const std::string service_name = (server_type == HAServerType::DHCPv4 ? "dhcp4" : "dhcp6");
     service->add(Element::create(service_name));
-
-    // We have no better way of setting a new element here than
-    // doing const pointer cast. That's another reason why this
-    // functionality could be moved to the core code. We don't
-    // do it however, because we want to minimize concurrent
-    // code changes in the premium and core Kea repos.
-    (boost::const_pointer_cast<Element>(command))->set("service", service);
+    command->set("service", service);
 }
 
 } // end of namespace ha
