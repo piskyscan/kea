@@ -6,18 +6,22 @@
 
 #ifndef PARSER_CONTEXT_H
 #define PARSER_CONTEXT_H
-#include <string>
-#include <map>
-#include <vector>
 #include <d2/d2_parser.h>
 #include <d2/parser_context_decl.h>
 #include <exceptions/exceptions.h>
+#include <cstdio>
+#include <map>
+#include <string>
+#include <vector>
 
 // Tell Flex the lexer's prototype ...
 #define YY_DECL isc::d2::D2Parser::symbol_type d2_parser_lex (D2ParserContext& driver)
 
 // ... and declare it for the parser's sake.
 YY_DECL;
+
+// Forward definition of yy_buffer_state.
+struct yy_buffer_state;
 
 namespace isc {
 namespace d2 {

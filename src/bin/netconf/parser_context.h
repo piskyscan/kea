@@ -6,19 +6,23 @@
 
 #ifndef NETCONF_PARSER_CONTEXT_H
 #define NETCONF_PARSER_CONTEXT_H
-#include <string>
-#include <map>
-#include <vector>
 #include <netconf/netconf_parser.h>
 #include <netconf/parser_context_decl.h>
 #include <cc/dhcp_config_error.h>
 #include <exceptions/exceptions.h>
+#include <cstdio>
+#include <map>
+#include <string>
+#include <vector>
 
 // Tell Flex the lexer's prototype ...
 #define YY_DECL isc::netconf::NetconfParser::symbol_type netconf_lex (ParserContext& driver)
 
 // ... and declare it for the parser's sake.
 YY_DECL;
+
+// Forward definition of yy_buffer_state.
+struct yy_buffer_state;
 
 namespace isc {
 namespace netconf {

@@ -6,18 +6,22 @@
 
 #ifndef PARSER_CONTEXT_H
 #define PARSER_CONTEXT_H
-#include <string>
-#include <map>
-#include <vector>
 #include <agent/agent_parser.h>
 #include <agent/parser_context_decl.h>
 #include <exceptions/exceptions.h>
+#include <cstdio>
+#include <map>
+#include <string>
+#include <vector>
 
 // Tell Flex the lexer's prototype ...
 #define YY_DECL isc::agent::AgentParser::symbol_type agent_lex (ParserContext& driver)
 
 // ... and declare it for the parser's sake.
 YY_DECL;
+
+// Forward definition of yy_buffer_state.
+struct yy_buffer_state;
 
 namespace isc {
 namespace agent {

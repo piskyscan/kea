@@ -6,18 +6,22 @@
 
 #ifndef PARSER_CONTEXT_H
 #define PARSER_CONTEXT_H
-#include <string>
-#include <map>
-#include <vector>
 #include <dhcp4/dhcp4_parser.h>
 #include <dhcp4/parser_context_decl.h>
 #include <exceptions/exceptions.h>
+#include <cstdio>
+#include <map>
+#include <string>
+#include <vector>
 
 // Tell Flex the lexer's prototype ...
 #define YY_DECL isc::dhcp::Dhcp4Parser::symbol_type parser4_lex (Parser4Context& driver)
 
 // ... and declare it for the parser's sake.
 YY_DECL;
+
+// Forward definition of yy_buffer_state.
+struct yy_buffer_state;
 
 namespace isc {
 namespace dhcp {
