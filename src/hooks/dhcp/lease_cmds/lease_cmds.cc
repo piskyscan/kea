@@ -1371,8 +1371,9 @@ LeaseCmdsImpl::lease6BulkApplyHandler(CalloutHandle& handle) {
         // Send the success response and include failed leases.
         std::ostringstream resp_text;
         resp_text << "Bulk apply of " << success_count << " IPv6 leases completed.";
-        auto answer = createAnswer(success_count > 0 ? CONTROL_RESULT_SUCCESS :
-                                   CONTROL_RESULT_EMPTY, resp_text.str(), args);
+        ConstElementPtr answer =
+            createAnswer(success_count > 0 ? CONTROL_RESULT_SUCCESS :
+                         CONTROL_RESULT_EMPTY, resp_text.str(), args);
         setResponse(handle, answer);
 
     } catch (const std::exception& ex) {
