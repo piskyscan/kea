@@ -1195,10 +1195,32 @@ AllocEngine::allocateReservedLeases6(ClientContext6& ctx,
                     }
                 }
 
+                bool expired = lease->expired();
+
                 // If this is a real allocation, we may need to extend the lease
                 // lifetime.
                 if (!ctx.fake_allocation_ && conditionalExtendLifetime(*lease)) {
                     LeaseMgrFactory::instance().updateLease6(lease);
+
+                    if (expired) {
+                        lease->update_stats_ = true;
+
+                        StatsMgr::instance().addValue(
+                            StatsMgr::generateName("subnet", ctx.subnet_->getID(),
+                                                   ctx.currentIA().type_ == Lease::TYPE_NA ?
+                                                   "assigned-nas" : "assigned-pds"),
+                            static_cast<int64_t>(1));
+                        StatsMgr::instance().addValue(
+                            StatsMgr::generateName("subnet", ctx.subnet_->getID(),
+                                                   ctx.currentIA().type_ == Lease::TYPE_NA ?
+                                                   "cumulative-assigned-nas" :
+                                                   "cumulative-assigned-pds"),
+                            static_cast<int64_t>(1));
+                        StatsMgr::instance().addValue(ctx.currentIA().type_ == Lease::TYPE_NA ?
+                                                      "cumulative-assigned-nas" :
+                                                      "cumulative-assigned-pds",
+                            static_cast<int64_t>(1));
+                    }
                 }
                 return;
             }
@@ -1336,10 +1358,32 @@ AllocEngine::allocateGlobalReservedLeases6(ClientContext6& ctx,
                                                 static_cast<bool>(fqdn));
             }
 
+            bool expired = lease->expired();
+
             // If this is a real allocation, we may need to extend the lease
             // lifetime.
             if (!ctx.fake_allocation_ && conditionalExtendLifetime(*lease)) {
                 LeaseMgrFactory::instance().updateLease6(lease);
+
+                if (expired) {
+                    lease->update_stats_ = true;
+
+                    StatsMgr::instance().addValue(
+                        StatsMgr::generateName("subnet", ctx.subnet_->getID(),
+                                               ctx.currentIA().type_ == Lease::TYPE_NA ?
+                                               "assigned-nas" : "assigned-pds"),
+                        static_cast<int64_t>(1));
+                    StatsMgr::instance().addValue(
+                        StatsMgr::generateName("subnet", ctx.subnet_->getID(),
+                                               ctx.currentIA().type_ == Lease::TYPE_NA ?
+                                               "cumulative-assigned-nas" :
+                                               "cumulative-assigned-pds"),
+                        static_cast<int64_t>(1));
+                    StatsMgr::instance().addValue(ctx.currentIA().type_ == Lease::TYPE_NA ?
+                                                  "cumulative-assigned-nas" :
+                                                  "cumulative-assigned-pds",
+                        static_cast<int64_t>(1));
+                }
             }
 
             return(true);
@@ -1418,7 +1462,7 @@ AllocEngine::allocateGlobalReservedLeases6(ClientContext6& ctx,
         }
     }
 
-    return(false);
+    return (false);
 }
 
 void
@@ -1752,6 +1796,8 @@ AllocEngine::reuseExpiredLease(Lease6Ptr& expired, ClientContext6& ctx,
         // for REQUEST we do update the lease
         LeaseMgrFactory::instance().updateLease6(expired);
 
+        expired->update_stats_ = true;
+
         // If the lease is in the current subnet we need to account
         // for the re-assignment of The lease.
         if (ctx.subnet_->inPool(ctx.currentIA().type_, expired->addr_)) {
@@ -1769,7 +1815,7 @@ AllocEngine::reuseExpiredLease(Lease6Ptr& expired, ClientContext6& ctx,
             StatsMgr::instance().addValue(ctx.currentIA().type_ == Lease::TYPE_NA ?
                                           "cumulative-assigned-nas" :
                                           "cumulative-assigned-pds",
-                                          static_cast<int64_t>(1));
+                static_cast<int64_t>(1));
         }
     }
 
@@ -1879,7 +1925,7 @@ Lease6Ptr AllocEngine::createLease6(ClientContext6& ctx,
                 StatsMgr::instance().addValue(ctx.currentIA().type_ == Lease::TYPE_NA ?
                                               "cumulative-assigned-nas" :
                                               "cumulative-assigned-pds",
-                                              static_cast<int64_t>(1));
+                    static_cast<int64_t>(1));
             }
 
             return (lease);
@@ -2156,6 +2202,8 @@ AllocEngine::extendLease6(ClientContext6& ctx, Lease6Ptr lease) {
         LeaseMgrFactory::instance().updateLease6(lease);
 
         if (update_stats) {
+            lease->update_stats_ = true;
+
             StatsMgr::instance().addValue(
                 StatsMgr::generateName("subnet", ctx.subnet_->getID(),
                                        ctx.currentIA().type_ == Lease::TYPE_NA ?
@@ -2170,7 +2218,7 @@ AllocEngine::extendLease6(ClientContext6& ctx, Lease6Ptr lease) {
             StatsMgr::instance().addValue(ctx.currentIA().type_ == Lease::TYPE_NA ?
                                           "cumulative-assigned-nas" :
                                           "cumulative-assigned-pds",
-                                          static_cast<int64_t>(1));
+                static_cast<int64_t>(1));
         }
 
     } else {
@@ -2233,7 +2281,7 @@ AllocEngine::updateLeaseData(ClientContext6& ctx, const Lease6Collection& leases
                 StatsMgr::instance().addValue(ctx.currentIA().type_ == Lease::TYPE_NA ?
                                               "cumulative-assigned-nas" :
                                               "cumulative-assigned-pds",
-                                              static_cast<int64_t>(1));
+                    static_cast<int64_t>(1));
             }
         }
 

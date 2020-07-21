@@ -43,7 +43,8 @@ Lease::Lease(const isc::asiolink::IOAddress& addr,
     : addr_(addr), valid_lft_(valid_lft), old_valid_lft_(valid_lft),
       cltt_(cltt), old_cltt_(cltt), subnet_id_(subnet_id),
       hostname_(boost::algorithm::to_lower_copy(hostname)), fqdn_fwd_(fqdn_fwd),
-      fqdn_rev_(fqdn_rev), hwaddr_(hwaddr), state_(STATE_DEFAULT) {
+      fqdn_rev_(fqdn_rev), hwaddr_(hwaddr), state_(STATE_DEFAULT),
+      update_stats_(false) {
 }
 
 

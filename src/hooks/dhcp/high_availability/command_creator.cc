@@ -49,6 +49,9 @@ ConstElementPtr
 CommandCreator::createLease4Update(const Lease4& lease4) {
     ElementPtr lease_as_json = lease4.toElement();
     insertLeaseExpireTime(lease_as_json);
+    if (lease4.update_stats_) {
+        lease_as_json->set("update-stats", Element::create(true));
+    }
     lease_as_json->set("force-create", Element::create(true));
     ConstElementPtr command = config::createCommand("lease4-update", lease_as_json);
     insertService(command, HAServerType::DHCPv4);
@@ -128,6 +131,9 @@ ConstElementPtr
 CommandCreator::createLease6Update(const Lease6& lease6) {
     ElementPtr lease_as_json = lease6.toElement();
     insertLeaseExpireTime(lease_as_json);
+    if (lease6.update_stats_) {
+        lease_as_json->set("update-stats", Element::create(true));
+    }
     lease_as_json->set("force-create", Element::create(true));
     ConstElementPtr command = config::createCommand("lease6-update", lease_as_json);
     insertService(command, HAServerType::DHCPv6);

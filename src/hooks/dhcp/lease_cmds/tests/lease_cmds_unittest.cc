@@ -15,8 +15,11 @@
 #include <dhcpsrv/cfgmgr.h>
 #include <cc/command_interpreter.h>
 #include <cc/data.h>
+#include <stats/stats_mgr.h>
 #include <testutils/user_context_utils.h>
+
 #include <gtest/gtest.h>
+
 #include <errno.h>
 #include <set>
 
@@ -28,6 +31,7 @@ using namespace isc::data;
 using namespace isc::dhcp;
 using namespace isc::dhcp_ddns;
 using namespace isc::asiolink;
+using namespace isc::stats;
 using namespace isc::test;
 
 namespace {
@@ -272,6 +276,7 @@ public:
         LeaseMgrFactory::destroy();
         enableD2();
         lmptr_ = 0;
+        StatsMgr::instance().removeAll();
     }
 
     /// @brief Destructor
@@ -284,6 +289,7 @@ public:
         disableD2();
         unloadLibs();
         lmptr_ = 0;
+        StatsMgr::instance().removeAll();
     }
 
     /// @brief Initializes lease manager (and optionally populates it with a lease)
@@ -328,11 +334,23 @@ public:
                 lmptr_->addLease(createLease6("2001:db8:1::2", 66, 0x56));
                 lmptr_->addLease(createLease6("2001:db8:2::1", 99, 0x42));
                 lmptr_->addLease(createLease6("2001:db8:2::2", 99, 0x56));
+                StatsMgr::instance().setValue(
+                    StatsMgr::generateName("subnet", 66, "assigned-nas" ),
+                    int64_t(2));
+                StatsMgr::instance().setValue(
+                    StatsMgr::generateName("subnet", 99, "assigned-nas" ),
+                    int64_t(2));
             } else {
                 lmptr_->addLease(createLease4("192.0.2.1", 44, 0x08, 0x42));
                 lmptr_->addLease(createLease4("192.0.2.2", 44, 0x09, 0x56));
                 lmptr_->addLease(createLease4("192.0.3.1", 88, 0x08, 0x42));
                 lmptr_->addLease(createLease4("192.0.3.2", 88, 0x09, 0x56));
+                StatsMgr::instance().setValue(
+                    StatsMgr::generateName("subnet", 44, "assigned-addresses"),
+                    int64_t(2));
+                StatsMgr::instance().setValue(
+                    StatsMgr::generateName("subnet", 88, "assigned-addresses"),
+                    int64_t(2));
             }
         }
     }
@@ -813,6 +831,12 @@ TEST_F(LeaseCmdsTest, Lease4Add) {
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
 
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
+
     // Now send the command.
     string txt =
         "{\n"
@@ -825,6 +849,12 @@ TEST_F(LeaseCmdsTest, Lease4Add) {
         "}";
     string exp_rsp = "Lease for address 192.0.2.202, subnet-id 44 added.";
     testCommand(txt, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 1);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
 
     // Now check that the lease is really there.
     Lease4Ptr l = lmptr_->getLease4(IOAddress("192.0.2.202"));
@@ -844,7 +874,6 @@ TEST_F(LeaseCmdsTest, Lease4Add) {
     // by one is ok.
     EXPECT_LE(abs(l->cltt_ - time(NULL)), 1);
     EXPECT_EQ(0, l->state_);
-
 }
 
 // Check that a lease4 is not added when it already exists.
@@ -855,6 +884,12 @@ TEST_F(LeaseCmdsTest, Lease4AddExisting) {
 
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
 
     // Now send the command.
     string txt =
@@ -868,6 +903,12 @@ TEST_F(LeaseCmdsTest, Lease4AddExisting) {
         "}";
     string exp_rsp = "IPv4 lease already exists.";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
 }
 
 // Check that subnet-id is optional. If not specified, Kea should select
@@ -879,6 +920,12 @@ TEST_F(LeaseCmdsTest, Lease4AddSubnetIdMissing) {
 
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
 
     // Now send the command without subnet-id. Kea should select
     // the subnet id on its own.
@@ -892,6 +939,12 @@ TEST_F(LeaseCmdsTest, Lease4AddSubnetIdMissing) {
         "}";
     string exp_rsp = "Lease for address 192.0.2.202, subnet-id 44 added.";
     testCommand(txt, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 1);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
 
     // Now check that the lease is really there.
     Lease4Ptr l = lmptr_->getLease4(IOAddress("192.0.2.202"));
@@ -911,6 +964,12 @@ TEST_F(LeaseCmdsTest, Lease4AddSubnetIdMissingBadAddr) {
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
 
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
+
     // Now send the command without subnet-id. Kea should select
     // the subnet id on its own.
     string txt =
@@ -924,6 +983,12 @@ TEST_F(LeaseCmdsTest, Lease4AddSubnetIdMissingBadAddr) {
     string exp_rsp = "subnet-id not specified and failed to find a subnet for "
                      "address 192.0.55.1";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
 
     // Now check that the lease was not added.
     Lease4Ptr l = lmptr_->getLease4(IOAddress("192.0.55.1"));
@@ -939,6 +1004,12 @@ TEST_F(LeaseCmdsTest, Lease4AddNegativeExpireTime) {
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
 
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
+
     // Add a lease with negative expiration time.
     string txt =
         "{\n"
@@ -951,6 +1022,12 @@ TEST_F(LeaseCmdsTest, Lease4AddNegativeExpireTime) {
         "}";
     string exp_rsp = "expiration time must be positive for address 192.0.2.202";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
 
     // Now check that the lease was not added.
     Lease4Ptr l = lmptr_->getLease4(IOAddress("192.0.2.202"));
@@ -965,6 +1042,12 @@ TEST_F(LeaseCmdsTest, Lease4AddNegativeCltt) {
 
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
 
     // Add a lease with negative cltt (expiration time - valid lifetime)
     string txt =
@@ -981,6 +1064,12 @@ TEST_F(LeaseCmdsTest, Lease4AddNegativeCltt) {
         "address 192.0.2.202";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
 
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
+
     // Now check that the lease was not added.
     Lease4Ptr l = lmptr_->getLease4(IOAddress("192.0.2.202"));
     ASSERT_FALSE(l);
@@ -994,6 +1083,12 @@ TEST_F(LeaseCmdsTest, Lease4AddFull) {
 
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
 
     // Now send the command.
     string txt =
@@ -1014,6 +1109,12 @@ TEST_F(LeaseCmdsTest, Lease4AddFull) {
         "}";
     string exp_rsp = "Lease for address 192.0.2.202, subnet-id 44 added.";
     testCommand(txt, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 1);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
 
     // Now check that the lease is really there.
     Lease4Ptr l = lmptr_->getLease4(IOAddress("192.0.2.202"));
@@ -1041,6 +1142,12 @@ TEST_F(LeaseCmdsTest, Lease4AddComment) {
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
 
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
+
     // Now send the command.
     string txt =
         "{\n"
@@ -1054,6 +1161,12 @@ TEST_F(LeaseCmdsTest, Lease4AddComment) {
             "}";
     string exp_rsp = "Lease for address 192.0.2.202, subnet-id 44 added.";
     testCommand(txt, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 1);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
 
     // Now check that the lease is really there.
     Lease4Ptr l = lmptr_->getLease4(IOAddress("192.0.2.202"));
@@ -1293,6 +1406,18 @@ TEST_F(LeaseCmdsTest, Lease6Add) {
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
 
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
+
     // Now send the command.
     string txt =
         "{\n"
@@ -1306,6 +1431,18 @@ TEST_F(LeaseCmdsTest, Lease6Add) {
         "}";
     string exp_rsp = "Lease for address 2001:db8:1::3, subnet-id 66 added.";
     testCommand(txt, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 1);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now check that the lease is really there.
     Lease6Ptr l = lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::3"));
@@ -1323,6 +1460,18 @@ TEST_F(LeaseCmdsTest, Lease6AddExisting) {
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
 
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
+
     // Now send the command.
     string txt =
         "{\n"
@@ -1336,6 +1485,18 @@ TEST_F(LeaseCmdsTest, Lease6AddExisting) {
         "}";
     string exp_rsp = "IPv6 lease already exists.";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 }
 
 // Check that subnet-id is optional. If not specified, Kea should select
@@ -1347,6 +1508,18 @@ TEST_F(LeaseCmdsTest, Lease6AddSubnetIdMissing) {
 
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now send the command (without subnet-id)
     string txt =
@@ -1360,6 +1533,18 @@ TEST_F(LeaseCmdsTest, Lease6AddSubnetIdMissing) {
         "}";
     string exp_rsp = "Lease for address 2001:db8:1::3, subnet-id 66 added.";
     testCommand(txt, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 1);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now check that the lease is really there and has correct subnet-id.
     Lease6Ptr l = lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::3"));
@@ -1378,6 +1563,18 @@ TEST_F(LeaseCmdsTest, Lease6AddSubnetIdMissingBadAddr) {
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
 
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
+
     // Now send the command (without subnet-id)
     string txt =
         "{\n"
@@ -1392,7 +1589,19 @@ TEST_F(LeaseCmdsTest, Lease6AddSubnetIdMissingBadAddr) {
                      "address 2001:ffff::1";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
 
-    // Now check that the lease is really there and has correct subnet-id.
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
+
+    // Now check that the lease was not added.
     Lease6Ptr l = lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:ffff::1"));
     ASSERT_FALSE(l);
 }
@@ -1405,6 +1614,18 @@ TEST_F(LeaseCmdsTest, Lease6AddPrefix) {
 
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now send the command.
     string txt =
@@ -1421,6 +1642,18 @@ TEST_F(LeaseCmdsTest, Lease6AddPrefix) {
         "}";
     string exp_rsp = "Lease for prefix 2001:db8:abcd::/48, subnet-id 66 added.";
     testCommand(txt, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 1);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now check that the lease is really there.
     Lease6Ptr l = lmptr_->getLease6(Lease::TYPE_PD, IOAddress("2001:db8:abcd::"));
@@ -1439,6 +1672,18 @@ TEST_F(LeaseCmdsTest, Lease6AddFullAddr) {
 
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now send the command.
     string txt =
@@ -1461,6 +1706,18 @@ TEST_F(LeaseCmdsTest, Lease6AddFullAddr) {
         "}";
     string exp_rsp = "Lease for address 2001:db8:1::3, subnet-id 66 added.";
     testCommand(txt, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 1);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now check that the lease is really there.
     Lease6Ptr l = lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::3"));
@@ -1489,6 +1746,18 @@ TEST_F(LeaseCmdsTest, Lease6AddComment) {
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
 
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
+
     // Now send the command.
     string txt =
         "{\n"
@@ -1503,6 +1772,18 @@ TEST_F(LeaseCmdsTest, Lease6AddComment) {
         "}";
     string exp_rsp = "Lease for address 2001:db8:1::3, subnet-id 66 added.";
     testCommand(txt, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 1);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now check that the lease is really there.
     Lease6Ptr l = lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::3"));
@@ -1593,8 +1874,11 @@ TEST_F(LeaseCmdsTest, Lease4GetMissingParams) {
 // Checks that lease4-get sanitizes its input.
 TEST_F(LeaseCmdsTest, Lease4GetByAddrBadParam) {
 
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Invalid family
     string cmd =
@@ -1623,8 +1907,11 @@ TEST_F(LeaseCmdsTest, Lease4GetByAddrBadParam) {
 // valid, but the lease is not there.
 TEST_F(LeaseCmdsTest, Lease4GetByAddrNotFound) {
 
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Invalid
     string cmd =
@@ -1642,8 +1929,11 @@ TEST_F(LeaseCmdsTest, Lease4GetByAddrNotFound) {
 // Checks that lease4-get can return a lease by address.
 TEST_F(LeaseCmdsTest, Lease4GetByAddr) {
 
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Query for valid, existing lease.
     string cmd =
@@ -1669,8 +1959,11 @@ TEST_F(LeaseCmdsTest, Lease4GetByAddr) {
 // well formed, but the lease is not there.
 TEST_F(LeaseCmdsTest, Lease4GetByHWAddrNotFound) {
 
-    // Initialize lease manager (false = v4, false = don't add a lease)
+    // Initialize lease manager (false = v4, false = don't add leases)
     initLeaseMgr(false, false);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // No such lease.
     string cmd =
@@ -1689,8 +1982,11 @@ TEST_F(LeaseCmdsTest, Lease4GetByHWAddrNotFound) {
 // Checks that lease4-get can find a lease by hardware address.
 TEST_F(LeaseCmdsTest, Lease4GetByHWAddr) {
 
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Invalid
     string cmd =
@@ -1718,8 +2014,11 @@ TEST_F(LeaseCmdsTest, Lease4GetByHWAddr) {
 // the query is correctly formed, but the lease is not there.
 TEST_F(LeaseCmdsTest, Lease6GetByAddr6NotFound) {
 
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Now send the command.
     string cmd =
@@ -1741,8 +2040,11 @@ TEST_F(LeaseCmdsTest, Lease6GetByAddr6NotFound) {
 // well formed, but the lease is not there.
 TEST_F(LeaseCmdsTest, Lease4GetByClientIdNotFound) {
 
-    // Initialize lease manager (false = v4, false = don't add a lease)
+    // Initialize lease manager (false = v4, false = don't add leases)
     initLeaseMgr(false, false);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // No such lease.
     string cmd =
@@ -1760,8 +2062,11 @@ TEST_F(LeaseCmdsTest, Lease4GetByClientIdNotFound) {
 
 // Check that lease4-get can find a lease by client identifier.
 TEST_F(LeaseCmdsTest, Lease4GetByClientId) {
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     string cmd =
         "{\n"
@@ -1787,8 +2092,11 @@ TEST_F(LeaseCmdsTest, Lease4GetByClientId) {
 // Checks that lease6-get rejects queries by client-id.
 TEST_F(LeaseCmdsTest, Lease6GetByClientIdInvalidType) {
 
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // client-id query is allowed in v4 only.
     string cmd =
@@ -1807,8 +2115,11 @@ TEST_F(LeaseCmdsTest, Lease6GetByClientIdInvalidType) {
 // Checks that lease6-get(subnet-id, addr) can handle a situation when
 // the query is correctly formed, but the lease is not there.
 TEST_F(LeaseCmdsTest, Lease6GetByDuidNotFound) {
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Now send the command.
     string cmd =
@@ -1832,6 +2143,9 @@ TEST_F(LeaseCmdsTest, Lease6GetByDuidNotFound) {
 TEST_F(LeaseCmdsTest, Lease6GetByAddr) {
 
     initLeaseMgr(true, true); // (true = v6, true = create a lease)
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Now send the command.
     string cmd =
@@ -1857,8 +2171,11 @@ TEST_F(LeaseCmdsTest, Lease6GetByAddr) {
 // Checks that lease6-get sanitizes its input.
 TEST_F(LeaseCmdsTest, Lease6GetByAddrBadParam) {
 
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Invalid family
     string cmd =
@@ -1889,6 +2206,9 @@ TEST_F(LeaseCmdsTest, Lease6GetByAddrPrefix) {
 
     // We need to get a prefix lease. We need to create it by hand.
     initLeaseMgr(true, false); // (true = v6, true = create a lease)
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Let's start with regular address lease and make it a prefix lease.
     Lease6Ptr l = createLease6("2001:db8:1::1", 66, 0x77);
@@ -1925,6 +2245,9 @@ TEST_F(LeaseCmdsTest, Lease6GetByDUID) {
 
     initLeaseMgr(true, true); // (true = v6, true = create a lease)
 
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
     // Now send the command.
     string cmd =
         "{\n"
@@ -1952,8 +2275,11 @@ TEST_F(LeaseCmdsTest, Lease6GetByDUID) {
 // Checks that lease4-get-all returns all leases.
 TEST_F(LeaseCmdsTest, Lease4GetAll) {
 
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Query for all leases.
     string cmd =
@@ -1987,6 +2313,9 @@ TEST_F(LeaseCmdsTest, Lease4GetAllNoLeases) {
     // Initialize lease manager (false = v4, false = do not add leasesxs)
     initLeaseMgr(false, false);
 
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
     // Query for all leases.
     string cmd =
         "{\n"
@@ -2009,12 +2338,14 @@ TEST_F(LeaseCmdsTest, Lease4GetAllNoLeases) {
     EXPECT_EQ(0, leases->size());
 }
 
-
 // Checks that lease4-get-all returns all leases for a subnet.
 TEST_F(LeaseCmdsTest, Lease4GetAllBySubnetId) {
 
     // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Query for leases from subnet 44. Subnet 127 will be ignored because
     // it doesn't contain any leases.
@@ -2047,8 +2378,11 @@ TEST_F(LeaseCmdsTest, Lease4GetAllBySubnetId) {
 // Checks that lease4-get-all returns empty set when no leases are found.
 TEST_F(LeaseCmdsTest, Lease4GetAllBySubnetIdNoLeases) {
 
-    // Initialize lease manager (false = v4, true = do not add leases)
+    // Initialize lease manager (false = v4, false = don't add leases)
     initLeaseMgr(false, false);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Query for leases from subnet 44. Subnet 127 will be ignored because
     // it doesn't contain any leases.
@@ -2079,8 +2413,11 @@ TEST_F(LeaseCmdsTest, Lease4GetAllBySubnetIdNoLeases) {
 // Checks that lease4-get-all returns leases from multiple subnets.
 TEST_F(LeaseCmdsTest, Lease4GetAllByMultipleSubnetIds) {
 
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Query for leases from subnet 44 and 88.
     string cmd =
@@ -2114,8 +2451,11 @@ TEST_F(LeaseCmdsTest, Lease4GetAllByMultipleSubnetIds) {
 // Checks that lease4-get-all checks its input arguments.
 TEST_F(LeaseCmdsTest, Lease4GetBySubnetIdInvalidArguments) {
 
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Subnets not specified in arguments.
     string cmd =
@@ -2154,8 +2494,11 @@ TEST_F(LeaseCmdsTest, Lease4GetBySubnetIdInvalidArguments) {
 // Checks that multiple calls to lease4-get-pages return all leases.
 TEST_F(LeaseCmdsTest, Lease4GetPaged) {
 
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Gather all returned addresses to verify that all were returned.
     std::set<std::string> lease_addresses;
@@ -2247,8 +2590,11 @@ TEST_F(LeaseCmdsTest, Lease4GetPaged) {
 // zero IPv4 address.
 TEST_F(LeaseCmdsTest, Lease4GetPagedZeroAddress) {
 
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Query for a page of leases.
     string cmd =
@@ -2267,8 +2613,11 @@ TEST_F(LeaseCmdsTest, Lease4GetPagedZeroAddress) {
 // Verifies that IPv6 address as a start address is rejected.
 TEST_F(LeaseCmdsTest, Lease4GetPagedIPv4Address) {
 
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Query for a page of leases.
     string cmd =
@@ -2287,8 +2636,11 @@ TEST_F(LeaseCmdsTest, Lease4GetPagedIPv4Address) {
 // Checks that lease6-get-all returns all leases.
 TEST_F(LeaseCmdsTest, Lease6GetAll) {
 
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Query for all leases.
     string cmd =
@@ -2322,6 +2674,9 @@ TEST_F(LeaseCmdsTest, Lease6GetAllNoLeases) {
     // Initialize lease manager (true = v6, false = do not add leasesxs)
     initLeaseMgr(true, false);
 
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
     // Query for all leases.
     string cmd =
         "{\n"
@@ -2344,12 +2699,14 @@ TEST_F(LeaseCmdsTest, Lease6GetAllNoLeases) {
     EXPECT_EQ(0, leases->size());
 }
 
-
 // Checks that lease6-get-all returns all leases for a subnet.
 TEST_F(LeaseCmdsTest, Lease6GetAllBySubnetId) {
 
     // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Query for leases from subnet 66. Subnet 127 will be ignored because
     // it doesn't contain any leases.
@@ -2382,8 +2739,11 @@ TEST_F(LeaseCmdsTest, Lease6GetAllBySubnetId) {
 // Checks that lease6-get-all returns empty set when no leases are found.
 TEST_F(LeaseCmdsTest, Lease6GetAllBySubnetIdNoLeases) {
 
-    // Initialize lease manager (true = v6, true = do not add leases)
+    // Initialize lease manager (true = v6, false = don't add leases)
     initLeaseMgr(true, false);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Query for leases from subnet 66. Subnet 127 will be ignored because
     // it doesn't contain any leases.
@@ -2414,8 +2774,11 @@ TEST_F(LeaseCmdsTest, Lease6GetAllBySubnetIdNoLeases) {
 // Checks that lease6-get-all returns leases from multiple subnets.
 TEST_F(LeaseCmdsTest, Lease6GetAllByMultipleSubnetIds) {
 
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Query for leases from subnet 66 and 99.
     string cmd =
@@ -2449,8 +2812,11 @@ TEST_F(LeaseCmdsTest, Lease6GetAllByMultipleSubnetIds) {
 // Checks that lease6-get-all checks its input arguments.
 TEST_F(LeaseCmdsTest, Lease6GetBySubnetIdInvalidArguments) {
 
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Subnets not specified in arguments.
     string cmd =
@@ -2489,8 +2855,11 @@ TEST_F(LeaseCmdsTest, Lease6GetBySubnetIdInvalidArguments) {
 // Checks that multiple calls to lease6-get-page return all leases.
 TEST_F(LeaseCmdsTest, Lease6GetPaged) {
 
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Gather all returned addresses to verify that all were returned.
     std::set<std::string> lease_addresses;
@@ -2583,8 +2952,11 @@ TEST_F(LeaseCmdsTest, Lease6GetPaged) {
 // zero IPv6 address.
 TEST_F(LeaseCmdsTest, Lease6GetPagedZeroAddress) {
 
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Query for a page of leases.
     string cmd =
@@ -2603,8 +2975,11 @@ TEST_F(LeaseCmdsTest, Lease6GetPagedZeroAddress) {
 // Verifies that IPv4 address as a start address is rejected.
 TEST_F(LeaseCmdsTest, Lease6GetPagedIPv4Address) {
 
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Query for a page of leases.
     string cmd =
@@ -2624,8 +2999,11 @@ TEST_F(LeaseCmdsTest, Lease6GetPagedIPv4Address) {
 // address is rejected.
 TEST_F(LeaseCmdsTest, Lease6GetPagedInvalidFrom) {
 
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Query for a page of leases.
     string cmd =
@@ -2645,8 +3023,11 @@ TEST_F(LeaseCmdsTest, Lease6GetPagedInvalidFrom) {
 // Verifies that limit is mandatory.
 TEST_F(LeaseCmdsTest, Lease6GetPagedNoLimit) {
 
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Query for a page of leases.
     string cmd =
@@ -2664,8 +3045,11 @@ TEST_F(LeaseCmdsTest, Lease6GetPagedNoLimit) {
 // Verifies that the limit must be a number.
 TEST_F(LeaseCmdsTest, Lease6GetPagedLimitNotNumber) {
 
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Query for a page of leases.
     string cmd =
@@ -2684,8 +3068,11 @@ TEST_F(LeaseCmdsTest, Lease6GetPagedLimitNotNumber) {
 // Verifies that the limit of 0 is rejected.
 TEST_F(LeaseCmdsTest, Lease6GetPagedLimitIsZero) {
 
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Query for a page of leases.
     string cmd =
@@ -2741,10 +3128,13 @@ TEST_F(LeaseCmdsTest, LeaseGetByHwAddressParams) {
 
 // Checks that lease4-get-by-hw-address works as expected (find no lease).
 TEST_F(LeaseCmdsTest, LeaseGetByHwAddressFind0) {
-    // Initialize lease manager (false = v4, false = don't add a lease)
+    // Initialize lease manager (false = v4, false = don't add leases)
     initLeaseMgr(false, false);
 
-    // No such leasea.
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    // No such lease.
     string cmd =
         "{\n"
         "    \"command\": \"lease4-get-by-hw-address\",\n"
@@ -2760,6 +3150,9 @@ TEST_F(LeaseCmdsTest, LeaseGetByHwAddressFind0) {
 TEST_F(LeaseCmdsTest, LeaseGetByHwAddressFind2) {
     // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Get the lease.
     string cmd =
@@ -2831,10 +3224,13 @@ TEST_F(LeaseCmdsTest, LeaseGetByClientIdParams) {
 
 // Checks that lease4-get-by-client-id works as expected (find no lease).
 TEST_F(LeaseCmdsTest, LeaseGetByClientIdFind0) {
-    // Initialize lease manager (false = v4, false = don't add a lease)
+    // Initialize lease manager (false = v4, false = don't add leases)
     initLeaseMgr(false, false);
 
-    // No such leasea.
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    // No such lease.
     string cmd =
         "{\n"
         "    \"command\": \"lease4-get-by-client-id\",\n"
@@ -2850,6 +3246,9 @@ TEST_F(LeaseCmdsTest, LeaseGetByClientIdFind0) {
 TEST_F(LeaseCmdsTest, LeaseGetByClientIdFind2) {
     // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Get the lease.
     string cmd =
@@ -2921,10 +3320,13 @@ TEST_F(LeaseCmdsTest, LeaseGetByDuidParams) {
 
 // Checks that lease6-get-by-duid works as expected (find no lease).
 TEST_F(LeaseCmdsTest, LeaseGetByDuidFind0) {
-    // Initialize lease manager (true = v6, false = don't add a lease)
+    // Initialize lease manager (true = v6, false = don't add leases)
     initLeaseMgr(true, false);
 
-    // No such leasea.
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    // No such lease.
     string cmd =
         "{\n"
         "    \"command\": \"lease6-get-by-duid\",\n"
@@ -2940,6 +3342,9 @@ TEST_F(LeaseCmdsTest, LeaseGetByDuidFind0) {
 TEST_F(LeaseCmdsTest, LeaseGetByDuidFind2) {
     // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Get the lease.
     string cmd =
@@ -3010,10 +3415,13 @@ TEST_F(LeaseCmdsTest, Lease4GetByHostnameParams) {
 
 // Checks that lease4-get-by-hostname works as expected (find no lease).
 TEST_F(LeaseCmdsTest, Lease4GetByHostnameFind0) {
-    // Initialize lease manager (false = v4, false = don't add a lease)
+    // Initialize lease manager (false = v4, false = don't add leases)
     initLeaseMgr(false, false);
 
-    // No such leasea.
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    // No such lease.
     string cmd =
         "{\n"
         "    \"command\": \"lease4-get-by-hostname\",\n"
@@ -3029,6 +3437,9 @@ TEST_F(LeaseCmdsTest, Lease4GetByHostnameFind0) {
 TEST_F(LeaseCmdsTest, Lease4GetByHostnameFind2) {
     // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Get the lease.
     string cmd =
@@ -3099,10 +3510,13 @@ TEST_F(LeaseCmdsTest, Lease6GetByHostnameParams) {
 
 // Checks that lease6-get-by-hostname works as expected (find no lease).
 TEST_F(LeaseCmdsTest, Lease6GetByHostnameFind0) {
-    // Initialize lease manager (true = v6, false = don't add a lease)
+    // Initialize lease manager (true = v6, false = don't add leases)
     initLeaseMgr(true, false);
 
-    // No such leasea.
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    // No such lease.
     string cmd =
         "{\n"
         "    \"command\": \"lease6-get-by-hostname\",\n"
@@ -3118,6 +3532,9 @@ TEST_F(LeaseCmdsTest, Lease6GetByHostnameFind0) {
 TEST_F(LeaseCmdsTest, Lease6GetByHostnameFind2) {
     // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Get the lease.
     string cmd =
@@ -3151,7 +3568,7 @@ TEST_F(LeaseCmdsTest, Lease6GetByHostnameFind2) {
 
 // Test checks if lease4-update handler refuses calls with missing parameters.
 TEST_F(LeaseCmdsTest, Lease4UpdateMissingParams) {
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
 
     // Check that the lease manager pointer is there.
@@ -3208,7 +3625,7 @@ TEST_F(LeaseCmdsTest, Lease4UpdateMissingParams) {
 // have incorrect values.
 TEST_F(LeaseCmdsTest, Lease4UpdateBadParams) {
 
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
 
     // Check that the lease manager pointer is there.
@@ -3289,7 +3706,7 @@ TEST_F(LeaseCmdsTest, Lease4UpdateBadParams) {
 // no lease to be updated.
 TEST_F(LeaseCmdsTest, Lease4UpdateNoLease) {
 
-    // Initialize lease manager (false = v4, false = don't add any lease)
+    // Initialize lease manager (false = v4, false = don't add leases)
     initLeaseMgr(false, false);
 
     // Check that the lease manager pointer is there.
@@ -3314,11 +3731,17 @@ TEST_F(LeaseCmdsTest, Lease4UpdateNoLease) {
 // and a hostname.
 TEST_F(LeaseCmdsTest, Lease4Update) {
 
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
 
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
 
     // Now send the command.
     string txt =
@@ -3333,6 +3756,60 @@ TEST_F(LeaseCmdsTest, Lease4Update) {
         "}";
     string exp_rsp = "IPv4 lease updated.";
     testCommand(txt, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
+
+    // Now check that the lease is still there.
+    Lease4Ptr l = lmptr_->getLease4(IOAddress("192.0.2.1"));
+    ASSERT_TRUE(l);
+
+    // Make sure it's been updated.
+    ASSERT_TRUE(l->hwaddr_);
+    EXPECT_EQ("1a:1b:1c:1d:1e:1f", l->hwaddr_->toText(false));
+    EXPECT_EQ("newhostname.example.org", l->hostname_);
+    EXPECT_FALSE(l->getContext());
+}
+
+// Check that a lease4 can be updated. We're changing hw-address
+// and a hostname.
+TEST_F(LeaseCmdsTest, Lease4UpdateWithStats) {
+
+    // Initialize lease manager (false = v4, true = add leases)
+    initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
+
+    // Now send the command.
+    string txt =
+        "{\n"
+        "    \"command\": \"lease4-update\",\n"
+        "    \"arguments\": {"
+        "        \"subnet-id\": 44,\n"
+        "        \"ip-address\": \"192.0.2.1\",\n"
+        "        \"hw-address\": \"1a:1b:1c:1d:1e:1f\",\n"
+        "        \"update-stats\": true,\n"
+        "        \"hostname\": \"newhostname.example.org\""
+        "    }\n"
+        "}";
+    string exp_rsp = "IPv4 lease updated.";
+    testCommand(txt, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 3);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
 
     // Now check that the lease is still there.
     Lease4Ptr l = lmptr_->getLease4(IOAddress("192.0.2.1"));
@@ -3349,11 +3826,17 @@ TEST_F(LeaseCmdsTest, Lease4Update) {
 // and a hostname. The subnet-id is not specified.
 TEST_F(LeaseCmdsTest, Lease4UpdateNoSubnetId) {
 
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
 
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
 
     // Now send the command.
     string txt =
@@ -3367,6 +3850,59 @@ TEST_F(LeaseCmdsTest, Lease4UpdateNoSubnetId) {
         "}";
     string exp_rsp = "IPv4 lease updated.";
     testCommand(txt, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
+
+    // Now check that the lease is still there.
+    Lease4Ptr l = lmptr_->getLease4(IOAddress("192.0.2.1"));
+    ASSERT_TRUE(l);
+
+    // Make sure it's been updated.
+    ASSERT_TRUE(l->hwaddr_);
+    EXPECT_EQ("1a:1b:1c:1d:1e:1f", l->hwaddr_->toText(false));
+    EXPECT_EQ("newhostname.example.org", l->hostname_);
+    EXPECT_FALSE(l->getContext());
+}
+
+// Check that a lease4 can be updated. We're changing hw-address
+// and a hostname. The subnet-id is not specified.
+TEST_F(LeaseCmdsTest, Lease4UpdateNoSubnetIdWithStats) {
+
+    // Initialize lease manager (false = v4, true = add leases)
+    initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
+
+    // Now send the command.
+    string txt =
+        "{\n"
+        "    \"command\": \"lease4-update\",\n"
+        "    \"arguments\": {"
+        "        \"ip-address\": \"192.0.2.1\",\n"
+        "        \"hw-address\": \"1a:1b:1c:1d:1e:1f\",\n"
+        "        \"update-stats\": true,\n"
+        "        \"hostname\": \"newhostname.example.org\""
+        "    }\n"
+        "}";
+    string exp_rsp = "IPv4 lease updated.";
+    testCommand(txt, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 3);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
 
     // Now check that the lease is still there.
     Lease4Ptr l = lmptr_->getLease4(IOAddress("192.0.2.1"));
@@ -3383,11 +3919,17 @@ TEST_F(LeaseCmdsTest, Lease4UpdateNoSubnetId) {
 // To trigger this behavior 'force-create' boolean parameter must be
 // included in the command.
 TEST_F(LeaseCmdsTest, Lease4UpdateForceCreate) {
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, false);
 
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
 
     // Now send the command.
     string txt =
@@ -3403,6 +3945,12 @@ TEST_F(LeaseCmdsTest, Lease4UpdateForceCreate) {
         "}";
     string exp_rsp = "IPv4 lease added.";
     testCommand(txt, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 1);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
 
     // Now check that the lease is still there.
     Lease4Ptr l = lmptr_->getLease4(IOAddress("192.0.2.1"));
@@ -3420,11 +3968,17 @@ TEST_F(LeaseCmdsTest, Lease4UpdateForceCreate) {
 // included in the command. The subnet-id is not specified, Kea will
 // figure it out.
 TEST_F(LeaseCmdsTest, Lease4UpdateForceCreateNoSubnetId) {
-    // Initialize lease manager (false = v4, false = don't add any lease)
+    // Initialize lease manager (false = v4, false = don't add leases)
     initLeaseMgr(false, false);
 
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
 
     // Now send the command.
     string txt =
@@ -3439,6 +3993,12 @@ TEST_F(LeaseCmdsTest, Lease4UpdateForceCreateNoSubnetId) {
         "}";
     string exp_rsp = "IPv4 lease added.";
     testCommand(txt, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 1);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
 
     // Now check that the lease is still there.
     Lease4Ptr l = lmptr_->getLease4(IOAddress("192.0.2.1"));
@@ -3458,11 +4018,17 @@ TEST_F(LeaseCmdsTest, Lease4UpdateForceCreateNoSubnetId) {
 // parameter is explicitly set to false.
 TEST_F(LeaseCmdsTest, Lease4UpdateDoNotForceCreate) {
 
-    // Initialize lease manager (false = v4, false = don't add any lease)
+    // Initialize lease manager (false = v4, false = don't add leases)
     initLeaseMgr(false, false);
 
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
 
     // Now send the command.
     string txt =
@@ -3478,17 +4044,29 @@ TEST_F(LeaseCmdsTest, Lease4UpdateDoNotForceCreate) {
         "}";
     string exp_rsp = "failed to update the lease with address 192.0.2.1 - no such lease";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
 }
 
 // Check that a lease4 can be updated. We're adding a comment and an user
 // context.
 TEST_F(LeaseCmdsTest, Lease4UpdateComment) {
 
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
 
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
 
     // Now send the command.
     string txt =
@@ -3504,6 +4082,12 @@ TEST_F(LeaseCmdsTest, Lease4UpdateComment) {
         "}";
     string exp_rsp = "IPv4 lease updated.";
     testCommand(txt, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
 
     // Now check that the lease is still there.
     Lease4Ptr l = lmptr_->getLease4(IOAddress("192.0.2.1"));
@@ -3525,7 +4109,7 @@ TEST_F(LeaseCmdsTest, Lease4UpdateComment) {
 
 // Test checks if lease6-update handler refuses calls with missing parameters.
 TEST_F(LeaseCmdsTest, Lease6UpdateMissingParams) {
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
 
     // Check that the lease manager pointer is there.
@@ -3582,7 +4166,7 @@ TEST_F(LeaseCmdsTest, Lease6UpdateMissingParams) {
 // have incorrect values.
 TEST_F(LeaseCmdsTest, Lease6UpdateBadParams) {
 
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
 
     // Check that the lease manager pointer is there.
@@ -3665,11 +4249,23 @@ TEST_F(LeaseCmdsTest, Lease6UpdateBadParams) {
 // and a hostname.
 TEST_F(LeaseCmdsTest, Lease6Update) {
 
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
 
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now send the command.
     string txt =
@@ -3685,6 +4281,80 @@ TEST_F(LeaseCmdsTest, Lease6Update) {
         "}";
     string exp_rsp = "IPv6 lease updated.";
     testCommand(txt, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
+
+    // Now check that the lease is really there.
+    Lease6Ptr l = lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::1"));
+    ASSERT_TRUE(l);
+
+    // Make sure the lease has been updated.
+    ASSERT_TRUE(l->duid_);
+    EXPECT_EQ("88:88:88:88:88:88:88:88", l->duid_->toText());
+    EXPECT_EQ("newhostname.example.org", l->hostname_);
+    EXPECT_EQ(7654321, l->iaid_);
+    EXPECT_FALSE(l->getContext());
+}
+
+// Check that a lease6 can be updated. We're changing hw-address
+// and a hostname.
+TEST_F(LeaseCmdsTest, Lease6UpdateWithStats) {
+
+    // Initialize lease manager (true = v6, true = add leases)
+    initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
+
+    // Now send the command.
+    string txt =
+        "{\n"
+        "    \"command\": \"lease6-update\",\n"
+        "    \"arguments\": {"
+        "        \"subnet-id\": 66,\n"
+        "        \"ip-address\": \"2001:db8:1::1\",\n"
+        "        \"iaid\": 7654321,\n"
+        "        \"duid\": \"88:88:88:88:88:88:88:88\",\n"
+        "        \"update-stats\": true,\n"
+        "        \"hostname\": \"newhostname.example.org\""
+        "    }\n"
+        "}";
+    string exp_rsp = "IPv6 lease updated.";
+    testCommand(txt, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 3);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now check that the lease is really there.
     Lease6Ptr l = lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::1"));
@@ -3702,11 +4372,23 @@ TEST_F(LeaseCmdsTest, Lease6Update) {
 // and a hostname. The subnet-id is not specified.
 TEST_F(LeaseCmdsTest, Lease6UpdateNoSubnetId) {
 
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
 
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now send the command.
     string txt =
@@ -3721,6 +4403,18 @@ TEST_F(LeaseCmdsTest, Lease6UpdateNoSubnetId) {
         "}";
     string exp_rsp = "IPv6 lease updated.";
     testCommand(txt, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now check that the lease is really there.
     Lease6Ptr l = lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::1"));
@@ -3737,16 +4431,91 @@ TEST_F(LeaseCmdsTest, Lease6UpdateNoSubnetId) {
     EXPECT_FALSE(l->getContext());
 }
 
+// Check that a lease6 can be updated. We're changing hw-address
+// and a hostname. The subnet-id is not specified.
+TEST_F(LeaseCmdsTest, Lease6UpdateNoSubnetIdWithStats) {
+
+    // Initialize lease manager (true = v6, true = add leases)
+    initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
+
+    // Now send the command.
+    string txt =
+        "{\n"
+        "    \"command\": \"lease6-update\",\n"
+        "    \"arguments\": {"
+        "        \"ip-address\": \"2001:db8:1::1\",\n"
+        "        \"iaid\": 7654321,\n"
+        "        \"duid\": \"88:88:88:88:88:88:88:88\",\n"
+        "        \"update-stats\": true,\n"
+        "        \"hostname\": \"newhostname.example.org\""
+        "    }\n"
+        "}";
+    string exp_rsp = "IPv6 lease updated.";
+    testCommand(txt, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 3);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
+
+    // Now check that the lease is really there.
+    Lease6Ptr l = lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::1"));
+    ASSERT_TRUE(l);
+
+    // Make sure the subnet-id is correct.
+    EXPECT_EQ(66, l->subnet_id_);
+
+    // Make sure the lease has been updated.
+    ASSERT_TRUE(l->duid_);
+    EXPECT_EQ("88:88:88:88:88:88:88:88", l->duid_->toText());
+    EXPECT_EQ("newhostname.example.org", l->hostname_);
+    EXPECT_EQ(7654321, l->iaid_);
+    EXPECT_FALSE(l->getContext());
+}
 
 // Check that a lease6 can be updated. We're adding a comment and an user
 // context.
 TEST_F(LeaseCmdsTest, Lease6UpdateComment) {
 
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
 
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now send the command.
     string txt =
@@ -3763,6 +4532,18 @@ TEST_F(LeaseCmdsTest, Lease6UpdateComment) {
         "}";
     string exp_rsp = "IPv6 lease updated.";
     testCommand(txt, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now check that the lease is really there.
     Lease6Ptr l = lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::1"));
@@ -3781,16 +4562,27 @@ TEST_F(LeaseCmdsTest, Lease6UpdateComment) {
     EXPECT_EQ("true", ctx->get("foobar")->str());
 }
 
-
 // Check that lease6-update correctly handles case when there is
 // no lease to be updated.
 TEST_F(LeaseCmdsTest, Lease6UpdateNoLease) {
 
-    // Initialize lease manager (true = v6, false = don't add any lease)
+    // Initialize lease manager (true = v6, false = don't add leases)
     initLeaseMgr(true, false);
 
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now send the command.
     string txt =
@@ -3806,6 +4598,18 @@ TEST_F(LeaseCmdsTest, Lease6UpdateNoLease) {
         "}";
     string exp_rsp = "failed to update the lease with address 2001:db8:1::1 - no such lease";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 }
 
 // Check that a lease6 is created if it doesn't exist during the update.
@@ -3813,11 +4617,23 @@ TEST_F(LeaseCmdsTest, Lease6UpdateNoLease) {
 // included in the command.
 TEST_F(LeaseCmdsTest, Lease6UpdateForceCreate) {
 
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, false);
 
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now send the command.
     string txt =
@@ -3834,6 +4650,18 @@ TEST_F(LeaseCmdsTest, Lease6UpdateForceCreate) {
         "}";
     string exp_rsp = "IPv6 lease added.";
     testCommand(txt, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 1);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now check that the lease is really there.
     Lease6Ptr l = lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::1"));
@@ -3853,11 +4681,23 @@ TEST_F(LeaseCmdsTest, Lease6UpdateForceCreate) {
 // figure it out.
 TEST_F(LeaseCmdsTest, Lease6UpdateForceCreateNoSubnetId) {
 
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, false);
 
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now send the command.
     string txt =
@@ -3873,6 +4713,18 @@ TEST_F(LeaseCmdsTest, Lease6UpdateForceCreateNoSubnetId) {
         "}";
     string exp_rsp = "IPv6 lease added.";
     testCommand(txt, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 1);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now check that the lease is really there.
     Lease6Ptr l = lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::1"));
@@ -3893,11 +4745,23 @@ TEST_F(LeaseCmdsTest, Lease6UpdateForceCreateNoSubnetId) {
 // parameter is explicitly set to false.
 TEST_F(LeaseCmdsTest, Lease6UpdateDoNotForceCreate) {
 
-    // Initialize lease manager (true = v6, false = don't add any lease)
+    // Initialize lease manager (true = v6, false = don't add leases)
     initLeaseMgr(true, false);
 
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now send the command.
     string txt =
@@ -3914,6 +4778,18 @@ TEST_F(LeaseCmdsTest, Lease6UpdateDoNotForceCreate) {
         "}";
     string exp_rsp = "failed to update the lease with address 2001:db8:1::1 - no such lease";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 }
 
 // Checks that lease6-del can handle a situation when the query is
@@ -3997,8 +4873,17 @@ TEST_F(LeaseCmdsTest, Lease4DelMissingParams) {
 // valid, but the lease is not there.
 TEST_F(LeaseCmdsTest, Lease4DelByAddrNotFound) {
 
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
 
     // Invalid
     string cmd =
@@ -4011,13 +4896,28 @@ TEST_F(LeaseCmdsTest, Lease4DelByAddrNotFound) {
         "}";
     string exp_rsp = "IPv4 lease not found.";
     ConstElementPtr rsp = testCommand(cmd, CONTROL_RESULT_EMPTY, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
 }
 
 // Checks that lease4-del can return a lease by address.
 TEST_F(LeaseCmdsTest, Lease4DelByAddr) {
 
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
 
     // Query for valid, existing lease.
     string cmd =
@@ -4029,6 +4929,12 @@ TEST_F(LeaseCmdsTest, Lease4DelByAddr) {
         "}";
     string exp_rsp = "IPv4 lease deleted.";
     testCommand(cmd, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 1);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
 
     // Make sure the lease is really gone.
     EXPECT_FALSE(lmptr_->getLease4(IOAddress("192.0.2.1")));
@@ -4065,8 +4971,17 @@ TEST_F(LeaseCmdsTest, LeaseXDelBadUpdateDdnsParam) {
 // Checks that lease4-del sanitizes its input.
 TEST_F(LeaseCmdsTest, Lease4DelByAddrBadParam) {
 
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
 
     // Invalid family
     string cmd =
@@ -4078,6 +4993,12 @@ TEST_F(LeaseCmdsTest, Lease4DelByAddrBadParam) {
         "}";
     string exp_rsp = "Invalid IPv4 address specified: 2001:db8:1::1";
     testCommand(cmd, CONTROL_RESULT_ERROR, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
 
     // This is way off
     cmd =
@@ -4095,8 +5016,17 @@ TEST_F(LeaseCmdsTest, Lease4DelByAddrBadParam) {
 // well formed, but the lease is not there.
 TEST_F(LeaseCmdsTest, Lease4DelByHWAddrNotFound) {
 
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
 
     // No such lease.
     string cmd =
@@ -4111,6 +5041,12 @@ TEST_F(LeaseCmdsTest, Lease4DelByHWAddrNotFound) {
     string exp_rsp = "IPv4 lease not found.";
     ConstElementPtr rsp = testCommand(cmd, CONTROL_RESULT_EMPTY, exp_rsp);
 
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
+
     // Make sure the lease is still there.
     EXPECT_TRUE(lmptr_->getLease4(IOAddress("192.0.2.1")));
 }
@@ -4118,8 +5054,17 @@ TEST_F(LeaseCmdsTest, Lease4DelByHWAddrNotFound) {
 // Checks that lease4-del can find a lease by hardware address.
 TEST_F(LeaseCmdsTest, Lease4DelByHWAddr) {
 
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
 
     // Invalid
     string cmd =
@@ -4134,6 +5079,12 @@ TEST_F(LeaseCmdsTest, Lease4DelByHWAddr) {
     string exp_rsp = "IPv4 lease deleted.";
     ConstElementPtr rsp = testCommand(cmd, CONTROL_RESULT_SUCCESS, exp_rsp);
 
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 1);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
+
     // Make sure the lease is really gone.
     EXPECT_FALSE(lmptr_->getLease4(IOAddress("192.0.2.1")));
 }
@@ -4142,8 +5093,17 @@ TEST_F(LeaseCmdsTest, Lease4DelByHWAddr) {
 // well formed, but the lease is not there.
 TEST_F(LeaseCmdsTest, Lease4DelByClientIdNotFound) {
 
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
 
     // No such lease.
     string cmd =
@@ -4158,14 +5118,29 @@ TEST_F(LeaseCmdsTest, Lease4DelByClientIdNotFound) {
     string exp_rsp = "IPv4 lease not found.";
     ConstElementPtr rsp = testCommand(cmd, CONTROL_RESULT_EMPTY, exp_rsp);
 
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
+
     // Make sure the lease is still there.
     EXPECT_TRUE(lmptr_->getLease4(IOAddress("192.0.2.1")));
 }
 
 // Checks that lease4-del can find and delete a lease by client identifier.
 TEST_F(LeaseCmdsTest, Lease4DelByClientId) {
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
 
     // Invalid
     string cmd =
@@ -4180,6 +5155,12 @@ TEST_F(LeaseCmdsTest, Lease4DelByClientId) {
     string exp_rsp = "IPv4 lease deleted.";
     ConstElementPtr rsp = testCommand(cmd, CONTROL_RESULT_SUCCESS, exp_rsp);
 
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 1);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
+
     // Make sure the lease is really gone.
     EXPECT_FALSE(lmptr_->getLease4(IOAddress("192.0.2.1")));
 }
@@ -4188,8 +5169,23 @@ TEST_F(LeaseCmdsTest, Lease4DelByClientId) {
 // the query is correctly formed, but the lease is not there.
 TEST_F(LeaseCmdsTest, Lease6DelByAddr6NotFound) {
 
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now send the command.
     string cmd =
@@ -4205,14 +5201,41 @@ TEST_F(LeaseCmdsTest, Lease6DelByAddr6NotFound) {
     // Note the status expected is empty. The query completed correctly,
     // just didn't found the lease.
     testCommand(cmd, CONTROL_RESULT_EMPTY, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 }
 
 // Checks that lease6-del(subnet-id, addr) can handle a situation when
 // the query is correctly formed, but the lease is not there.
 TEST_F(LeaseCmdsTest, Lease6DelByDuidNotFound) {
 
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now send the command.
     string cmd =
@@ -4230,6 +5253,18 @@ TEST_F(LeaseCmdsTest, Lease6DelByDuidNotFound) {
     // just didn't found the lease.
     testCommand(cmd, CONTROL_RESULT_EMPTY, exp_rsp);
 
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
+
     // Make sure the lease is still there.
     EXPECT_TRUE(lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::1")));
 }
@@ -4239,6 +5274,21 @@ TEST_F(LeaseCmdsTest, Lease6DelByDuidNotFound) {
 TEST_F(LeaseCmdsTest, Lease6DelByAddr) {
 
     initLeaseMgr(true, true); // (true = v6, true = create a lease)
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now send the command.
     string cmd =
@@ -4254,6 +5304,18 @@ TEST_F(LeaseCmdsTest, Lease6DelByAddr) {
     // The status expected is success. The lease should be deleted.
     testCommand(cmd, CONTROL_RESULT_SUCCESS, exp_rsp);
 
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 1);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
+
     // Make sure the lease is really gone.
     EXPECT_FALSE(lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::1")));
 }
@@ -4261,8 +5323,11 @@ TEST_F(LeaseCmdsTest, Lease6DelByAddr) {
 // Checks that lease6-del sanitizes its input.
 TEST_F(LeaseCmdsTest, Lease6DelByAddrBadParam) {
 
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Invalid family
     string cmd =
@@ -4291,7 +5356,22 @@ TEST_F(LeaseCmdsTest, Lease6DelByAddrBadParam) {
 // the query is correctly formed and the lease is deleted.
 TEST_F(LeaseCmdsTest, Lease6DelByAddrPrefix) {
 
-    initLeaseMgr(true, false); // (true = v6, false = don't add any leases)
+    initLeaseMgr(true, false); // (true = v6, false = don't add leases)
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Let's start with regular address lease and make it a prefix lease.
     Lease6Ptr l = createLease6("2001:db8:1::1", 66, 0x77);
@@ -4299,6 +5379,22 @@ TEST_F(LeaseCmdsTest, Lease6DelByAddrPrefix) {
     l->type_ = Lease::TYPE_PD;
     l->prefixlen_ = 56;
     lmptr_->addLease(l);
+
+    StatsMgr::instance().setValue(StatsMgr::generateName("subnet", 66,
+                                                         "assigned-pds" ),
+                                  int64_t(1));
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 1);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now send the command.
     string cmd =
@@ -4314,6 +5410,18 @@ TEST_F(LeaseCmdsTest, Lease6DelByAddrPrefix) {
     // The status expected is success. The lease should be deleted.
     testCommand(cmd, CONTROL_RESULT_SUCCESS, exp_rsp);
 
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
+
     // Make sure the lease is really gone.
     EXPECT_FALSE(lmptr_->getLease6(Lease::TYPE_PD, IOAddress("2001:db8:1234:ab::")));
 }
@@ -4323,6 +5431,21 @@ TEST_F(LeaseCmdsTest, Lease6DelByAddrPrefix) {
 TEST_F(LeaseCmdsTest, Lease6DelByDUID) {
 
     initLeaseMgr(true, true); // (true = v6, true = create a lease)
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now send the command.
     string cmd =
@@ -4340,6 +5463,18 @@ TEST_F(LeaseCmdsTest, Lease6DelByDUID) {
     // The status expected is success. The lease should be deleted.
     testCommand(cmd, CONTROL_RESULT_SUCCESS, exp_rsp);
 
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 1);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
+
     // Make sure the lease is really gone.
     EXPECT_FALSE(lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::1")));
 }
@@ -4347,8 +5482,17 @@ TEST_F(LeaseCmdsTest, Lease6DelByDUID) {
 // Checks that lease4-wipe can remove leases.
 TEST_F(LeaseCmdsTest, Lease4Wipe) {
 
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
 
     // Query for valid, existing lease.
     string cmd =
@@ -4360,6 +5504,12 @@ TEST_F(LeaseCmdsTest, Lease4Wipe) {
         "}";
     string exp_rsp = "Deleted 2 IPv4 lease(s) from subnet(s) 44";
     testCommand(cmd, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
 
     // Make sure the leases in subnet 44 are really gone.
     EXPECT_FALSE(lmptr_->getLease4(IOAddress("192.0.2.1")));
@@ -4374,8 +5524,17 @@ TEST_F(LeaseCmdsTest, Lease4Wipe) {
 // at once.
 TEST_F(LeaseCmdsTest, Lease4WipeAll) {
 
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
 
     // Query for valid, existing lease.
     string cmd =
@@ -4387,6 +5546,12 @@ TEST_F(LeaseCmdsTest, Lease4WipeAll) {
         "}";
     string exp_rsp = "Deleted 4 IPv4 lease(s) from subnet(s) 44 88";
     testCommand(cmd, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
 
     // Make sure the leases in subnet 44 are really gone.
     EXPECT_FALSE(lmptr_->getLease4(IOAddress("192.0.2.1")));
@@ -4401,8 +5566,17 @@ TEST_F(LeaseCmdsTest, Lease4WipeAll) {
 // at once (when no parameters are specifed).
 TEST_F(LeaseCmdsTest, Lease4WipeAllNoArgs) {
 
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 2);
 
     // Query for valid, existing lease.
     string cmd =
@@ -4411,6 +5585,12 @@ TEST_F(LeaseCmdsTest, Lease4WipeAllNoArgs) {
         "}";
     string exp_rsp = "Deleted 4 IPv4 lease(s) from subnet(s) 44 88";
     testCommand(cmd, CONTROL_RESULT_SUCCESS, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
 
     // Make sure the leases in subnet 44 are really gone.
     EXPECT_FALSE(lmptr_->getLease4(IOAddress("192.0.2.1")));
@@ -4424,8 +5604,17 @@ TEST_F(LeaseCmdsTest, Lease4WipeAllNoArgs) {
 // Checks that lease4-wipe properly reports when no leases were deleted.
 TEST_F(LeaseCmdsTest, Lease4WipeNoLeases) {
 
-    // Initialize lease manager (false = v4, false = no leases)
+    // Initialize lease manager (false = v4, false = don't add leases)
     initLeaseMgr(false, false);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
 
     // Query for valid, existing lease.
     string cmd =
@@ -4437,13 +5626,28 @@ TEST_F(LeaseCmdsTest, Lease4WipeNoLeases) {
         "}";
     string exp_rsp = "Deleted 0 IPv4 lease(s) from subnet(s) 44";
     testCommand(cmd, CONTROL_RESULT_EMPTY, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
 }
 
 // Checks that lease4-wipe properly reports when no leases were deleted.
 TEST_F(LeaseCmdsTest, Lease4WipeNoLeasesAll) {
 
-    // Initialize lease manager (false = v4, false = no leases)
+    // Initialize lease manager (false = v4, false = don't add leases)
     initLeaseMgr(false, false);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
 
     // Query for valid, existing lease.
     string cmd =
@@ -4455,12 +5659,33 @@ TEST_F(LeaseCmdsTest, Lease4WipeNoLeasesAll) {
         "}";
     string exp_rsp = "Deleted 0 IPv4 lease(s) from subnet(s) 44 88";
     testCommand(cmd, CONTROL_RESULT_EMPTY, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              44, "assigned-addresses"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              88, "assigned-addresses"))->getInteger().first, 0);
 }
 
 // Checks that lease4-wipe can remove leases.
 TEST_F(LeaseCmdsTest, Lease6Wipe) {
 
     initLeaseMgr(true, true); // (true = v6, true = create a lease)
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now send the command.
     string cmd =
@@ -4475,11 +5700,23 @@ TEST_F(LeaseCmdsTest, Lease6Wipe) {
     // The status expected is success. The lease should be deleted.
     testCommand(cmd, CONTROL_RESULT_SUCCESS, exp_rsp);
 
-    // Make sure the leases in subnet 44 are really gone.
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
+
+    // Make sure the leases in subnet 66 are really gone.
     EXPECT_FALSE(lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::1")));
     EXPECT_FALSE(lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::2")));
 
-    // The leases in subnet 88 are supposed to be still there.
+    // Make sure the leases from subnet 99 are still there.
     EXPECT_TRUE(lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:2::1")));
     EXPECT_TRUE(lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:2::2")));
 }
@@ -4488,6 +5725,21 @@ TEST_F(LeaseCmdsTest, Lease6Wipe) {
 TEST_F(LeaseCmdsTest, Lease6WipeAll) {
 
     initLeaseMgr(true, true); // (true = v6, true = create a lease)
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now send the command.
     string cmd =
@@ -4502,11 +5754,23 @@ TEST_F(LeaseCmdsTest, Lease6WipeAll) {
     // The status expected is success. The lease should be deleted.
     testCommand(cmd, CONTROL_RESULT_SUCCESS, exp_rsp);
 
-    // Make sure the leases in subnet 44 are really gone.
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
+
+    // Make sure the leases in subnet 66 are really gone.
     EXPECT_FALSE(lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::1")));
     EXPECT_FALSE(lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::2")));
 
-    // The leases in subnet 88 are supposed to be still there.
+    // Make sure the leases from subnet 99 are gone, too.
     EXPECT_FALSE(lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:2::1")));
     EXPECT_FALSE(lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:2::2")));
 }
@@ -4516,6 +5780,21 @@ TEST_F(LeaseCmdsTest, Lease6WipeAll) {
 TEST_F(LeaseCmdsTest, Lease6WipeAllNoArgs) {
 
     initLeaseMgr(true, true); // (true = v6, true = create a lease)
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now send the command.
     string cmd =
@@ -4527,11 +5806,23 @@ TEST_F(LeaseCmdsTest, Lease6WipeAllNoArgs) {
     // The status expected is success. The lease should be deleted.
     testCommand(cmd, CONTROL_RESULT_SUCCESS, exp_rsp);
 
-    // Make sure the leases in subnet 44 are really gone.
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
+
+    // Make sure the leases in subnet 66 are really gone.
     EXPECT_FALSE(lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::1")));
     EXPECT_FALSE(lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::2")));
 
-    // The leases in subnet 88 are supposed to be still there.
+    // Make sure the leases from subnet 99 are gone, too.
     EXPECT_FALSE(lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:2::1")));
     EXPECT_FALSE(lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:2::2")));
 }
@@ -4539,8 +5830,23 @@ TEST_F(LeaseCmdsTest, Lease6WipeAllNoArgs) {
 // Checks that lease4-wipe properly reports when no leases were deleted.
 TEST_F(LeaseCmdsTest, Lease6WipeNoLeases) {
 
-    // Initialize lease manager (false = v4, false = no leases)
+    // Initialize lease manager (false = v4, false = don't add leases)
     initLeaseMgr(true, false);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Query for valid, existing lease.
     string cmd =
@@ -4552,13 +5858,40 @@ TEST_F(LeaseCmdsTest, Lease6WipeNoLeases) {
         "}";
     string exp_rsp = "Deleted 0 IPv6 lease(s) from subnet(s) 66";
     testCommand(cmd, CONTROL_RESULT_EMPTY, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 }
 
 // Checks that lease4-wipe properly reports when no leases were deleted.
 TEST_F(LeaseCmdsTest, Lease6WipeNoLeasesAll) {
 
-    // Initialize lease manager (false = v4, false = no leases)
+    // Initialize lease manager (false = v4, false = don't add leases)
     initLeaseMgr(true, false);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Query for valid, existing lease.
     string cmd =
@@ -4570,6 +5903,18 @@ TEST_F(LeaseCmdsTest, Lease6WipeNoLeasesAll) {
         "}";
     string exp_rsp = "Deleted 0 IPv6 lease(s) from subnet(s) 66 99";
     testCommand(cmd, CONTROL_RESULT_EMPTY, exp_rsp);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 }
 
 // Checks that an attempt to update a lease (set incorrect subnet-id)
@@ -4579,12 +5924,12 @@ TEST_F(LeaseCmdsTest, brokenUpdate) {
     // Initialize lease manager (false = v4, false = don't add leases)
     initLeaseMgr(false, false);
 
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
     // Set the sanity checks level.
     CfgMgr::instance().getCurrentCfg()->getConsistency()
         ->setLeaseSanityCheck(CfgConsistency::LEASE_CHECK_FIX);
-
-    // Check that the lease manager pointer is there.
-    ASSERT_TRUE(lmptr_);
 
     // Now send the command.
     string txt =
@@ -4607,6 +5952,21 @@ TEST_F(LeaseCmdsTest, brokenUpdate) {
 TEST_F(LeaseCmdsTest, Lease6BulkApply) {
 
     initLeaseMgr(true, true); // (true = v6, true = create leases)
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now send the command.
     string cmd =
@@ -4644,6 +6004,18 @@ TEST_F(LeaseCmdsTest, Lease6BulkApply) {
     // The status expected is success.
     testCommand(cmd, CONTROL_RESULT_SUCCESS, exp_rsp);
 
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 1);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 3);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
+
     //  Check that the leases we inserted are stored.
     EXPECT_TRUE(lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::123")));
     EXPECT_TRUE(lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:2::123")));
@@ -4658,6 +6030,21 @@ TEST_F(LeaseCmdsTest, Lease6BulkApply) {
 TEST_F(LeaseCmdsTest, Lease6BulkApplyAddsOnly) {
 
     initLeaseMgr(true, false); // (true = v6, true = create leases)
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now send the command.
     string cmd =
@@ -4685,6 +6072,18 @@ TEST_F(LeaseCmdsTest, Lease6BulkApplyAddsOnly) {
     // The status expected is success.
     testCommand(cmd, CONTROL_RESULT_SUCCESS, exp_rsp);
 
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 1);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 1);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
+
     //  Check that the leases we inserted are stored.
     EXPECT_TRUE(lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::123")));
     EXPECT_TRUE(lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:2::123")));
@@ -4695,6 +6094,21 @@ TEST_F(LeaseCmdsTest, Lease6BulkApplyAddsOnly) {
 TEST_F(LeaseCmdsTest, Lease6BulkApplyUpdatesOnly) {
 
     initLeaseMgr(true, true); // (true = v6, true = create leases)
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now send the command.
     string cmd =
@@ -4722,6 +6136,18 @@ TEST_F(LeaseCmdsTest, Lease6BulkApplyUpdatesOnly) {
     // The status expected is success.
     testCommand(cmd, CONTROL_RESULT_SUCCESS, exp_rsp);
 
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
+
     //  Check that the leases we inserted are stored.
     Lease6Ptr lease1 = lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::1"));
     Lease6Ptr lease2 = lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::2"));
@@ -4738,6 +6164,21 @@ TEST_F(LeaseCmdsTest, Lease6BulkApplyUpdatesOnly) {
 TEST_F(LeaseCmdsTest, Lease6BulkApplyDeletesOnly) {
 
     initLeaseMgr(true, true); // (true = v6, true = create leases)
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now send the command.
     string cmd =
@@ -4761,6 +6202,18 @@ TEST_F(LeaseCmdsTest, Lease6BulkApplyDeletesOnly) {
     // The status expected is success.
     testCommand(cmd, CONTROL_RESULT_SUCCESS, exp_rsp);
 
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
+
     // Check that the leases we deleted are gone,
     EXPECT_FALSE(lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::1")));
     EXPECT_FALSE(lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::2")));
@@ -4771,6 +6224,21 @@ TEST_F(LeaseCmdsTest, Lease6BulkApplyDeletesOnly) {
 TEST_F(LeaseCmdsTest, Lease6BulkApplyDeleteNonExiting) {
 
     initLeaseMgr(true, true); // (true = v6, true = create leases)
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now send the command.
     string cmd =
@@ -4795,6 +6263,18 @@ TEST_F(LeaseCmdsTest, Lease6BulkApplyDeleteNonExiting) {
     auto resp = testCommand(cmd, CONTROL_RESULT_EMPTY, exp_rsp);
     ASSERT_TRUE(resp);
     ASSERT_EQ(Element::map, resp->getType());
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     auto args = resp->get("arguments");
     ASSERT_TRUE(args);
@@ -4823,6 +6303,21 @@ TEST_F(LeaseCmdsTest, Lease6BulkApplyDeleteNonExiting) {
 TEST_F(LeaseCmdsTest, Lease6BulkApplyRollback) {
 
     initLeaseMgr(true, true); // (true = v6, true = create leases)
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
 
     // Now send the command.
     string cmd =
@@ -4860,6 +6355,18 @@ TEST_F(LeaseCmdsTest, Lease6BulkApplyRollback) {
     // The status expected is success.
     testCommand(cmd, CONTROL_RESULT_ERROR, exp_rsp);
 
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              66, "assigned-pds"))->getInteger().first, 0);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-nas"))->getInteger().first, 2);
+
+    ASSERT_EQ(StatsMgr::instance().getObservation(StatsMgr::generateName("subnet",
+              99, "assigned-pds"))->getInteger().first, 0);
+
     EXPECT_FALSE(lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:1::123")));
     EXPECT_FALSE(lmptr_->getLease6(Lease::TYPE_NA, IOAddress("2001:db8:2::123")));
 
@@ -4869,8 +6376,11 @@ TEST_F(LeaseCmdsTest, Lease6BulkApplyRollback) {
 
 // Checks that lease4-resend-ddns sanitizes its input.
 TEST_F(LeaseCmdsTest, Lease4ResendDdnsBadParam) {
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Missing address parameter.
     string cmd =
@@ -4911,8 +6421,12 @@ TEST_F(LeaseCmdsTest, Lease4ResendDdnsBadParam) {
 // Checks that lease4-resend-ddns does not generate an NCR for given lease
 // when DDNS updating is disabled.
 TEST_F(LeaseCmdsTest, lease4ResendDdnsDisabled) {
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
     disableD2();
 
     // Query for valid, existing lease.
@@ -4930,12 +6444,14 @@ TEST_F(LeaseCmdsTest, lease4ResendDdnsDisabled) {
     EXPECT_EQ(ncrQueueSize(), -1);
 }
 
-
 // Checks that lease4-resend-ddns does not generate an NCR for
 // when there is no matching lease.
 TEST_F(LeaseCmdsTest, lease4ResendDdnsNoLease) {
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Invalid
     string cmd =
@@ -4952,8 +6468,11 @@ TEST_F(LeaseCmdsTest, lease4ResendDdnsNoLease) {
 // Checks that lease4-resend-ddns does not generate an NCR for given lease
 // when updates are enabled but Lease::hostname_ is blank.
 TEST_F(LeaseCmdsTest, lease4ResendNoHostname) {
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // NCR sender queue should be empty.
     ASSERT_EQ(ncrQueueSize(), 0);
@@ -4984,8 +6503,11 @@ TEST_F(LeaseCmdsTest, lease4ResendNoHostname) {
 // when updates are enabled, Lease::hostname_ is not blank, but both
 // Lease::fqdn_fwd_ and fdqn_rev_ are false.
 TEST_F(LeaseCmdsTest, lease4ResendNoDirectionsEnabled) {
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // NCR sender queue should be empty.
     ASSERT_EQ(ncrQueueSize(), 0);
@@ -5017,8 +6539,11 @@ TEST_F(LeaseCmdsTest, lease4ResendNoDirectionsEnabled) {
 // when updates are enabled, Lease::hostname_ is not blank, and at least
 // one of Lease::fqdn_fwd_ or fdqn_rev_ are true.
 TEST_F(LeaseCmdsTest, lease4ResendDdnsEnabled) {
-    // Initialize lease manager (false = v4, true = add a lease)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Structure detailing a test scenario.
     struct Scenario {
@@ -5069,8 +6594,11 @@ TEST_F(LeaseCmdsTest, lease4ResendDdnsEnabled) {
 
 // Checks that lease6-resend-ddns sanitizes its input.
 TEST_F(LeaseCmdsTest, Lease6ResendDdnsBadParam) {
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Missing address parameter.
     string cmd =
@@ -5111,8 +6639,11 @@ TEST_F(LeaseCmdsTest, Lease6ResendDdnsBadParam) {
 // Checks that lease6-resend-ddns does not generate an NCR for given lease
 // when DDNS updating is disabled.
 TEST_F(LeaseCmdsTest, lease6ResendDdnsDisabled) {
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Disable DDNS updating.
     disableD2();
@@ -5135,8 +6666,11 @@ TEST_F(LeaseCmdsTest, lease6ResendDdnsDisabled) {
 // Checks that lease6-resend-ddns does not generate an NCR for
 // when there is no matching lease.
 TEST_F(LeaseCmdsTest, lease6ResendDdnsNoLease) {
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Invalid
     string cmd =
@@ -5150,12 +6684,14 @@ TEST_F(LeaseCmdsTest, lease6ResendDdnsNoLease) {
     ConstElementPtr rsp = testCommand(cmd, CONTROL_RESULT_EMPTY, exp_rsp);
 }
 
-
 // Checks that lease6-resend-ddns does not generate an NCR for given lease
 // when updates are enabled but Lease::hostname_ is blank.
 TEST_F(LeaseCmdsTest, lease6ResendNoHostname) {
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // NCR sender queue should be empty.
     ASSERT_EQ(ncrQueueSize(), 0);
@@ -5186,8 +6722,11 @@ TEST_F(LeaseCmdsTest, lease6ResendNoHostname) {
 // when updates are enabled, Lease::hostname_ is not blank, but both
 // Lease::fqdn_fwd_ and fdqn_rev_ are false.
 TEST_F(LeaseCmdsTest, lease6ResendNoDirectionsEnabled) {
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // NCR sender queue should be empty.
     ASSERT_EQ(ncrQueueSize(), 0);
@@ -5219,8 +6758,11 @@ TEST_F(LeaseCmdsTest, lease6ResendNoDirectionsEnabled) {
 // when updates are enabled, Lease::hostname_ is not blank, and at least
 // one of Lease::fqdn_fwd_ or fdqn_rev_ are true.
 TEST_F(LeaseCmdsTest, lease6ResendDdnsEnabled) {
-    // Initialize lease manager (true = v6, true = add a lease)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Structure detailing a test scenario.
     struct Scenario {

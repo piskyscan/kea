@@ -169,6 +169,12 @@ struct Lease : public isc::data::UserContext, public isc::data::CfgToElement {
     /// belonging to this class.
     uint32_t state_;
 
+    /// @brief Flag used to differentiate between leases that need to update
+    /// stats on HA pair (expired and reused and do count as a new assignment)
+    /// and leases that do not need to update stats on HA pair (did not expire
+    /// and do not count as a new assignment).
+    bool update_stats_;
+
     /// @brief Convert Lease to Printable Form
     ///
     /// @return String form of the lease

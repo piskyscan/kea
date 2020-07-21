@@ -176,6 +176,12 @@ Lease4Parser::parse(ConstSrvConfigPtr& cfg,
         force_create = getBoolean(lease_info, "force-create");
     }
 
+    // Retrieve the optional flag indicating if the stats must be updated
+    // during the lease update.
+    if (lease_info->contains("update-stats")) {
+        l->update_stats_ = getBoolean(lease_info, "update-stats");
+    }
+
     return (l);
 }
 
@@ -369,6 +375,12 @@ Lease6Parser::parse(ConstSrvConfigPtr& cfg,
     force_create = false;
     if (lease_info->contains("force-create")) {
         force_create = getBoolean(lease_info, "force-create");
+    }
+
+    // Retrieve the optional flag indicating if the stats must be updated
+    // during the lease update.
+    if (lease_info->contains("update-stats")) {
+        l->update_stats_ = getBoolean(lease_info, "update-stats");
     }
 
     return (l);

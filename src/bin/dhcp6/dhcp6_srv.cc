@@ -1007,23 +1007,17 @@ Dhcpv6Srv::processDhcp6Query(Pkt6Ptr& query, Pkt6Ptr& rsp) {
 
         // Do per IA lists
         for (auto const iac : ctx.ias_) {
-            if (!iac.old_leases_.empty()) {
-                for (auto old_lease : iac.old_leases_) {
-                    if (ctx.new_leases_.empty()) {
-                        deleted_leases->push_back(old_lease);
-                        continue;
+            for (auto old_lease : iac.old_leases_) {
+                bool in_new = false;
+                for (auto const new_lease : ctx.new_leases_) {
+                    if ((new_lease->addr_ == old_lease->addr_) &&
+                        (new_lease->prefixlen_ == old_lease->prefixlen_)) {
+                        in_new = true;
+                        break;
                     }
-                    bool in_new = false;
-                    for (auto const new_lease : ctx.new_leases_) {
-                        if ((new_lease->addr_ == old_lease->addr_) &&
-                            (new_lease->prefixlen_ == old_lease->prefixlen_)) {
-                            in_new = true;
-                            break;
-                        }
-                    }
-                    if (!in_new) {
-                        deleted_leases->push_back(old_lease);
-                    }
+                }
+                if (!in_new) {
+                    deleted_leases->push_back(old_lease);
                 }
             }
         }

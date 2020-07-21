@@ -25,6 +25,7 @@
 #include <lease_cmds.h>
 #include <lease_parser.h>
 #include <lease_cmds_log.h>
+#include <stats/stats_mgr.h>
 #include <util/encode/hex.h>
 #include <util/multi_threading_mgr.h>
 #include <util/strutil.h>
@@ -41,6 +42,7 @@ using namespace isc::dhcp_ddns;
 using namespace isc::config;
 using namespace isc::asiolink;
 using namespace isc::hooks;
+using namespace isc::stats;
 using namespace isc::util;
 using namespace std;
 
@@ -64,19 +66,19 @@ public:
         } Type;
 
         /// @brief Specifies subnet-id (always used)
-        SubnetID subnet_id;
+        SubnetID subnet_id_;
 
         /// @brief Specifies IPv4/v6 address (used when query_type is TYPE_ADDR)
-        IOAddress addr;
+        IOAddress addr_;
 
         /// @brief Specifies hardware address (used when query_type is TYPE_HWADDR)
-        HWAddrPtr hwaddr;
+        HWAddrPtr hwaddr_;
 
         /// @brief Specifies identifier value (used when query_type is TYPE_DUID)
-        isc::dhcp::DuidPtr duid;
+        isc::dhcp::DuidPtr duid_;
 
         /// @brief Specifies identifier value (used when query_type is TYPE_CLIENT_ID)
-        isc::dhcp::ClientIdPtr client_id;
+        isc::dhcp::ClientIdPtr client_id_;
 
         /// @brief Attempts to covert text to one of specified types
         ///
@@ -103,21 +105,21 @@ public:
 
         /// @brief specifies parameter types (true = query by address, false =
         ///         query by identifier-type,identifier)
-        Type query_type;
+        Type query_type_;
 
         /// @brief Lease type (NA,TA or PD) used for v6 leases
-        Lease::Type lease_type;
+        Lease::Type lease_type_;
 
         /// @brief IAID identifier used for v6 leases
-        uint32_t iaid;
+        uint32_t iaid_;
 
         /// @brief Indicates whether or not DNS should be updated.
         bool updateDDNS;
 
         /// @brief Default constructor.
         Parameters()
-            : addr("::"), query_type(TYPE_ADDR), lease_type(Lease::TYPE_NA),
-              iaid(0), updateDDNS(false) {
+            : addr_("::"), query_type_(TYPE_ADDR), lease_type_(Lease::TYPE_NA),
+              iaid_(0), updateDDNS_(false) {
         }
     };
 
@@ -420,6 +422,10 @@ LeaseCmdsImpl::leaseAddHandler(CalloutHandle& handle) {
                 if (!success) {
                     isc_throw(db::DuplicateEntry, "IPv4 lease already exists.");
                 }
+                StatsMgr::instance().addValue(
+                    StatsMgr::generateName("subnet", lease4->subnet_id_,
+                                           "assigned-addresses"),
+                    int64_t(1));
                 resp << "Lease for address " << lease4->addr_.toText()
                      << ", subnet-id " << lease4->subnet_id_ << " added.";
             }
@@ -454,6 +460,11 @@ LeaseCmdsImpl::leaseAddHandler(CalloutHandle& handle) {
                 if (!success) {
                     isc_throw(db::DuplicateEntry, "IPv6 lease already exists.");
                 }
+                StatsMgr::instance().addValue(
+                    StatsMgr::generateName("subnet", lease6->subnet_id_,
+                                           lease6->type_ == Lease::TYPE_NA ?
+                                           "assigned-nas" : "assigned-pds"),
+                    int64_t(1));
                 if (lease6->type_ == Lease::TYPE_NA) {
                     resp << "Lease for address " << lease6->addr_.toText()
                          << ", subnet-id " << lease6->subnet_id_ << " added.";
@@ -503,13 +514,13 @@ LeaseCmdsImpl::getParameters(bool v6, const ConstElementPtr& params) {
     if (params->contains("type")) {
         string t = params->get("type")->stringValue();
         if (t == "IA_NA" || t == "0") {
-            x.lease_type = Lease::TYPE_NA;
+            x.lease_type_ = Lease::TYPE_NA;
         } else if (t == "IA_TA" || t == "1") {
-            x.lease_type = Lease::TYPE_TA;
+            x.lease_type_ = Lease::TYPE_TA;
         } else if (t == "IA_PD" || t == "2") {
-            x.lease_type = Lease::TYPE_PD;
+            x.lease_type_ = Lease::TYPE_PD;
         } else if (t == "V4" || t == "3") {
-            x.lease_type = Lease::TYPE_V4;
+            x.lease_type_ = Lease::TYPE_V4;
         } else {
             isc_throw(BadValue, "Invalid lease type specified: "
                       << t << ", only supported values are: IA_NA, IA_TA,"
@@ -523,16 +534,16 @@ LeaseCmdsImpl::getParameters(bool v6, const ConstElementPtr& params) {
             isc_throw(BadValue, "'ip-address' is not a string.");
         }
 
-        x.addr = IOAddress(tmp->stringValue());
+        x.addr_ = IOAddress(tmp->stringValue());
 
-        if ((v6 && !x.addr.isV6()) || (!v6 && !x.addr.isV4())) {
+        if ((v6 && !x.addr_.isV6()) || (!v6 && !x.addr_.isV4())) {
             stringstream txt;
             txt << "Invalid " << (v6 ? "IPv6" : "IPv4")
                 << " address specified: " << tmp->stringValue();
             isc_throw(BadValue, txt.str());
         }
 
-        x.query_type = Parameters::TYPE_ADDR;
+        x.query_type_ = Parameters::TYPE_ADDR;
         return (x);
     }
 
@@ -543,10 +554,10 @@ LeaseCmdsImpl::getParameters(bool v6, const ConstElementPtr& params) {
     if (tmp->getType() != Element::integer) {
         isc_throw(BadValue, "'subnet-id' parameter is not integer.");
     }
-    x.subnet_id = tmp->intValue();
+    x.subnet_id_ = tmp->intValue();
 
     if (params->contains("iaid")) {
-        x.iaid = params->get("iaid")->intValue();
+        x.iaid_ = params->get("iaid")->intValue();
     }
 
     // No address specified. Ok, so it must be identifier based query.
@@ -566,21 +577,21 @@ LeaseCmdsImpl::getParameters(bool v6, const ConstElementPtr& params) {
 
     // Got the parameters. Let's see if their values make sense.
     // Try to convert identifier-type
-    x.query_type = Parameters::txtToType(type->stringValue());
+    x.query_type_ = Parameters::txtToType(type->stringValue());
 
-    switch (x.query_type) {
+    switch (x.query_type_) {
     case Parameters::TYPE_HWADDR: {
         HWAddr hw = HWAddr::fromText(ident->stringValue());
-        x.hwaddr = HWAddrPtr(new HWAddr(hw));
+        x.hwaddr_ = HWAddrPtr(new HWAddr(hw));
         break;
     }
     case Parameters::TYPE_CLIENT_ID: {
-        x.client_id = ClientId::fromText(ident->stringValue());
+        x.client_id_ = ClientId::fromText(ident->stringValue());
         break;
     }
     case Parameters::TYPE_DUID: {
         DUID duid = DUID::fromText(ident->stringValue());
-        x.duid = DuidPtr(new DUID(duid));
+        x.duid_ = DuidPtr(new DUID(duid));
         break;
     }
     case Parameters::TYPE_ADDR: {
@@ -608,24 +619,24 @@ LeaseCmdsImpl::leaseGetHandler(CalloutHandle& handle) {
         v4 = (cmd_name_ == "lease4-get");
 
         p = getParameters(!v4, cmd_args_);
-        switch (p.query_type) {
+        switch (p.query_type_) {
         case Parameters::TYPE_ADDR: {
             // Query by address
             if (v4) {
-                lease4 = LeaseMgrFactory::instance().getLease4(p.addr);
+                lease4 = LeaseMgrFactory::instance().getLease4(p.addr_);
             } else {
-                lease6 = LeaseMgrFactory::instance().getLease6(p.lease_type, p.addr);
+                lease6 = LeaseMgrFactory::instance().getLease6(p.lease_type_, p.addr_);
             }
             break;
         }
         case Parameters::TYPE_HWADDR:
             if (v4) {
-                if (!p.hwaddr) {
+                if (!p.hwaddr_) {
                     isc_throw(InvalidParameter, "Program error: Query by hw-address "
                                                 "requires hwaddr to be specified");
                 }
 
-                lease4 = LeaseMgrFactory::instance().getLease4(*p.hwaddr, p.subnet_id);
+                lease4 = LeaseMgrFactory::instance().getLease4(*p.hwaddr_, p.subnet_id_);
             } else {
                 isc_throw(isc::InvalidParameter, "Query by hw-address is not allowed in v6.");
             }
@@ -633,13 +644,13 @@ LeaseCmdsImpl::leaseGetHandler(CalloutHandle& handle) {
 
         case Parameters::TYPE_DUID:
             if (!v4) {
-                if (!p.duid) {
+                if (!p.duid_) {
                     isc_throw(InvalidParameter, "Program error: Query by duid "
                                                 "requires duid to be specified");
                 }
 
-                lease6 = LeaseMgrFactory::instance().getLease6(p.lease_type, *p.duid,
-                                                               p.iaid, p.subnet_id);
+                lease6 = LeaseMgrFactory::instance().getLease6(p.lease_type_, *p.duid_,
+                                                               p.iaid_, p.subnet_id_);
             } else {
                 isc_throw(InvalidParameter, "Query by duid is not allowed in v4.");
             }
@@ -647,19 +658,19 @@ LeaseCmdsImpl::leaseGetHandler(CalloutHandle& handle) {
 
         case Parameters::TYPE_CLIENT_ID:
             if (v4) {
-                if (!p.client_id) {
+                if (!p.client_id_) {
                     isc_throw(InvalidParameter, "Program error: Query by client-id "
                                                 "requires client-id to be specified");
                 }
 
-                lease4 = LeaseMgrFactory::instance().getLease4(*p.client_id, p.subnet_id);
+                lease4 = LeaseMgrFactory::instance().getLease4(*p.client_id_, p.subnet_id_);
             } else {
                 isc_throw(isc::InvalidParameter, "Query by client-id is not allowed in v6.");
             }
             break;
 
         default: {
-            isc_throw(InvalidOperation, "Unknown query type: " << static_cast<int>(p.query_type));
+            isc_throw(InvalidOperation, "Unknown query type: " << static_cast<int>(p.query_type_));
             break;
         }
         }
@@ -1117,10 +1128,10 @@ LeaseCmdsImpl::lease4DelHandler(CalloutHandle& handle) {
         extractCommand(handle);
         p = getParameters(false, cmd_args_);
 
-        switch (p.query_type) {
+        switch (p.query_type_) {
         case Parameters::TYPE_ADDR: {
             // If address was specified explicitly, let's use it as is.
-            lease4 = LeaseMgrFactory::instance().getLease4(p.addr);
+            lease4 = LeaseMgrFactory::instance().getLease4(p.addr_);
             if (!lease4) {
                 setErrorResponse(handle, "IPv4 lease not found.", CONTROL_RESULT_EMPTY);
                 return (0);
@@ -1128,13 +1139,13 @@ LeaseCmdsImpl::lease4DelHandler(CalloutHandle& handle) {
             break;
         }
         case Parameters::TYPE_HWADDR: {
-            if (!p.hwaddr) {
+            if (!p.hwaddr_) {
                 isc_throw(InvalidParameter, "Program error: Query by hw-address "
                                             "requires hwaddr to be specified");
             }
 
             // Let's see if there's such a lease at all.
-            lease4 = LeaseMgrFactory::instance().getLease4(*p.hwaddr, p.subnet_id);
+            lease4 = LeaseMgrFactory::instance().getLease4(*p.hwaddr_, p.subnet_id_);
             if (!lease4) {
                 setErrorResponse(handle, "IPv4 lease not found.", CONTROL_RESULT_EMPTY);
                 return (0);
@@ -1142,13 +1153,13 @@ LeaseCmdsImpl::lease4DelHandler(CalloutHandle& handle) {
             break;
         }
         case Parameters::TYPE_CLIENT_ID: {
-            if (!p.client_id) {
+            if (!p.client_id_) {
                 isc_throw(InvalidParameter, "Program error: Query by client-id "
                                             "requires client-id to be specified");
             }
 
             // Let's see if there's such a lease at all.
-            lease4 = LeaseMgrFactory::instance().getLease4(*p.client_id, p.subnet_id);
+            lease4 = LeaseMgrFactory::instance().getLease4(*p.client_id_, p.subnet_id_);
             if (!lease4) {
                 setErrorResponse(handle, "IPv4 lease not found.", CONTROL_RESULT_EMPTY);
                 return (0);
@@ -1160,13 +1171,17 @@ LeaseCmdsImpl::lease4DelHandler(CalloutHandle& handle) {
             break;
         }
         default: {
-            isc_throw(InvalidOperation, "Unknown query type: " << static_cast<int>(p.query_type));
+            isc_throw(InvalidOperation, "Unknown query type: " << static_cast<int>(p.query_type_));
             break;
         }
         }
 
         if (LeaseMgrFactory::instance().deleteLease(lease4)) {
             setSuccessResponse(handle, "IPv4 lease deleted.");
+            StatsMgr::instance().addValue(StatsMgr::generateName("subnet",
+                                                                 lease4->subnet_id_,
+                                                                 "assigned-addresses"),
+                                          int64_t(-1));
         } else {
             setErrorResponse (handle, "IPv4 lease not found.", CONTROL_RESULT_EMPTY);
         }
@@ -1190,6 +1205,13 @@ void updateOrAdd(Lease6Ptr lease) {
     try {
         // Try to update.
         LeaseMgrFactory::instance().updateLease6(lease);
+        if (lease->update_stats_) {
+            StatsMgr::instance().addValue(
+                StatsMgr::generateName("subnet", lease->subnet_id_,
+                                       lease->type_ == Lease::TYPE_NA ?
+                                       "assigned-nas" : "assigned-pds"),
+                int64_t(1));
+        }
 
     } catch (const NoSuchLease& ex) {
         // Lease to be updated not found, so add it.
@@ -1197,6 +1219,11 @@ void updateOrAdd(Lease6Ptr lease) {
             isc_throw(db::DuplicateEntry,
                       "lost race between calls to update and add");
         }
+        StatsMgr::instance().addValue(
+            StatsMgr::generateName("subnet", lease->subnet_id_,
+                                   lease->type_ == Lease::TYPE_NA ?
+                                   "assigned-nas" : "assigned-pds"),
+            int64_t(1));
     }
 }
 
@@ -1289,6 +1316,11 @@ LeaseCmdsImpl::lease6BulkApplyHandler(CalloutHandle& handle) {
                         // leases.
                         if (LeaseMgrFactory::instance().deleteLease(lease)) {
                             ++success_count;
+                            StatsMgr::instance().addValue(
+                                StatsMgr::generateName("subnet", lease->subnet_id_,
+                                                       lease->type_ == Lease::TYPE_NA ?
+                                                       "assigned-nas" : "assigned-pds"),
+                                int64_t(-1));
 
                         } else {
                             // Lazy creation of the list of leases which failed to delete.
@@ -1300,8 +1332,8 @@ LeaseCmdsImpl::lease6BulkApplyHandler(CalloutHandle& handle) {
                             // on the list of leases which failed to delete. That
                             // corresponds to the lease6-del command which returns
                             // an error when the lease doesn't exist.
-                            failed_deleted_list->add(createFailedLeaseMap(p.lease_type,
-                                                                          p.addr, p.duid,
+                            failed_deleted_list->add(createFailedLeaseMap(p.lease_type_,
+                                                                          p.addr_, p.duid_,
                                                                           CONTROL_RESULT_EMPTY,
                                                                           "lease not found"));
                         }
@@ -1312,8 +1344,8 @@ LeaseCmdsImpl::lease6BulkApplyHandler(CalloutHandle& handle) {
                     if (!failed_deleted_list) {
                          failed_deleted_list = Element::createList();
                     }
-                    failed_deleted_list->add(createFailedLeaseMap(p.lease_type,
-                                                                  p.addr, p.duid,
+                    failed_deleted_list->add(createFailedLeaseMap(p.lease_type_,
+                                                                  p.addr_, p.duid_,
                                                                   CONTROL_RESULT_ERROR,
                                                                   ex.what()));
                 }
@@ -1412,12 +1444,12 @@ LeaseCmdsImpl::lease6DelHandler(CalloutHandle& handle) {
         extractCommand(handle);
         p = getParameters(true, cmd_args_);
 
-        switch (p.query_type) {
+        switch (p.query_type_) {
         case Parameters::TYPE_ADDR: {
             // If address was specified explicitly, let's use it as is.
 
             // Let's see if there's such a lease at all.
-            lease6 = LeaseMgrFactory::instance().getLease6(p.lease_type, p.addr);
+            lease6 = LeaseMgrFactory::instance().getLease6(p.lease_type_, p.addr_);
             if (!lease6) {
                 setErrorResponse(handle, "IPv6 lease not found.", CONTROL_RESULT_EMPTY);
                 return (0);
@@ -1429,14 +1461,14 @@ LeaseCmdsImpl::lease6DelHandler(CalloutHandle& handle) {
             break;
         }
         case Parameters::TYPE_DUID: {
-            if (!p.duid) {
+            if (!p.duid_) {
                 isc_throw(InvalidParameter, "Program error: Query by duid "
                                             "requires duid to be specified");
             }
 
             // Let's see if there's such a lease at all.
-            lease6 = LeaseMgrFactory::instance().getLease6(p.lease_type, *p.duid,
-                                                           p.iaid, p.subnet_id);
+            lease6 = LeaseMgrFactory::instance().getLease6(p.lease_type_, *p.duid_,
+                                                           p.iaid_, p.subnet_id_);
             if (!lease6) {
                 setErrorResponse(handle, "IPv6 lease not found.", CONTROL_RESULT_EMPTY);
                 return (0);
@@ -1444,13 +1476,18 @@ LeaseCmdsImpl::lease6DelHandler(CalloutHandle& handle) {
             break;
         }
         default: {
-            isc_throw(InvalidOperation, "Unknown query type: " << static_cast<int>(p.query_type));
+            isc_throw(InvalidOperation, "Unknown query type: " << static_cast<int>(p.query_type_));
             break;
         }
         }
 
         if (LeaseMgrFactory::instance().deleteLease(lease6)) {
             setSuccessResponse(handle, "IPv6 lease deleted.");
+            StatsMgr::instance().addValue(
+                StatsMgr::generateName("subnet", lease6->subnet_id_,
+                                       lease6->type_ == Lease::TYPE_NA ?
+                                       "assigned-nas" : "assigned-pds"),
+                int64_t(-1));
         } else {
             setErrorResponse (handle, "IPv6 lease not found.", CONTROL_RESULT_EMPTY);
         }
@@ -1476,9 +1513,19 @@ bool addOrUpdate4(Lease4Ptr lease, bool force_create) {
             isc_throw(db::DuplicateEntry,
                       "lost race between calls to get and add");
         }
+        StatsMgr::instance().addValue(
+            StatsMgr::generateName("subnet", lease->subnet_id_,
+                                   "assigned-addresses"),
+            int64_t(1));
         return (true);
     }
     LeaseMgrFactory::instance().updateLease4(lease);
+    if (lease->update_stats_) {
+        StatsMgr::instance().addValue(
+            StatsMgr::generateName("subnet", lease->subnet_id_,
+                                   "assigned-addresses"),
+            int64_t(1));
+    }
     return (false);
 }
 
@@ -1546,9 +1593,21 @@ bool addOrUpdate6(Lease6Ptr lease, bool force_create) {
             isc_throw(db::DuplicateEntry,
                       "lost race between calls to get and add");
         }
+        StatsMgr::instance().addValue(
+            StatsMgr::generateName("subnet", lease->subnet_id_,
+                                   lease->type_ == Lease::TYPE_NA ?
+                                   "assigned-nas" : "assigned-pds"),
+            int64_t(1));
         return (true);
     }
     LeaseMgrFactory::instance().updateLease6(lease);
+    if (lease->update_stats_) {
+        StatsMgr::instance().addValue(
+            StatsMgr::generateName("subnet", lease->subnet_id_,
+                                   lease->type_ == Lease::TYPE_NA ?
+                                   "assigned-nas" : "assigned-pds"),
+            int64_t(1));
+    }
     return (false);
 }
 
@@ -1628,6 +1687,10 @@ LeaseCmdsImpl::lease4WipeHandler(CalloutHandle& handle) {
             // Wipe a single subnet
             num = LeaseMgrFactory::instance().wipeLeases4(id);
             ids << " " << id;
+            StatsMgr::instance().setValue(StatsMgr::generateName("subnet",
+                                                                 id,
+                                                                 "assigned-addresses"),
+                                          int64_t(0));
         } else {
             // Wipe them all!
             ConstSrvConfigPtr config = CfgMgr::instance().getCurrentCfg();
@@ -1638,6 +1701,10 @@ LeaseCmdsImpl::lease4WipeHandler(CalloutHandle& handle) {
             for (auto sub : *subs) {
                 num += LeaseMgrFactory::instance().wipeLeases4(sub->getID());
                 ids << " " << sub->getID();
+                StatsMgr::instance().setValue(StatsMgr::generateName("subnet",
+                                                                     sub->getID(),
+                                                                     "assigned-addresses"),
+                                              int64_t(0));
             }
         }
 
@@ -1680,6 +1747,12 @@ LeaseCmdsImpl::lease6WipeHandler(CalloutHandle& handle) {
             // Wipe a single subnet.
             num = LeaseMgrFactory::instance().wipeLeases6(id);
             ids << " " << id;
+            StatsMgr::instance().setValue(
+                StatsMgr::generateName("subnet", id, "assigned-nas" ),
+                int64_t(0));
+            StatsMgr::instance().setValue(
+                StatsMgr::generateName("subnet", id, "assigned-pds"),
+                int64_t(0));
        } else {
             // Wipe them all!
             ConstSrvConfigPtr config = CfgMgr::instance().getCurrentCfg();
@@ -1690,6 +1763,12 @@ LeaseCmdsImpl::lease6WipeHandler(CalloutHandle& handle) {
             for (auto sub : *subs) {
                 num += LeaseMgrFactory::instance().wipeLeases6(sub->getID());
                 ids << " " << sub->getID();
+                StatsMgr::instance().setValue(
+                    StatsMgr::generateName("subnet", sub->getID(), "assigned-nas" ),
+                    int64_t(0));
+                StatsMgr::instance().setValue(
+                    StatsMgr::generateName("subnet", sub->getID(), "assigned-pds"),
+                    int64_t(0));
             }
         }
 
@@ -1710,16 +1789,16 @@ Lease6Ptr
 LeaseCmdsImpl::getIPv6LeaseForDelete(const Parameters& parameters) const {
     Lease6Ptr lease6;
 
-    switch (parameters.query_type) {
+    switch (parameters.query_type_) {
     case Parameters::TYPE_ADDR: {
         // If address was specified explicitly, let's use it as is.
 
         // Let's see if there's such a lease at all.
-        lease6 = LeaseMgrFactory::instance().getLease6(parameters.lease_type,
-                                                       parameters.addr);
+        lease6 = LeaseMgrFactory::instance().getLease6(parameters.lease_type_,
+                                                       parameters.addr_);
         if (!lease6) {
             lease6.reset(new Lease6());
-            lease6->addr_ = parameters.addr;
+            lease6->addr_ = parameters.addr_;
         }
         break;
     }
@@ -1728,21 +1807,21 @@ LeaseCmdsImpl::getIPv6LeaseForDelete(const Parameters& parameters) const {
         break;
     }
     case Parameters::TYPE_DUID: {
-        if (!parameters.duid) {
+        if (!parameters.duid_) {
             isc_throw(InvalidParameter, "Program error: Query by duid "
                       "requires duid to be specified");
         }
 
         // Let's see if there's such a lease at all.
-        lease6 = LeaseMgrFactory::instance().getLease6(parameters.lease_type,
-                                                       *parameters.duid,
-                                                       parameters.iaid,
-                                                       parameters.subnet_id);
+        lease6 = LeaseMgrFactory::instance().getLease6(parameters.lease_type_,
+                                                       *parameters.duid_,
+                                                       parameters.iaid_,
+                                                       parameters.subnet_id_);
         break;
     }
     default:
         isc_throw(InvalidOperation, "Unknown query type: "
-                  << static_cast<int>(parameters.query_type));
+                  << static_cast<int>(parameters.query_type_));
     }
 
     return (lease6);
