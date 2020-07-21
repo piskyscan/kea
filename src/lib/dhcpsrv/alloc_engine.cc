@@ -1199,7 +1199,9 @@ AllocEngine::allocateReservedLeases6(ClientContext6& ctx,
 
                 // If this is a real allocation, we may need to extend the lease
                 // lifetime.
-                if (!ctx.fake_allocation_ && conditionalExtendLifetime(*lease)) {
+                if (!ctx.fake_allocation_) {
+                    conditionalExtendLifetime(*lease);
+
                     LeaseMgrFactory::instance().updateLease6(lease);
 
                     if (expired) {
@@ -1362,7 +1364,9 @@ AllocEngine::allocateGlobalReservedLeases6(ClientContext6& ctx,
 
             // If this is a real allocation, we may need to extend the lease
             // lifetime.
-            if (!ctx.fake_allocation_ && conditionalExtendLifetime(*lease)) {
+            if (!ctx.fake_allocation_) {
+                conditionalExtendLifetime(*lease);
+
                 LeaseMgrFactory::instance().updateLease6(lease);
 
                 if (expired) {
