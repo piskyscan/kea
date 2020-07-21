@@ -2261,12 +2261,16 @@ AllocEngine::updateLeaseData(ClientContext6& ctx, const Lease6Collection& leases
             bool fqdn_changed = ((lease->type_ != Lease::TYPE_PD) &&
                                  !(lease->hasIdenticalFqdn(**lease_it)));
 
-            if (conditionalExtendLifetime(*lease) || fqdn_changed) {
+            conditionalExtendLifetime(*lease);
+            if (fqdn_changed) {
                 ctx.currentIA().changed_leases_.push_back(*lease_it);
-                LeaseMgrFactory::instance().updateLease6(lease);
             }
 
+            LeaseMgrFactory::instance().updateLease6(lease);
+
             if (update_stats) {
+                lease->update_stats_ = true;
+
                 StatsMgr::instance().addValue(
                     StatsMgr::generateName("subnet", lease->subnet_id_,
                                            ctx.currentIA().type_ == Lease::TYPE_NA ?
