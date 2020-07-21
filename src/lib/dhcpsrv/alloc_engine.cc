@@ -3885,6 +3885,8 @@ AllocEngine::renewLease4(const Lease4Ptr& lease,
         // for REQUEST we do update the lease
         LeaseMgrFactory::instance().updateLease4(lease);
 
+        lease->update_stats_ = true;
+
         // We need to account for the re-assignment of The lease.
         if (ctx.old_lease_->expired() || ctx.old_lease_->state_ == Lease::STATE_EXPIRED_RECLAIMED) {
             StatsMgr::instance().addValue(
@@ -3990,6 +3992,8 @@ AllocEngine::reuseExpiredLease4(Lease4Ptr& expired,
     if (!ctx.fake_allocation_) {
         // for REQUEST we do update the lease
         LeaseMgrFactory::instance().updateLease4(expired);
+
+        expired->update_stats_ = true;
 
         // We need to account for the re-assignment of The lease.
         StatsMgr::instance().addValue(
