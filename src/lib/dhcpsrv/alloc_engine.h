@@ -1838,10 +1838,7 @@ private:
     ///
     /// @param [in,out] lease A lease for which the lifetime should be
     /// extended.
-    ///
-    /// @return true if the lease lifetime has been extended, false
-    /// otherwise.
-    bool conditionalExtendLifetime(Lease& lease) const;
+    void extendLifetime(Lease& lease) const;
 
 private:
 
