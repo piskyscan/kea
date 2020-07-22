@@ -854,6 +854,13 @@ update a non-existing lease. If the "force-create" parameter is set to
 true and the updated lease does not exist, the new lease is created as a
 result of receiving the ``leaseX-update``.
 
+The optional boolean parameter "update-stats" specifies whether the
+lease add or update should also update statistics (like in case of
+renewing an expired or reclaimed lease). It defaults to false, which
+indicates that the lease command does not update statistics. If the
+"update-stats" parameter is set to true, the statistics are updated
+only if the lease add or update succeeds.
+
 An example of a command to update an IPv4 lease is:
 
 ::
@@ -865,7 +872,8 @@ An example of a command to update an IPv4 lease is:
        "hostname": "newhostname.example.org",
        "hw-address": "1a:1b:1c:1d:1e:1f",
        "subnet-id": 44,
-       "force-create": true
+       "force-create": true,
+       "update-stats": false
      }
    }
 
@@ -881,7 +889,8 @@ An example of a command to update an IPv6 lease is:
        "iaid": 7654321,
        "hostname": "newhostname.example.org",
        "subnet-id": 66,
-       "force-create": false
+       "force-create": false,
+       "update-stats": false
      }
    }
 

@@ -45,6 +45,9 @@ public:
     /// the remote server to create the lease if it doesn't exist in its
     /// lease database.
     ///
+    /// If the lease needs to update statistics (@ref Lease::update_stats_ is
+    /// set to true), it adds "update-stats" parameter to the lease information.
+    ///
     /// @param lease4 Reference to a lease for which the command should
     /// be created.
     ///
@@ -96,6 +99,9 @@ public:
     /// It adds "force-create" parameter to the lease information to force
     /// the remote server to create the lease if it doesn't exist in its
     /// lease database.
+    ///
+    /// If the lease needs to update statistics (@ref Lease::update_stats_ is
+    /// set to true), it adds "update-stats" parameter to the lease information.
     ///
     /// @param lease6 Reference to a lease for which the command should
     /// be created.
