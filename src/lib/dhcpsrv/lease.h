@@ -169,12 +169,6 @@ struct Lease : public isc::data::UserContext, public isc::data::CfgToElement {
     /// belonging to this class.
     uint32_t state_;
 
-    /// @brief Flag used to differentiate between leases that need to update
-    /// stats on HA pair (expired and reused and do count as a new assignment)
-    /// and leases that do not need to update stats on HA pair (did not expire
-    /// and do not count as a new assignment).
-    bool update_stats_;
-
     /// @brief Convert Lease to Printable Form
     ///
     /// @return String form of the lease
@@ -232,6 +226,12 @@ struct Lease : public isc::data::UserContext, public isc::data::CfgToElement {
     ///
     /// @param probation_period lease lifetime will be set to this value
     virtual void decline(uint32_t probation_period) = 0;
+
+    /// @brief Check lease for expiration or reclaimed state or declined state.
+    ///
+    /// @return true if the lease is expired or in reclaimed state or in
+    /// declined state, false otherwise.
+    bool checkUpdateStats() const;
 
     /// Avoid a clang spurious error
     using isc::data::CfgToElement::toElement;

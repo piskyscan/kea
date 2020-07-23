@@ -31,14 +31,11 @@ namespace {
 /// of 0b:0b:0b:0b:0b:0b.
 ///
 /// @return Pointer to the created lease.
-Lease4Ptr createLease4(bool update_stats = false) {
+Lease4Ptr createLease4() {
     HWAddrPtr hwaddr(new HWAddr(std::vector<uint8_t>(6, 11), HTYPE_ETHER));
     Lease4Ptr lease4(new Lease4(IOAddress("192.1.2.3"), hwaddr,
                                 static_cast<const uint8_t*>(0), 0,
                                 60, 0, 1));
-    if (update_stats) {
-        lease4->update_stats_ = true;
-    }
     return (lease4);
 }
 
@@ -48,13 +45,10 @@ Lease4Ptr createLease4(bool update_stats = false) {
 /// DUID of 02:02:02:02:02:02:02:02.
 ///
 /// @return Pointer to the created lease.
-Lease6Ptr createLease6(bool update_stats = false) {
+Lease6Ptr createLease6() {
     DuidPtr duid(new DUID(std::vector<uint8_t>(8, 02)));
     Lease6Ptr lease6(new Lease6(Lease::TYPE_NA, IOAddress("2001:db8:1::cafe"),
                                 duid, 1234, 50, 60, 1));
-    if (update_stats) {
-        lease6->update_stats_ = true;
-    }
     return (lease6);
 }
 
@@ -195,22 +189,6 @@ TEST(CommandCreatorTest, createLease4Update) {
     EXPECT_EQ(lease_as_json->str(), arguments->str());
 }
 
-// This test verifies that the command generated for the lease update with
-// "update-stats" is correct.
-TEST(CommandCreatorTest, createLease4UpdateWithStats) {
-    ConstElementPtr command = CommandCreator::createLease4Update(*createLease4(true));
-    ConstElementPtr arguments;
-    ASSERT_NO_FATAL_FAILURE(testCommandBasics(command, "lease4-update", "dhcp4",
-                                              arguments));
-    ElementPtr lease_as_json = leaseAsJson(createLease4());
-    // The lease update must contain the "force-create" parameter indicating that
-    // the lease must be created if it doesn't exist.
-    lease_as_json->set("force-create", Element::create(true));
-    // The lease update must contain the "update-stats" parameter.
-    lease_as_json->set("update-stats", Element::create(true));
-    EXPECT_EQ(lease_as_json->str(), arguments->str());
-}
-
 // This test verifies that the command generated for the lease deletion
 // is correct.
 TEST(CommandCreatorTest, createLease4Delete) {
@@ -302,8 +280,6 @@ TEST(CommandCreatorTest, createDHCPEnable6) {
     ASSERT_NO_FATAL_FAILURE(testCommandBasics(command, "dhcp-enable", "dhcp6"));
 }
 
-// This test verifies that the command generated for the lease update
-// is correct.
 TEST(CommandCreatorTest, createLease6Update) {
     ConstElementPtr command = CommandCreator::createLease6Update(*createLease6());
     ConstElementPtr arguments;
@@ -313,22 +289,6 @@ TEST(CommandCreatorTest, createLease6Update) {
     // The lease update must contain the "force-create" parameter indicating that
     // the lease must be created if it doesn't exist.
     lease_as_json->set("force-create", Element::create(true));
-    EXPECT_EQ(lease_as_json->str(), arguments->str());
-}
-
-// This test verifies that the command generated for the lease update with
-// "update-stats" is correct.
-TEST(CommandCreatorTest, createLease6UpdateWithStats) {
-    ConstElementPtr command = CommandCreator::createLease6Update(*createLease6(true));
-    ConstElementPtr arguments;
-    ASSERT_NO_FATAL_FAILURE(testCommandBasics(command, "lease6-update", "dhcp6",
-                                              arguments));
-    ElementPtr lease_as_json = leaseAsJson(createLease6());
-    // The lease update must contain the "force-create" parameter indicating that
-    // the lease must be created if it doesn't exist.
-    lease_as_json->set("force-create", Element::create(true));
-    // The lease update must contain the "update-stats" parameter.
-    lease_as_json->set("update-stats", Element::create(true));
     EXPECT_EQ(lease_as_json->str(), arguments->str());
 }
 

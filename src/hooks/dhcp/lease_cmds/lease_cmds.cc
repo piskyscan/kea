@@ -1203,9 +1203,20 @@ namespace { // anonymous namespace.
 
 void updateOrAdd(Lease6Ptr lease) {
     try {
+        Lease6Ptr lease6 =
+            LeaseMgrFactory::instance().getLease6(lease->type_, lease->addr_);
+        bool update = lease6->checkUpdateStats();
         // Try to update.
         LeaseMgrFactory::instance().updateLease6(lease);
-        if (lease->update_stats_) {
+        if (lease6->subnet_id_ != lease->subnet_id_) {
+            StatsMgr::instance().addValue(
+                StatsMgr::generateName("subnet", lease6->subnet_id_,
+                                       lease->type_ == Lease::TYPE_NA ?
+                                       "assigned-nas" : "assigned-pds"),
+                int64_t(-1));
+            update = true;
+        }
+        if (update) {
             StatsMgr::instance().addValue(
                 StatsMgr::generateName("subnet", lease->subnet_id_,
                                        lease->type_ == Lease::TYPE_NA ?
@@ -1508,7 +1519,8 @@ LeaseCmdsImpl::lease6DelHandler(CalloutHandle& handle) {
 namespace { // anonymous namepace.
 
 bool addOrUpdate4(Lease4Ptr lease, bool force_create) {
-    if (force_create && !LeaseMgrFactory::instance().getLease4(lease->addr_)) {
+    Lease4Ptr lease4 = LeaseMgrFactory::instance().getLease4(lease->addr_);
+    if (force_create && !lease4) {
         if (!LeaseMgrFactory::instance().addLease(lease)) {
             isc_throw(db::DuplicateEntry,
                       "lost race between calls to get and add");
@@ -1519,8 +1531,16 @@ bool addOrUpdate4(Lease4Ptr lease, bool force_create) {
             int64_t(1));
         return (true);
     }
+    bool update = lease4->checkUpdateStats();
     LeaseMgrFactory::instance().updateLease4(lease);
-    if (lease->update_stats_) {
+    if (lease4->subnet_id_ != lease->subnet_id_) {
+        StatsMgr::instance().addValue(
+            StatsMgr::generateName("subnet", lease4->subnet_id_,
+                                   "assigned-addresses"),
+            int64_t(-1));
+        update = true;
+    }
+    if (update) {
         StatsMgr::instance().addValue(
             StatsMgr::generateName("subnet", lease->subnet_id_,
                                    "assigned-addresses"),
@@ -1587,8 +1607,9 @@ LeaseCmdsImpl::lease4UpdateHandler(CalloutHandle& handle) {
 namespace { // anonymous namepace.
 
 bool addOrUpdate6(Lease6Ptr lease, bool force_create) {
-    if (force_create &&
-        !LeaseMgrFactory::instance().getLease6(lease->type_, lease->addr_)) {
+    Lease6Ptr lease6 =
+        LeaseMgrFactory::instance().getLease6(lease->type_, lease->addr_);
+    if (force_create && !lease6) {
         if (!LeaseMgrFactory::instance().addLease(lease)) {
             isc_throw(db::DuplicateEntry,
                       "lost race between calls to get and add");
@@ -1600,8 +1621,17 @@ bool addOrUpdate6(Lease6Ptr lease, bool force_create) {
             int64_t(1));
         return (true);
     }
+    bool update = lease6->checkUpdateStats();
     LeaseMgrFactory::instance().updateLease6(lease);
-    if (lease->update_stats_) {
+    if (lease6->subnet_id_ != lease->subnet_id_) {
+        StatsMgr::instance().addValue(
+            StatsMgr::generateName("subnet", lease6->subnet_id_,
+                                   lease->type_ == Lease::TYPE_NA ?
+                                   "assigned-nas" : "assigned-pds"),
+            int64_t(-1));
+        update = true;
+    }
+    if (update) {
         StatsMgr::instance().addValue(
             StatsMgr::generateName("subnet", lease->subnet_id_,
                                    lease->type_ == Lease::TYPE_NA ?

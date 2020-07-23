@@ -1072,7 +1072,6 @@ AllocEngine::allocateUnreservedLeases6(ClientContext6& ctx) {
                     continue;
                 }
 
-
                 // there's no existing lease for selected candidate, so it is
                 // free. Let's allocate it.
 
@@ -1199,13 +1198,11 @@ AllocEngine::allocateReservedLeases6(ClientContext6& ctx,
 
                 // If this is a real allocation, we may need to extend the lease
                 // lifetime.
-                if (!ctx.fake_allocation_) {
-                    extendLifetime(*lease);
+                if (!ctx.fake_allocation_ && conditionalExtendLifetime(*lease)) {
 
                     LeaseMgrFactory::instance().updateLease6(lease);
 
                     if (expired) {
-                        lease->update_stats_ = true;
 
                         StatsMgr::instance().addValue(
                             StatsMgr::generateName("subnet", ctx.subnet_->getID(),
@@ -1364,13 +1361,11 @@ AllocEngine::allocateGlobalReservedLeases6(ClientContext6& ctx,
 
             // If this is a real allocation, we may need to extend the lease
             // lifetime.
-            if (!ctx.fake_allocation_) {
-                extendLifetime(*lease);
+            if (!ctx.fake_allocation_ && conditionalExtendLifetime(*lease)) {
 
                 LeaseMgrFactory::instance().updateLease6(lease);
 
                 if (expired) {
-                    lease->update_stats_ = true;
 
                     StatsMgr::instance().addValue(
                         StatsMgr::generateName("subnet", ctx.subnet_->getID(),
@@ -1800,8 +1795,6 @@ AllocEngine::reuseExpiredLease(Lease6Ptr& expired, ClientContext6& ctx,
         // for REQUEST we do update the lease
         LeaseMgrFactory::instance().updateLease6(expired);
 
-        expired->update_stats_ = true;
-
         // If the lease is in the current subnet we need to account
         // for the re-assignment of The lease.
         if (ctx.subnet_->inPool(ctx.currentIA().type_, expired->addr_)) {
@@ -2131,7 +2124,7 @@ AllocEngine::extendLease6(ClientContext6& ctx, Lease6Ptr lease) {
     lease->state_ = Lease::STATE_DEFAULT;
 
     // Extend lease lifetime if it is time to extend it.
-    extendLifetime(*lease);
+    conditionalExtendLifetime(*lease);
 
     LOG_DEBUG(alloc_engine_logger, ALLOC_ENGINE_DBG_TRACE_DETAIL_DATA,
               ALLOC_ENGINE_V6_EXTEND_NEW_LEASE_DATA)
@@ -2206,7 +2199,6 @@ AllocEngine::extendLease6(ClientContext6& ctx, Lease6Ptr lease) {
         LeaseMgrFactory::instance().updateLease6(lease);
 
         if (update_stats) {
-            lease->update_stats_ = true;
 
             StatsMgr::instance().addValue(
                 StatsMgr::generateName("subnet", ctx.subnet_->getID(),
@@ -2262,13 +2254,15 @@ AllocEngine::updateLeaseData(ClientContext6& ctx, const Lease6Collection& leases
                 }
             }
 
-            extendLifetime(*lease);
-            ctx.currentIA().changed_leases_.push_back(*lease_it);
+            bool fqdn_changed = ((lease->type_ != Lease::TYPE_PD) &&
+                                 !(lease->hasIdenticalFqdn(**lease_it)));
 
-            LeaseMgrFactory::instance().updateLease6(lease);
+            if (conditionalExtendLifetime(*lease) || fqdn_changed) {
+                ctx.currentIA().changed_leases_.push_back(*lease_it);
+                LeaseMgrFactory::instance().updateLease6(lease);
+            }
 
             if (update_stats) {
-                lease->update_stats_ = true;
 
                 StatsMgr::instance().addValue(
                     StatsMgr::generateName("subnet", lease->subnet_id_,
@@ -3889,8 +3883,7 @@ AllocEngine::renewLease4(const Lease4Ptr& lease,
         LeaseMgrFactory::instance().updateLease4(lease);
 
         // We need to account for the re-assignment of The lease.
-        if (ctx.old_lease_->expired() || ctx.old_lease_->state_ == Lease::STATE_EXPIRED_RECLAIMED) {
-            lease->update_stats_ = true;
+        if (ctx.old_lease_->checkUpdateStats()) {
 
             StatsMgr::instance().addValue(
                 StatsMgr::generateName("subnet", ctx.subnet_->getID(),
@@ -3995,8 +3988,6 @@ AllocEngine::reuseExpiredLease4(Lease4Ptr& expired,
     if (!ctx.fake_allocation_) {
         // for REQUEST we do update the lease
         LeaseMgrFactory::instance().updateLease4(expired);
-
-        expired->update_stats_ = true;
 
         // We need to account for the re-assignment of The lease.
         StatsMgr::instance().addValue(
@@ -4312,9 +4303,10 @@ AllocEngine::updateLease6ExtendedInfo(const Lease6Ptr& lease,
     lease->setContext(user_context);
 }
 
-void
-AllocEngine::extendLifetime(Lease& lease) const {
+bool
+AllocEngine::conditionalExtendLifetime(Lease& lease) const {
     lease.cltt_ = time(NULL);
+    return (true);
 }
 
 }  // namespace dhcp
