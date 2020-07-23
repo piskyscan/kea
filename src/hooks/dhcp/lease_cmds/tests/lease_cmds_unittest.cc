@@ -301,7 +301,8 @@ public:
     ///
     /// @param v6 true = v6, false = v4
     /// @param insert_lease governs whether a lease should be pre-inserted
-    void initLeaseMgr(bool v6, bool insert_lease) {
+    /// @param expired governs whether a lease should be expired
+    void initLeaseMgr(bool v6, bool insert_lease, bool expired = false) {
 
         LeaseMgrFactory::destroy();
         std::ostringstream s;
@@ -330,10 +331,10 @@ public:
 
         if (insert_lease) {
             if (v6) {
-                lmptr_->addLease(createLease6("2001:db8:1::1", 66, 0x42));
-                lmptr_->addLease(createLease6("2001:db8:1::2", 66, 0x56));
-                lmptr_->addLease(createLease6("2001:db8:2::1", 99, 0x42));
-                lmptr_->addLease(createLease6("2001:db8:2::2", 99, 0x56));
+                lmptr_->addLease(createLease6("2001:db8:1::1", 66, 0x42, expired));
+                lmptr_->addLease(createLease6("2001:db8:1::2", 66, 0x56, expired));
+                lmptr_->addLease(createLease6("2001:db8:2::1", 99, 0x42, expired));
+                lmptr_->addLease(createLease6("2001:db8:2::2", 99, 0x56, expired));
                 StatsMgr::instance().setValue(
                     StatsMgr::generateName("subnet", 66, "assigned-nas" ),
                     int64_t(2));
@@ -341,10 +342,10 @@ public:
                     StatsMgr::generateName("subnet", 99, "assigned-nas" ),
                     int64_t(2));
             } else {
-                lmptr_->addLease(createLease4("192.0.2.1", 44, 0x08, 0x42));
-                lmptr_->addLease(createLease4("192.0.2.2", 44, 0x09, 0x56));
-                lmptr_->addLease(createLease4("192.0.3.1", 88, 0x08, 0x42));
-                lmptr_->addLease(createLease4("192.0.3.2", 88, 0x09, 0x56));
+                lmptr_->addLease(createLease4("192.0.2.1", 44, 0x08, 0x42, expired));
+                lmptr_->addLease(createLease4("192.0.2.2", 44, 0x09, 0x56, expired));
+                lmptr_->addLease(createLease4("192.0.3.1", 88, 0x08, 0x42, expired));
+                lmptr_->addLease(createLease4("192.0.3.2", 88, 0x09, 0x56, expired));
                 StatsMgr::instance().setValue(
                     StatsMgr::generateName("subnet", 44, "assigned-addresses"),
                     int64_t(2));
@@ -366,10 +367,13 @@ public:
     /// it 6 times.
     /// @param client_id_pattern value to be used for generating client identifier by
     /// repeating it 8 times.
+    /// @param expired controls weather the lease should be expired.
     /// @return Returns the lease created
-    Lease4Ptr createLease4(const std::string& ip_address, const SubnetID& subnet_id,
+    Lease4Ptr createLease4(const std::string& ip_address,
+                           const SubnetID& subnet_id,
                            const uint8_t hw_address_pattern,
-                           const uint8_t client_id_pattern) {
+                           const uint8_t client_id_pattern,
+                           bool expired = false) {
         Lease4Ptr lease(new Lease4());
 
         lease->addr_ = IOAddress(ip_address);
@@ -379,8 +383,13 @@ public:
         lease->client_id_ = ClientIdPtr(new ClientId(vector<uint8_t>(8, client_id_pattern)));
         // Purposely using high cltt and valid lifetime to test that
         // expiration time is cast properly.
-        lease->valid_lft_ = HIGH_VALID_LIFETIME; // Very high valid lifetime
-        lease->cltt_ = DEC_2030_TIME; // December 11th 2030
+        if (expired) {
+            lease->cltt_ = 0;
+            lease->valid_lft_ = 60;
+        } else {
+            lease->cltt_ = DEC_2030_TIME; // December 11th 2030
+            lease->valid_lft_ = HIGH_VALID_LIFETIME; // Very high valid lifetime
+        }
         lease->subnet_id_ = subnet_id;
         lease->fqdn_fwd_ = false;
         lease->fqdn_rev_ = true;
@@ -399,9 +408,12 @@ public:
     /// @param subnet_id subnet identifier
     /// @param duid_address_pattern value to be used for generating DUID by
     /// repeating it 8 times
+    /// @param expired controls weather the lease should be expired.
     /// @return Returns the lease created
-    Lease6Ptr createLease6(const std::string& ip_address, const SubnetID& subnet_id,
-                           const uint8_t duid_pattern) {
+    Lease6Ptr createLease6(const std::string& ip_address,
+                           const SubnetID& subnet_id,
+                           const uint8_t duid_pattern,
+                           bool expired = false) {
         Lease6Ptr lease(new Lease6());
 
         lease->addr_ = IOAddress(ip_address);
@@ -412,8 +424,13 @@ public:
         lease->preferred_lft_ = 1800;
         // Purposely using high cltt and valid lifetime to test that
         // expiration time is cast properly.
-        lease->valid_lft_ = HIGH_VALID_LIFETIME; // Very high valid lifetime
-        lease->cltt_ = DEC_2030_TIME; // December 11th 2030
+        if (expired) {
+            lease->cltt_ = 0;
+            lease->valid_lft_ = 60;
+        } else {
+            lease->cltt_ = DEC_2030_TIME; // December 11th 2030
+            lease->valid_lft_ = HIGH_VALID_LIFETIME; // Very high valid lifetime
+        }
         lease->subnet_id_ = subnet_id;
         lease->fqdn_fwd_ = false;
         lease->fqdn_rev_ = true;
@@ -3779,7 +3796,7 @@ TEST_F(LeaseCmdsTest, Lease4Update) {
 TEST_F(LeaseCmdsTest, Lease4UpdateWithStats) {
 
     // Initialize lease manager (false = v4, true = add leases)
-    initLeaseMgr(false, true);
+    initLeaseMgr(false, true, true);
 
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
@@ -3798,7 +3815,6 @@ TEST_F(LeaseCmdsTest, Lease4UpdateWithStats) {
         "        \"subnet-id\": 44,\n"
         "        \"ip-address\": \"192.0.2.1\",\n"
         "        \"hw-address\": \"1a:1b:1c:1d:1e:1f\",\n"
-        "        \"update-stats\": true,\n"
         "        \"hostname\": \"newhostname.example.org\""
         "    }\n"
         "}";
@@ -3873,7 +3889,7 @@ TEST_F(LeaseCmdsTest, Lease4UpdateNoSubnetId) {
 TEST_F(LeaseCmdsTest, Lease4UpdateNoSubnetIdWithStats) {
 
     // Initialize lease manager (false = v4, true = add leases)
-    initLeaseMgr(false, true);
+    initLeaseMgr(false, true, true);
 
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
@@ -3891,7 +3907,6 @@ TEST_F(LeaseCmdsTest, Lease4UpdateNoSubnetIdWithStats) {
         "    \"arguments\": {"
         "        \"ip-address\": \"192.0.2.1\",\n"
         "        \"hw-address\": \"1a:1b:1c:1d:1e:1f\",\n"
-        "        \"update-stats\": true,\n"
         "        \"hostname\": \"newhostname.example.org\""
         "    }\n"
         "}";
@@ -4311,7 +4326,7 @@ TEST_F(LeaseCmdsTest, Lease6Update) {
 TEST_F(LeaseCmdsTest, Lease6UpdateWithStats) {
 
     // Initialize lease manager (true = v6, true = add leases)
-    initLeaseMgr(true, true);
+    initLeaseMgr(true, true, true);
 
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
@@ -4337,7 +4352,6 @@ TEST_F(LeaseCmdsTest, Lease6UpdateWithStats) {
         "        \"ip-address\": \"2001:db8:1::1\",\n"
         "        \"iaid\": 7654321,\n"
         "        \"duid\": \"88:88:88:88:88:88:88:88\",\n"
-        "        \"update-stats\": true,\n"
         "        \"hostname\": \"newhostname.example.org\""
         "    }\n"
         "}";
@@ -4436,7 +4450,7 @@ TEST_F(LeaseCmdsTest, Lease6UpdateNoSubnetId) {
 TEST_F(LeaseCmdsTest, Lease6UpdateNoSubnetIdWithStats) {
 
     // Initialize lease manager (true = v6, true = add leases)
-    initLeaseMgr(true, true);
+    initLeaseMgr(true, true, true);
 
     // Check that the lease manager pointer is there.
     ASSERT_TRUE(lmptr_);
@@ -4461,7 +4475,6 @@ TEST_F(LeaseCmdsTest, Lease6UpdateNoSubnetIdWithStats) {
         "        \"ip-address\": \"2001:db8:1::1\",\n"
         "        \"iaid\": 7654321,\n"
         "        \"duid\": \"88:88:88:88:88:88:88:88\",\n"
-        "        \"update-stats\": true,\n"
         "        \"hostname\": \"newhostname.example.org\""
         "    }\n"
         "}";
