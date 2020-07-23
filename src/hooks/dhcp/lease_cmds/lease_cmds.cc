@@ -1205,9 +1205,9 @@ void updateOrAdd(Lease6Ptr lease) {
     try {
         Lease6Ptr lease6 =
             LeaseMgrFactory::instance().getLease6(lease->type_, lease->addr_);
-        bool update = lease6->checkUpdateStats();
         // Try to update.
         LeaseMgrFactory::instance().updateLease6(lease);
+        bool update = lease6->checkUpdateStats();
         if (lease6->subnet_id_ != lease->subnet_id_) {
             StatsMgr::instance().addValue(
                 StatsMgr::generateName("subnet", lease6->subnet_id_,
@@ -1531,8 +1531,8 @@ bool addOrUpdate4(Lease4Ptr lease, bool force_create) {
             int64_t(1));
         return (true);
     }
-    bool update = lease4->checkUpdateStats();
     LeaseMgrFactory::instance().updateLease4(lease);
+    bool update = lease4->checkUpdateStats();
     if (lease4->subnet_id_ != lease->subnet_id_) {
         StatsMgr::instance().addValue(
             StatsMgr::generateName("subnet", lease4->subnet_id_,
@@ -1621,8 +1621,8 @@ bool addOrUpdate6(Lease6Ptr lease, bool force_create) {
             int64_t(1));
         return (true);
     }
-    bool update = lease6->checkUpdateStats();
     LeaseMgrFactory::instance().updateLease6(lease);
+    bool update = lease6->checkUpdateStats();
     if (lease6->subnet_id_ != lease->subnet_id_) {
         StatsMgr::instance().addValue(
             StatsMgr::generateName("subnet", lease6->subnet_id_,
