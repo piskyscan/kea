@@ -132,7 +132,7 @@ Lease::hasIdenticalFqdn(const Lease& other) const {
 
 bool
 Lease::checkUpdateStats() const {
-    return (expired() || stateExpiredReclaimed() || stateDeclined());
+    return (expired() || stateExpiredReclaimed());
 }
 
 void

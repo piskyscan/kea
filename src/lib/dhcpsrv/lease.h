@@ -227,10 +227,10 @@ struct Lease : public isc::data::UserContext, public isc::data::CfgToElement {
     /// @param probation_period lease lifetime will be set to this value
     virtual void decline(uint32_t probation_period) = 0;
 
-    /// @brief Check lease for expiration or reclaimed state or declined state.
+    /// @brief Check lease for expiration or reclaimed state.
     ///
-    /// @return true if the lease is expired or in reclaimed state or in
-    /// declined state, false otherwise.
+    /// @return true if the lease is expired or in reclaimed state, false
+    /// otherwise.
     bool checkUpdateStats() const;
 
     /// Avoid a clang spurious error
