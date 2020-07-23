@@ -6827,8 +6827,11 @@ TEST_F(LeaseCmdsTest, lease6ResendDdnsEnabled) {
 // Checks that lease4-del does (or does not) generate an NCR to remove
 // DNS for a given lease based on lease content when DDNS updates are enabled.
 TEST_F(LeaseCmdsTest, lease4DnsRemoveD2Enabled) {
-    // Initialize lease manager (false = v4, true = leases)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(false, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Structure detailing a test scenario.
     struct Scenario {
@@ -6947,8 +6950,12 @@ TEST_F(LeaseCmdsTest, lease4DnsRemoveD2Enabled) {
 // DNS for a given lease based on lease content when DDNS
 // updates are disabled.
 TEST_F(LeaseCmdsTest, lease4DnsRemoveD2Disabled) {
-    // Initialize lease manager (false = v4, true = leases)
+    // Initialize lease manager (false = v4, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
     disableD2();
 
     // Delete for valid, existing lease.
@@ -6986,8 +6993,11 @@ TEST_F(LeaseCmdsTest, lease4DnsRemoveD2Disabled) {
 // Checks that lease6-del does (or does not) generate an NCR to remove
 // DNS for a given lease based on lease content when DDNS updates are enabled.
 TEST_F(LeaseCmdsTest, lease6DnsRemoveD2Enabled) {
-    // Initialize lease manager (true = v6, false = no leases)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
 
     // Structure detailing a test scenario.
     struct Scenario {
@@ -7106,8 +7116,12 @@ TEST_F(LeaseCmdsTest, lease6DnsRemoveD2Enabled) {
 // DNS for a given lease based on lease content when DDNS
 // updates are disabled.
 TEST_F(LeaseCmdsTest, lease6DnsRemoveD2Disabled) {
-    // Initialize lease manager (true = v6, true = leases)
+    // Initialize lease manager (true = v6, true = add leases)
     initLeaseMgr(true, true);
+
+    // Check that the lease manager pointer is there.
+    ASSERT_TRUE(lmptr_);
+
     disableD2();
 
     // Delete for valid, existing lease.

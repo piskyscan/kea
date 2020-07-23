@@ -114,7 +114,7 @@ public:
         uint32_t iaid_;
 
         /// @brief Indicates whether or not DNS should be updated.
-        bool updateDDNS;
+        bool updateDDNS_;
 
         /// @brief Default constructor.
         Parameters()
@@ -503,7 +503,7 @@ LeaseCmdsImpl::getParameters(bool v6, const ConstElementPtr& params) {
         if (tmp->getType() != Element::boolean) {
             isc_throw(BadValue, "'update-ddns' is not a boolean");
         } else {
-            x.updateDDNS = tmp->boolValue();
+            x.updateDDNS_ = tmp->boolValue();
         }
     }
 
@@ -1187,7 +1187,7 @@ LeaseCmdsImpl::lease4DelHandler(CalloutHandle& handle) {
         }
 
         // Queue an NCR to remove DNS if configured and the lease has it.
-        if (p.updateDDNS) {
+        if (p.updateDDNS_) {
             queueNCR(CHG_REMOVE, lease4);
         }
 
@@ -1504,7 +1504,7 @@ LeaseCmdsImpl::lease6DelHandler(CalloutHandle& handle) {
         }
 
         // Queue an NCR to remove DNS if configured and the lease has it.
-        if (p.updateDDNS) {
+        if (p.updateDDNS_) {
             queueNCR(CHG_REMOVE, lease6);
         }
 
