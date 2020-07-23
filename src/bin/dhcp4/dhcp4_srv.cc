@@ -3321,10 +3321,6 @@ Dhcpv4Srv::declineLease(const Lease4Ptr& lease, const Pkt4Ptr& decline,
         return;
     }
 
-    StatsMgr::instance().addValue(
-        StatsMgr::generateName("subnet", lease->subnet_id_, "assigned-addresses"),
-        static_cast<int64_t>(-1));
-
     // Remove existing DNS entries for the lease, if any.
     // queueNCR will do the necessary checks and will skip the update, if not needed.
     queueNCR(CHG_REMOVE, old_values);

@@ -3583,10 +3583,6 @@ Dhcpv6Srv::declineLease(const Pkt6Ptr& decline, const Lease6Ptr lease,
         return (false);
     }
 
-    StatsMgr::instance().addValue(
-        StatsMgr::generateName("subnet", lease->subnet_id_, "assigned-nas"),
-        static_cast<int64_t>(-1));
-
     // Check if a lease has flags indicating that the FQDN update has
     // been performed. If so, create NameChangeRequest which removes
     // the entries. This method does all necessary checks.
