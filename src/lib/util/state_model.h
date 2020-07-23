@@ -33,6 +33,9 @@ typedef LabeledValue Event;
 /// @brief Define Event pointer.
 typedef LabeledValuePtr EventPtr;
 
+/// @brief Event unique set or dictionary.
+typedef LabeledValueSet<EventPtr> EventSet;
+
 /// @brief Defines a pointer to an instance method for handling a state.
 typedef boost::function<void()> StateHandler;
 
@@ -115,7 +118,7 @@ typedef boost::shared_ptr<State> StatePtr;
 /// This class provides the means to construct and access a unique set of
 /// states.  This provide the ability to validate state values, look up their
 /// text labels, and their handlers.
-class StateSet : public LabeledValueSet {
+class StateSet : public LabeledValueSet<StatePtr> {
 public:
     /// @brief Constructor
     StateSet();
@@ -809,7 +812,7 @@ private:
     std::string getPrevContextStrInternal() const;
 
     /// @brief The dictionary of valid events.
-    LabeledValueSet events_;
+    EventSet events_;
 
     /// @brief The dictionary of valid states.
     StateSet states_;

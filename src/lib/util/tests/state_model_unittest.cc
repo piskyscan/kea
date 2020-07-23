@@ -352,7 +352,7 @@ TEST_F(StateModelTest, eventDictionary) {
 
     // Verify that undefined events are handled correctly.
     EXPECT_THROW(getEvent(9999), StateModelError);
-    EXPECT_EQ(LabeledValueSet::UNDEFINED_LABEL, getEventLabel(9999));
+    EXPECT_EQ(EventSet::UNDEFINED_LABEL, getEventLabel(9999));
 }
 
 /// @brief General testing of event context accessors.
@@ -448,7 +448,7 @@ TEST_F(StateModelTest, stateDictionary) {
 
     // Verify that undefined states are handled correctly.
     EXPECT_THROW(getState(9999), StateModelError);
-    EXPECT_EQ(LabeledValueSet::UNDEFINED_LABEL, getStateLabel(9999));
+    EXPECT_EQ(StateSet::UNDEFINED_LABEL, getStateLabel(9999));
 }
 
 /// @brief General testing of state context accessors.

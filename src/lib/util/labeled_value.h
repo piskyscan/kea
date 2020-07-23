@@ -1,4 +1,4 @@
-// Copyright (C) 2013-2016 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2013-2020 Internet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -91,57 +91,53 @@ std::ostream& operator<<(std::ostream& os, const LabeledValue& vlp);
 /// @brief Defines a shared pointer to a LabeledValue instance.
 typedef boost::shared_ptr<LabeledValue> LabeledValuePtr;
 
-/// @brief Defines a map of pointers to LabeledValues keyed by value.
-typedef std::map<unsigned int, LabeledValuePtr> LabeledValueMap;
-
-
-/// @brief Implements a set of unique LabeledValues.
+/// @brief Implements a set of unique LabeledValues derived objects.
 ///
-/// This class is intended to function as a dictionary of numeric values
-/// and the labels associated with them.  It is essentially a thin wrapper
-/// around a std::map of LabeledValues, keyed by their values.  This is handy
-/// for defining a set of "valid" constants while conveniently associating a
-/// text label with each value.
+/// This class is intended to function as a dictionary of numeric
+/// values and the labels associated with them.  It is essentially a
+/// thin wrapper around a map of LabeledValue derived objects, keyed
+/// by their values.  This is handy for defining a set of "valid"
+/// constants while conveniently associating a text label with each
+/// value.
 ///
-/// This class offers two variants of an add method for adding entries to the
-/// set, and accessors for finding an entry or an entry's label by value.
+/// This class offers an add method for adding entries to the set, and
+/// accessors for finding an entry or an entry's label by value.
 /// Note that the add methods may throw but all accessors are exception safe.
 /// It is up to the caller to determine when and if an undefined value is
 /// exception-worthy.
 ///
-/// More interestingly, a derivation of this class can be used to "define"
-/// valid instances of derivations of LabeledValue.
+/// @tparam SubClassPtr Type of pointers to LabeledValue derived objects.
+template <typename SubClassPtr>
 class LabeledValueSet {
 public:
     /// @brief Defines a text label returned by when value is not found.
     static const char* UNDEFINED_LABEL;
 
-    /// @brief Constructor
-    ///
-    /// Constructs an empty set.
-    LabeledValueSet();
-
     /// @brief Destructor
     ///
     /// Destructor is virtual to permit derivations.
-    virtual ~LabeledValueSet();
+    virtual ~LabeledValueSet() { }
 
     /// @brief Adds the given entry to the set
     ///
     /// @param entry is the entry to add.
     ///
-    /// @throw LabeledValuePtr if the entry is null or the set already
+    /// @throw LabeledValueError if the entry is null or the set already
     /// contains an entry with the same value.
-    void add(LabeledValuePtr entry);
+    void add(SubClassPtr entry) {
+        if (!entry) {
+            isc_throw(LabeledValueError, "cannot add an null entry to set");
+        }
 
-    /// @brief Adds an entry to the set for the given value and label
-    ///
-    /// @param value the numeric constant value to be labeled.
-    /// @param label the text label to associate to this value.
-    ///
-    /// @throw LabeledValuePtr if the label is empty, or if the set
-    /// already contains an entry with the same value.
-    void add(const int value, const std::string& label);
+        const int value = entry->getValue();
+        if (isDefined(value)) {
+            isc_throw(LabeledValueError,
+                      "value: " << value << " is already defined as: "
+                      << getLabel(value));
+        }
+
+        map_[value] = entry;
+    }
 
     /// @brief Fetches a pointer to the entry associated with value
     ///
@@ -149,14 +145,26 @@ public:
     ///
     /// @return A pointer to the entry if the entry was found otherwise the
     /// pointer is empty.
-    const LabeledValuePtr& get(int value);
+    const SubClassPtr& get(int value) {
+        static SubClassPtr undefined;
+        auto it = map_.find(value);
+        if (it != map_.end()) {
+            return ((*it).second);
+        }
+
+        // Return an empty pointer when not found.
+        return (undefined);
+    }
 
     /// @brief Tests if the set contains an entry for the given value.
     ///
     /// @param value is the value of the entry to test.
     ///
     /// @return True if an entry for value exists in the set, false if not.
-    bool isDefined(const int value) const;
+    bool isDefined(const int value) const {
+        auto const it = map_.find(value);
+        return (it != map_.end());
+    }
 
     /// @brief Fetches the label for the given value
     ///
@@ -164,12 +172,23 @@ public:
     ///
     /// @return the label of the value if defined, otherwise it returns
     /// UNDEFINED_LABEL.
-    std::string getLabel(const int value) const;
+    std::string getLabel(const int value) const {
+        auto const it = map_.find(value);
+        if (it != map_.end()) {
+            const SubClassPtr& ptr = (*it).second;
+            return (ptr->getLabel());
+        }
+
+        return (std::string(UNDEFINED_LABEL));
+    }
 
 private:
     /// @brief The map of labeled values.
-    LabeledValueMap map_;
+    std::map<unsigned int, SubClassPtr> map_;
 };
+
+template <typename SubClassPtr>
+const char* LabeledValueSet<SubClassPtr>::UNDEFINED_LABEL = "UNDEFINED";
 
 } // namespace isc::util
 } // namespace isc

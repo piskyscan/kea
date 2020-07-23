@@ -1,4 +1,4 @@
-// Copyright (C) 2013-2016 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2013-2020 Internet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -51,9 +51,28 @@ TEST(LabeledValue, operators) {
     EXPECT_FALSE(*lvp2 < *lvp1);
 }
 
+/// @brief LabeledValueSet derivation for tests.
+class TestLabeledValueSet : public LabeledValueSet<LabeledValuePtr> {
+public:
+
+    /// @brief Inherits the LabeledValueSet add to overload it.
+    using LabeledValueSet::add;
+
+    /// @brief Adds an entry to the set for the given value and label
+    ///
+    /// @param value the numeric constant value to be labeled.
+    /// @param label the text label to associate to this value.
+    ///
+    /// @throw LabeledValuePtr if the label is empty, or if the set
+    /// already contains an entry with the same value.
+    void add(const int value, const std::string& label) {
+        add(LabeledValuePtr(new LabeledValue(value, label)));
+    }
+};
+
 /// @brief Verifies the default constructor for LabeledValueSet.
 TEST(LabeledValueSet, construction) {
-    ASSERT_NO_THROW (LabeledValueSet());
+    ASSERT_NO_THROW (TestLabeledValueSet());
 }
 
 /// @brief Verifies the basic operations of a LabeledValueSet.
@@ -61,7 +80,7 @@ TEST(LabeledValueSet, construction) {
 /// look them up without issue.
 TEST(LabeledValueSet, basicOperation) {
     const char* labels[] = {"Zero", "One", "Two", "Three" };
-    LabeledValueSet lvset;
+    TestLabeledValueSet lvset;
     LabeledValuePtr lvp;
 
     // Verify the we cannot add an empty pointer to the set.
@@ -95,7 +114,7 @@ TEST(LabeledValueSet, basicOperation) {
     EXPECT_FALSE(lvset.isDefined(4));
     EXPECT_NO_THROW(lvp = lvset.get(4));
     EXPECT_FALSE(lvp);
-    EXPECT_EQ(lvset.getLabel(4), LabeledValueSet::UNDEFINED_LABEL);
+    EXPECT_EQ(lvset.getLabel(4), TestLabeledValueSet::UNDEFINED_LABEL);
 }
 
 }

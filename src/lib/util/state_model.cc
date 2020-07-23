@@ -50,8 +50,8 @@ void
 StateSet::add(const int value, const std::string& label, StateHandler handler,
               const StatePausing& state_pausing) {
     try {
-        LabeledValueSet::add(LabeledValuePtr(new State(value, label, handler,
-                                                       state_pausing)));
+        LabeledValueSet::add(StatePtr(new State(value, label, handler,
+                                                state_pausing)));
     } catch (const std::exception& ex) {
         isc_throw(StateModelError, "StateSet: cannot add state :" << ex.what());
     }
@@ -63,11 +63,7 @@ StateSet::getState(int value) {
     if (!isDefined(value)) {
         isc_throw(StateModelError," StateSet: state is undefined");
     }
-
-    // Since we have to use dynamic casting, to get a state pointer
-    // we can't return a reference.
-    StatePtr state = boost::dynamic_pointer_cast<State>(get(value));
-    return (state);
+    return (get(value));
 }
 
 /********************************** StateModel *******************************/
@@ -177,7 +173,7 @@ StateModel::defineEvent(unsigned int event_value, const std::string& label) {
 
     // Attempt to add the event to the set.
     try {
-        events_.add(event_value, label);
+        events_.add(EventPtr(new Event(event_value, label)));
     } catch (const std::exception& ex) {
         isc_throw(StateModelError, "Error adding event: " << ex.what());
     }
