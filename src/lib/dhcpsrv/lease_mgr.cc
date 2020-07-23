@@ -115,13 +115,17 @@ LeaseMgr::recountLeaseStats4() {
     while (query->getNextRow(row)) {
         if (row.lease_state_ == Lease::STATE_DEFAULT) {
             // Set subnet level value.
-            stats_mgr.setValue(StatsMgr::generateName("subnet", row.subnet_id_,
+            stats_mgr.addValue(StatsMgr::generateName("subnet", row.subnet_id_,
                                                       "assigned-addresses"),
                                row.state_count_);
         } else if (row.lease_state_ == Lease::STATE_DECLINED) {
             // Set subnet level value.
             stats_mgr.setValue(StatsMgr::generateName("subnet", row.subnet_id_,
                                                       "declined-addresses"),
+                               row.state_count_);
+
+            stats_mgr.addValue(StatsMgr::generateName("subnet", row.subnet_id_,
+                                                      "assigned-addresses"),
                                row.state_count_);
 
             // Add to the global value.
@@ -250,7 +254,7 @@ LeaseMgr::recountLeaseStats6() {
             case Lease::TYPE_NA:
                 if (row.lease_state_ == Lease::STATE_DEFAULT) {
                     // Set subnet level value.
-                    stats_mgr.setValue(StatsMgr::
+                    stats_mgr.addValue(StatsMgr::
                                        generateName("subnet", row.subnet_id_,
                                                     "assigned-nas"),
                                        row.state_count_);
@@ -259,6 +263,11 @@ LeaseMgr::recountLeaseStats6() {
                     stats_mgr.setValue(StatsMgr::
                                        generateName("subnet", row.subnet_id_,
                                                     "declined-addresses"),
+                                       row.state_count_);
+
+                    stats_mgr.addValue(StatsMgr::
+                                       generateName("subnet", row.subnet_id_,
+                                                    "assigned-nas"),
                                        row.state_count_);
 
                     // Add to the global value.
