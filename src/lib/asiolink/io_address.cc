@@ -11,6 +11,8 @@
 #include <exceptions/exceptions.h>
 
 #include <boost/static_assert.hpp>
+// moved to container_hash on recent boost versions
+#include <boost/functional/hash.hpp>
 
 #include <unistd.h>             // for some IPC/network system calls
 #include <stdint.h>
