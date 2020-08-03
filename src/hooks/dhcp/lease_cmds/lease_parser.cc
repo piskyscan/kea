@@ -87,6 +87,8 @@ Lease4Parser::parse(ConstSrvConfigPtr& cfg,
         valid_lft = subnet->getValid();
     }
 
+    bool update_time_now = false;
+
     /// Let's calculate client last transmission time (cltt). If expiration
     /// timestamp is specified explicitly, we will use that. Note there are no
     /// checks whether this is in the past. There may be valid cases when user
@@ -107,6 +109,7 @@ Lease4Parser::parse(ConstSrvConfigPtr& cfg,
         cltt = static_cast<time_t>(expire_time - valid_lft);
     } else {
         cltt = time(NULL);
+        update_time_now = true;
     }
 
     bool fqdn_fwd = false;
@@ -168,6 +171,10 @@ Lease4Parser::parse(ConstSrvConfigPtr& cfg,
                            fqdn_fwd, fqdn_rev, hostname));
     l->state_ = state;
     l->setContext(ctx);
+
+    if (update_time_now) {
+        l->time_now_ = cltt;
+    }
 
     // Retrieve the optional flag indicating if the lease must be created when it
     // doesn't exist during the update.
@@ -280,6 +287,8 @@ Lease6Parser::parse(ConstSrvConfigPtr& cfg,
         pref_lft = subnet->getValid();
     }
 
+    bool update_time_now = false;
+
     /// Let's calculate client last transmission time (cltt). If expiration
     /// timestamp is specified explicitly, we will use that. Note there are
     /// no checks whether this is in the past. There may be valid cases when
@@ -301,6 +310,7 @@ Lease6Parser::parse(ConstSrvConfigPtr& cfg,
         cltt = static_cast<time_t>(expire_time - valid_lft);
     } else {
         cltt = time(NULL);
+        update_time_now = true;
     }
 
     bool fqdn_fwd = false;
@@ -363,6 +373,10 @@ Lease6Parser::parse(ConstSrvConfigPtr& cfg,
     l->cltt_ = cltt;
     l->state_ = state;
     l->setContext(ctx);
+
+    if (update_time_now) {
+        l->time_now_ = cltt;
+    }
 
     // Retrieve the optional flag indicating if the lease must be created when it
     // doesn't exist during the update.

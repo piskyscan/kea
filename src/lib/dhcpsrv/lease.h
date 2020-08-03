@@ -169,6 +169,11 @@ struct Lease : public isc::data::UserContext, public isc::data::CfgToElement {
     /// belonging to this class.
     uint32_t state_;
 
+    /// @brief Current time (time NOW) used for processing this lease.
+    ///
+    /// Specifies a timestamp giving the time NOW for processing this lease.
+    time_t time_now_;
+
     /// @brief Convert Lease to Printable Form
     ///
     /// @return String form of the lease

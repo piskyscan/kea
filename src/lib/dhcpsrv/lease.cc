@@ -43,7 +43,8 @@ Lease::Lease(const isc::asiolink::IOAddress& addr,
     : addr_(addr), valid_lft_(valid_lft), old_valid_lft_(valid_lft),
       cltt_(cltt), old_cltt_(cltt), subnet_id_(subnet_id),
       hostname_(boost::algorithm::to_lower_copy(hostname)), fqdn_fwd_(fqdn_fwd),
-      fqdn_rev_(fqdn_rev), hwaddr_(hwaddr), state_(STATE_DEFAULT) {
+      fqdn_rev_(fqdn_rev), hwaddr_(hwaddr), state_(STATE_DEFAULT),
+      time_now_(time(NULL)) {
 }
 
 
@@ -105,7 +106,7 @@ Lease::basicStatesToText(const uint32_t state) {
 
 bool
 Lease::expired() const {
-    return ((valid_lft_ != INFINITY_LFT) && (getExpirationTime() < time(NULL)));
+    return ((valid_lft_ != INFINITY_LFT) && (getExpirationTime() < time_now_));
 }
 
 bool
@@ -293,10 +294,8 @@ Lease4::Lease4(const Lease4& other)
 
     if (other.client_id_) {
         client_id_.reset(new ClientId(other.client_id_->getClientId()));
-
     } else {
         client_id_.reset();
-
     }
 
     if (other.getContext()) {
@@ -364,7 +363,7 @@ void
 Lease4::decline(uint32_t probation_period) {
     hwaddr_.reset(new HWAddr());
     client_id_.reset();
-    cltt_ = time(NULL);
+    cltt_ = time_now_;
     hostname_ = string("");
     fqdn_fwd_ = false;
     fqdn_rev_ = false;
@@ -385,6 +384,7 @@ Lease4::operator=(const Lease4& other) {
         fqdn_fwd_ = other.fqdn_fwd_;
         fqdn_rev_ = other.fqdn_rev_;
         state_ = other.state_;
+        time_now_ = other.time_now_;
 
         // Copy the hardware address if it is defined.
         if (other.hwaddr_) {
@@ -479,7 +479,7 @@ Lease6::Lease6(Lease::Type type, const isc::asiolink::IOAddress& addr,
         isc_throw(InvalidOperation, "DUID is mandatory for an IPv6 lease");
     }
 
-    cltt_ = time(NULL);
+    cltt_ = time_now_;
     old_cltt_ = cltt_;
 }
 
@@ -496,7 +496,7 @@ Lease6::Lease6(Lease::Type type, const isc::asiolink::IOAddress& addr,
         isc_throw(InvalidOperation, "DUID is mandatory for an IPv6 lease");
     }
 
-    cltt_ = time(NULL);
+    cltt_ = time_now_;
     old_cltt_ = cltt_;
 }
 
@@ -527,7 +527,7 @@ Lease6::decline(uint32_t probation_period) {
     duid_.reset(new DUID(DUID::EMPTY()));
     preferred_lft_ = 0;
     valid_lft_ = probation_period;
-    cltt_ = time(NULL);
+    cltt_ = time_now_;
     hostname_ = string("");
     fqdn_fwd_ = false;
     fqdn_rev_ = false;
@@ -593,6 +593,7 @@ Lease4::operator==(const Lease4& other) const {
             fqdn_fwd_ == other.fqdn_fwd_ &&
             fqdn_rev_ == other.fqdn_rev_ &&
             state_ == other.state_ &&
+            time_now_ == other.time_now_ &&
             nullOrEqualValues(getContext(), other.getContext()));
 }
 
@@ -614,6 +615,7 @@ Lease6::operator==(const Lease6& other) const {
             fqdn_fwd_ == other.fqdn_fwd_ &&
             fqdn_rev_ == other.fqdn_rev_ &&
             state_ == other.state_ &&
+            time_now_ == other.time_now_ &&
             nullOrEqualValues(getContext(), other.getContext()));
 }
 

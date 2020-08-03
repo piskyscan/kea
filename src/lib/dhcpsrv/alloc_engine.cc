@@ -1682,7 +1682,7 @@ AllocEngine::reuseExpiredLease(Lease6Ptr& expired, ClientContext6& ctx,
     } else {
         expired->valid_lft_ = ctx.subnet_->getValid();
     }
-    expired->cltt_ = time(NULL);
+    expired->cltt_ = expired->time_now_;
     expired->subnet_id_ = ctx.subnet_->getID();
     expired->hostname_ = ctx.hostname_;
     expired->fqdn_fwd_ = ctx.fwd_dns_update_;
@@ -3661,6 +3661,8 @@ AllocEngine::createLease4(const ClientContext4& ctx, const IOAddress& addr,
     Lease4Ptr lease(new Lease4(addr, ctx.hwaddr_, client_id,
                                valid_lft, now, ctx.subnet_->getID()));
 
+    lease->time_now_ = now;
+
     // Set FQDN specific lease parameters.
     lease->fqdn_fwd_ = ctx.fwd_dns_update_;
     lease->fqdn_rev_ = ctx.rev_dns_update_;
@@ -4123,7 +4125,7 @@ AllocEngine::updateLease4Information(const Lease4Ptr& lease,
     lease->subnet_id_ = ctx.subnet_->getID();
     lease->hwaddr_ = ctx.hwaddr_;
     lease->client_id_ = ctx.subnet_->getMatchClientId() ? ctx.clientid_ : ClientIdPtr();
-    lease->cltt_ = time(NULL);
+    lease->cltt_ = lease->time_now_;
     if (ctx.query_->inClass("BOOTP")) {
         // BOOTP uses infinite valid lifetime.
         lease->valid_lft_ = Lease::INFINITY_LFT;
@@ -4260,7 +4262,7 @@ AllocEngine::updateLease6ExtendedInfo(const Lease6Ptr& lease,
 
 bool
 AllocEngine::conditionalExtendLifetime(Lease& lease) const {
-    lease.cltt_ = time(NULL);
+    lease.cltt_ = lease.time_now_;
     return (true);
 }
 
