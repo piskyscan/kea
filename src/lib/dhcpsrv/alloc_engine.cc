@@ -1646,6 +1646,7 @@ AllocEngine::reuseExpiredLease(Lease6Ptr& expired, ClientContext6& ctx,
                                uint8_t prefix_len,
                                CalloutHandle::CalloutNextStep& callout_status) {
 
+    // @todo: verify this sanity check is not useless.
     if (!expired->expired()) {
         isc_throw(BadValue, "Attempt to recycle lease that is still valid");
     }
@@ -3773,12 +3774,14 @@ AllocEngine::renewLease4(const Lease4Ptr& lease,
     // Update the lease with the information from the context.
     updateLease4Information(lease, ctx);
 
+    bool reclaimed = ctx.old_lease_->stateExpiredReclaimed();
     if (!ctx.fake_allocation_) {
         // If the lease is expired we have to reclaim it before
         // re-assigning it to the client. The lease reclamation
         // involves execution of hooks and DNS update.
         if (ctx.old_lease_->expired()) {
             reclaimExpiredLease(ctx.old_lease_, ctx.callout_handle_);
+            reclaimed = true;
         }
 
         lease->state_ = Lease::STATE_DEFAULT;
@@ -3838,7 +3841,7 @@ AllocEngine::renewLease4(const Lease4Ptr& lease,
         LeaseMgrFactory::instance().updateLease4(lease);
 
         // We need to account for the re-assignment of The lease.
-        if (ctx.old_lease_->expired() || ctx.old_lease_->state_ == Lease::STATE_EXPIRED_RECLAIMED) {
+        if (reclaimed) {
             StatsMgr::instance().addValue(
                 StatsMgr::generateName("subnet", ctx.subnet_->getID(),
                                        "assigned-addresses"),
