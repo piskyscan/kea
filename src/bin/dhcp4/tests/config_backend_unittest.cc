@@ -122,7 +122,7 @@ public:
         ConstElementPtr json;
         try {
             json = parseDHCP4(config, true);
-        } catch(const std::exception& ex) {
+        } catch (const std::exception& ex) {
             ADD_FAILURE() << "parseDHCP4 failed: " << ex.what();
         }
 

@@ -323,11 +323,9 @@ void testError(const std::string& txt,
         ConstElementPtr parsed = ctx.parseString(txt, parser_type);
         FAIL() << "Expected Dhcp6ParseError but nothing was raised (expected: "
                << msg << ")";
-    }
-    catch (const Dhcp6ParseError& ex) {
+    } catch (const Dhcp6ParseError& ex) {
         EXPECT_EQ(msg, ex.what());
-    }
-    catch (...) {
+    } catch (...) {
         FAIL() << "Expected Dhcp6ParseError but something else was raised";
     }
 }

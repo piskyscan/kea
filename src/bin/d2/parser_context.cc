@@ -51,8 +51,7 @@ D2ParserContext::parseCommon() {
             isc_throw(D2ParseError, "Parser abort");
         }
         scanEnd();
-    }
-    catch (...) {
+    } catch (...) {
         scanEnd();
         throw;
     }

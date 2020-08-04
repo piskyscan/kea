@@ -162,8 +162,7 @@ LoggerLevelImpl::logLevelFromString(const log4cplus::tstring& level) {
 
                     }
                     return convertFromBindLevel(Level(DEBUG, dbglevel));
-                }
-                catch (boost::bad_lexical_cast&) {
+                } catch (const boost::bad_lexical_cast&) {
                     LOG_ERROR(logger, LOGIMPL_BAD_DEBUG_STRING).arg(name);
                     return (NOT_SET_LOG_LEVEL);
                 }

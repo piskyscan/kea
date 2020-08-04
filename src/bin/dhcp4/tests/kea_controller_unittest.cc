@@ -706,8 +706,7 @@ TEST_F(JSONFileBackendTest, recursiveInclude) {
     try {
         srv->init(TEST_FILE);
         FAIL() << "Expected Dhcp4ParseError but nothing was raised";
-    }
-    catch (const Exception& ex) {
+    } catch (const Exception& ex) {
         EXPECT_EQ(msg, ex.what());
     }
 }

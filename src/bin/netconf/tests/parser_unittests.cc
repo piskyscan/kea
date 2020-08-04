@@ -398,11 +398,9 @@ void testError(const std::string& txt,
         ConstElementPtr parsed = ctx.parseString(txt, parser_type);
         FAIL() << "Expected ParseError but nothing was raised (expected: "
                << msg << ")";
-    }
-    catch (const ParseError& ex) {
+    } catch (const ParseError& ex) {
         EXPECT_EQ(msg, ex.what());
-    }
-    catch (...) {
+    } catch (...) {
         FAIL() << "Expected ParseError but something else was raised";
     }
 }

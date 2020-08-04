@@ -179,7 +179,7 @@ ControlledDhcpv4Srv::loadConfigFile(const std::string& file_name) {
                 "no details available";
             isc_throw(isc::BadValue, reason);
         }
-    }  catch (const std::exception& ex) {
+    } catch (const std::exception& ex) {
         // If configuration failed at any stage, we drop the staging
         // configuration and continue to use the previous one.
         CfgMgr::instance().rollback();

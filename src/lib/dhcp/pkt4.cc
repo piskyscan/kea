@@ -142,7 +142,7 @@ Pkt4::pack() {
         // add END option that indicates end of options
         // (End option is very simple, just a 255 octet)
          buffer_out_.writeUint8(DHO_END);
-     } catch(const Exception& e) {
+     } catch (const Exception& e) {
         // An exception is thrown and message will be written to Logger
          isc_throw(InvalidOperation, e.what());
     }

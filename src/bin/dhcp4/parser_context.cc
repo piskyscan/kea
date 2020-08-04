@@ -55,8 +55,7 @@ Parser4Context::parseCommon() {
             isc_throw(Dhcp4ParseError, "Parser abort");
         }
         scanEnd();
-    }
-    catch (...) {
+    } catch (...) {
         scanEnd();
         throw;
     }

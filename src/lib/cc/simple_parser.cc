@@ -196,8 +196,7 @@ size_t SimpleParser::setDefaults(ElementPtr scope,
             try {
                 int int_value = boost::lexical_cast<int>(def_value.value_);
                 x.reset(new IntElement(int_value, pos));
-            }
-            catch (const std::exception& ex) {
+            } catch (const std::exception& ex) {
                 isc_throw(BadValue, "Internal error. Integer value expected for: "
                                     << def_value.name_ << ", value is: "
                                     << def_value.value_ );

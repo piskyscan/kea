@@ -94,8 +94,7 @@ int load(LibraryHandle&) {
                                        << user_chk_output_fname
                                        << " reason: " << errmsg);
         }
-    }
-    catch (const std::exception& ex) {
+    } catch (const std::exception& ex) {
         // Log the error and return failure.
         LOG_ERROR(user_chk_logger, USER_CHK_HOOK_LOAD_ERROR)
             .arg(ex.what());

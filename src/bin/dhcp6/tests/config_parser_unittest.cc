@@ -7719,7 +7719,7 @@ TEST_F(Dhcp6ParserTest, dhcpQueueControlInvalid) {
             std::string error_msg = "";
             try {
                 ASSERT_TRUE(parseDHCP6(os.str(), false)) << "parser returned empty element";
-            } catch(const std::exception& ex) {
+            } catch (const std::exception& ex) {
                 error_msg = ex.what();
             }
 

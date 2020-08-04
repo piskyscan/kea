@@ -55,8 +55,7 @@ ParserContext::parseCommon() {
             isc_throw(ParseError, "Parser abort");
         }
         scanEnd();
-    }
-    catch (...) {
+    } catch (...) {
         scanEnd();
         throw;
     }

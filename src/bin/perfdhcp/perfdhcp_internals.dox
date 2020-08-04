@@ -28,7 +28,7 @@
 ///     try {
 ///         CommandOptions& command_options = CommandOptions::instance();
 ///         command_options.parse(argc, argv);
-///     } catch(const Exception& e) {
+///     } catch (const Exception& e) {
 ///         ...
 ///     }
 /// @endcode
@@ -97,7 +97,7 @@
 ///     typedef StatsMgr<Pkt4> StatsMgr4; StatsMgr4 stats_mgr4 =
 ///     boost::shared_ptr<StatsMgr4>(new StatsMgr4()); try {
 ///         stats_mgr->addExchangeStats(StatsMgr4::XCHG_DO);
-///     } catch(const Exception& e) {
+///     } catch (const Exception& e) {
 ///         std::cout << e.what() << std::endl;
 ///     }
 /// @endcode

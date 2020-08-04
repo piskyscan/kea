@@ -841,8 +841,7 @@ configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
             const HooksConfig& libraries =
                 CfgMgr::instance().getStagingCfg()->getHooksConfig();
             libraries.loadLibraries();
-        }
-        catch (const isc::Exception& ex) {
+        } catch (const isc::Exception& ex) {
             LOG_ERROR(dhcp6_logger, DHCP6_PARSER_COMMIT_FAIL).arg(ex.what());
             answer = isc::config::createAnswer(2, ex.what());
             // An error occurred, so make sure to restore the original data.
@@ -864,8 +863,7 @@ configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
             // If there are config backends, fetch and merge into staging config
             server.getCBControl()->databaseConfigFetch(srv_config,
                                                        CBControlDHCPv6::FetchMode::FETCH_ALL);
-        }
-        catch (const isc::Exception& ex) {
+        } catch (const isc::Exception& ex) {
             std::ostringstream err;
             err << "during update from config backend database: " << ex.what();
             LOG_ERROR(dhcp6_logger, DHCP6_PARSER_COMMIT_FAIL).arg(err.str());

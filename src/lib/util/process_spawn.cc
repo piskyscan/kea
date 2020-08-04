@@ -227,7 +227,7 @@ ProcessSpawnImpl::spawn() {
     try {
         process_state_.insert(
             std::pair<pid_t, ProcessState>(pid, ProcessState()));
-    } catch(...) {
+    } catch (...) {
         pthread_sigmask(SIG_SETMASK, &osset, 0);
         throw;
     }

@@ -185,8 +185,7 @@ LoggerManager::readLocalMessageFile(const char* file) {
             string message_id = boost::lexical_cast<string>(*i);
                 logger.warn(LOG_NO_SUCH_MESSAGE).arg(message_id);
         }
-    }
-    catch (MessageException& e) {
+    } catch (const MessageException& e) {
         MessageID ident = e.id();
         vector<string> args = e.arguments();
 

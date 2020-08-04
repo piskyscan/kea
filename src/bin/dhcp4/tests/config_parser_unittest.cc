@@ -321,7 +321,7 @@ public:
         ConstElementPtr json;
         try {
             json = parseDHCP4(config, true);
-        } catch(const std::exception& ex) {
+        } catch (const std::exception& ex) {
             ADD_FAILURE() << "parseDHCP4 failed: " << ex.what();
         }
 
@@ -7069,7 +7069,7 @@ TEST_F(Dhcp4ParserTest, dhcpQueueControlInvalid) {
             std::string error_msg = "";
             try {
                 ASSERT_TRUE(parseDHCP4(os.str(), false)) << "parser returned empty element";
-            } catch(const std::exception& ex) {
+            } catch (const std::exception& ex) {
                 error_msg = ex.what();
             }
 

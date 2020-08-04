@@ -181,7 +181,7 @@ PgSqlConnection::openDatabase() {
     string shost = "localhost";
     try {
         shost = getParameter("host");
-    } catch(...) {
+    } catch (...) {
         // No host. Fine, we'll use "localhost"
     }
 
@@ -225,7 +225,7 @@ PgSqlConnection::openDatabase() {
     try {
         suser = getParameter("user");
         dbconnparameters += " user = '" + suser + "'";
-    } catch(...) {
+    } catch (...) {
         // No user. Fine, we'll use NULL
     }
 
@@ -233,7 +233,7 @@ PgSqlConnection::openDatabase() {
     try {
         spassword = getParameter("password");
         dbconnparameters += " password = '" + spassword + "'";
-    } catch(...) {
+    } catch (...) {
         // No password. Fine, we'll use NULL
     }
 
@@ -241,7 +241,7 @@ PgSqlConnection::openDatabase() {
     try {
         sname = getParameter("name");
         dbconnparameters += " dbname = '" + sname + "'";
-    } catch(...) {
+    } catch (...) {
         // No database name.  Throw a "NoDatabaseName" exception
         isc_throw(NoDatabaseName, "must specify a name for the database");
     }

@@ -572,8 +572,7 @@ parseDHCP4(const std::string& in, bool verbose = false)
         json = ctx.parseString(in, isc::dhcp::Parser4Context::SUBPARSER_DHCP4);
         disableIfacesReDetect(json);
         return (json);
-    }
-    catch (const std::exception& ex) {
+    } catch (const std::exception& ex) {
         if (verbose) {
             std::cout << "EXCEPTION: " << ex.what() << std::endl;
         }
@@ -594,8 +593,7 @@ parseOPTION_DEFS(const std::string& in, bool verbose = false)
     try {
         isc::dhcp::Parser4Context ctx;
         return (ctx.parseString(in, isc::dhcp::Parser4Context::PARSER_OPTION_DEFS));
-    }
-    catch (const std::exception& ex) {
+    } catch (const std::exception& ex) {
         if (verbose) {
             std::cout << "EXCEPTION: " << ex.what() << std::endl;
         }

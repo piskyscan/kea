@@ -146,8 +146,7 @@ PktTransform::packOptions(const OptionBuffer& in_buffer,
                 out_buffer.writeUint8At(buf_data[i], offset + i);
             }
         }
-    }
-    catch (const Exception&) {
+    } catch (const Exception&) {
         isc_throw(isc::BadValue, "failed to pack options into buffer.");
     }
 }

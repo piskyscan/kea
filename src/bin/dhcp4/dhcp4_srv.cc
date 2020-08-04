@@ -658,14 +658,14 @@ Dhcpv4Srv::~Dhcpv4Srv() {
 
     try {
         stopD2();
-    } catch(const std::exception& ex) {
+    } catch (const std::exception& ex) {
         // Highly unlikely, but lets Report it but go on
         LOG_ERROR(dhcp4_logger, DHCP4_SRV_D2STOP_ERROR).arg(ex.what());
     }
 
     try {
         Dhcp4to6Ipc::instance().close();
-    } catch(const std::exception& ex) {
+    } catch (const std::exception& ex) {
         // Highly unlikely, but lets Report it but go on
         LOG_ERROR(dhcp4_logger, DHCP4_SRV_DHCP4O6_ERROR).arg(ex.what());
     }
@@ -3933,8 +3933,7 @@ void Dhcpv4Srv::processStatsReceived(const Pkt4Ptr& query) {
         default:
             ; // do nothing
         }
-    }
-    catch (...) {
+    } catch (...) {
         // If the incoming packet doesn't have option 53 (message type)
         // or a hook set pkt4_receive_skip, then Pkt4::getType() may
         // throw an exception. That's ok, we'll then use the default

@@ -125,7 +125,7 @@ public:
         ConstElementPtr json;
         try {
             json = parseDHCP6(config, true);
-        } catch(const std::exception& ex) {
+        } catch (const std::exception& ex) {
             ADD_FAILURE() << "parseDHCP6 failed: " << ex.what();
         }
 

@@ -265,14 +265,14 @@ Dhcpv6Srv::~Dhcpv6Srv() {
 
     try {
         stopD2();
-    } catch(const std::exception& ex) {
+    } catch (const std::exception& ex) {
         // Highly unlikely, but lets Report it but go on
         LOG_ERROR(dhcp6_logger, DHCP6_SRV_D2STOP_ERROR).arg(ex.what());
     }
 
     try {
         Dhcp6to4Ipc::instance().close();
-    } catch(const std::exception& ex) {
+    } catch (const std::exception& ex) {
         // Highly unlikely, but lets Report it but go on
         // LOG_ERROR(dhcp6_logger, DHCP6_SRV_DHCP4O6_ERROR).arg(ex.what());
     }

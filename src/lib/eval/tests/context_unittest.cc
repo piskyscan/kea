@@ -183,8 +183,7 @@ public:
         // parse the expression
         try {
             parsed_ = eval.parseString(expr);
-        }
-        catch (const EvalParseError& ex) {
+        } catch (const EvalParseError& ex) {
             FAIL() <<"Exception thrown: " << ex.what();
             return;
         }
@@ -229,8 +228,7 @@ public:
         // Parse the expression.
         try {
             parsed_ = eval.parseString(expr);
-        }
-        catch (const EvalParseError& ex) {
+        } catch (const EvalParseError& ex) {
             FAIL() << "Exception thrown: " << ex.what();
             return;
         }
@@ -274,8 +272,7 @@ public:
         // Parse the expression.
         try {
             parsed_ = eval.parseString(expr);
-        }
-        catch (const EvalParseError& ex) {
+        } catch (const EvalParseError& ex) {
             FAIL() << "Exception thrown: " << ex.what();
             return;
         }
@@ -322,8 +319,7 @@ public:
         // Parse the expression.
         try {
             parsed_ = eval.parseString(expr);
-        }
-        catch (const EvalParseError& ex) {
+        } catch (const EvalParseError& ex) {
             FAIL() << "Exception thrown: " << ex.what();
             return;
         }
@@ -373,8 +369,7 @@ public:
         // parse the expression
         try {
             parsed_ = eval.parseString(expr);
-        }
-        catch (const EvalParseError& ex) {
+        } catch (const EvalParseError& ex) {
             FAIL() <<"Exception thrown: " << ex.what();
             return;
         }
@@ -421,8 +416,7 @@ public:
         // parse the expression
         try {
             parsed_ = eval.parseString(expr);
-        }
-        catch (const EvalParseError& ex) {
+        } catch (const EvalParseError& ex) {
             FAIL() <<"Exception thrown: " << ex.what();
             return;
         }
@@ -478,12 +472,10 @@ public:
         try {
             parsed_ = eval.parseString(expr);
             FAIL() << "Expected EvalParseError but nothing was raised";
-        }
-        catch (const EvalParseError& ex) {
+        } catch (const EvalParseError& ex) {
             EXPECT_EQ(msg, ex.what());
             EXPECT_FALSE(parsed_);
-        }
-        catch (...) {
+        } catch (...) {
             FAIL() << "Expected EvalParseError but something else was raised";
         }
     }
@@ -1167,13 +1159,11 @@ TEST_F(EvalContextTest, memberError) {
     try {
         parsed_ = eval.parseString("member('bar')");
         FAIL() << "Expected EvalParseError but nothing was raised";
-    }
-    catch (const EvalParseError& ex) {
+    } catch (const EvalParseError& ex) {
         EXPECT_EQ("<string>:1.8-12: Not defined client class 'bar'",
                   std::string(ex.what()));
         EXPECT_FALSE(parsed_);
-    }
-    catch (...) {
+    } catch (...) {
         FAIL() << "Expected EvalParseError but something else was raised";
     }
 }

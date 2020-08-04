@@ -194,8 +194,7 @@ OptionPtr TokenRelay6Option::getOption(Pkt& pkt) {
                 return(pkt6.getRelayOption(option_code_,
                                            static_cast<uint8_t>(nesting_level)));
             }
-        }
-        catch (const isc::OutOfRange&) {
+        } catch (const isc::OutOfRange&) {
             // The only exception we expect is OutOfRange if the nest
             // level is out of range of the encapsulations, for example
             // if nest_level_ is 4 and there are only 2 encapsulations.

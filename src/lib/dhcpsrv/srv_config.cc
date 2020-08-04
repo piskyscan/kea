@@ -244,7 +244,7 @@ SrvConfig::mergeGlobals(SrvConfig& other) {
             else if (name == "server-tag") {
                 setServerTag(element->stringValue());
             }
-        } catch(const std::exception& ex) {
+        } catch (const std::exception& ex) {
             isc_throw (BadValue, "Invalid value:" << element->str()
                        << " explict global:" << name);
         }
@@ -343,8 +343,7 @@ SrvConfig::applyDefaultsConfiguredGlobals(const SimpleDefaults& defaults) {
             try {
                 int int_value = boost::lexical_cast<int>(def_value.value_);
                 x.reset(new IntElement(int_value, pos));
-            }
-            catch (const std::exception& ex) {
+            } catch (const std::exception& ex) {
                 isc_throw(BadValue,
                           "Internal error. Integer value expected for: "
                           << def_value.name_ << ", value is: "

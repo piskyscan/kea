@@ -821,8 +821,8 @@ TestControl::address6Uniqueness(const Pkt6Ptr& pkt6, ExchangeType xchg_type) {
                     stats_mgr_.updateNonUniqueAddrNum(xchg_type);
                 }
                 break;
-	    }
-	    case D6O_IA_NA: {
+            }
+            case D6O_IA_NA: {
                 // add address and check if it has not been already assigned
                 // addresses should be unique cross options of the packet
                 auto ret = current.emplace(boost::dynamic_pointer_cast<

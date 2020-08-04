@@ -336,8 +336,7 @@ Pkt6::packUDP() {
 
         // the rest are options
         LibDHCP::packOptions6(buffer_out_, options_);
-    }
-    catch (const Exception& e) {
+    } catch (const Exception& e) {
        // An exception is thrown and message will be written to Logger
        isc_throw(InvalidOperation, e.what());
     }
