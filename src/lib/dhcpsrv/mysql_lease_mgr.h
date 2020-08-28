@@ -902,9 +902,6 @@ private:
 
     /// @brief The parameters
     db::DatabaseConnection::ParameterMap parameters_;
-
-    /// @brief Manager context
-    MySqlLeaseContextPtr ctx_;
 };
 
 }  // namespace dhcp
