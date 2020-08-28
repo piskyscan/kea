@@ -1322,25 +1322,6 @@ public:
     bool is_readonly_;
 };
 
-/// @brief PostgreSQL Host Context Pool
-///
-/// This class provides a pool of contexts.
-/// The manager will use this class to handle avalilable contexts.
-/// There is only one ContextPool per manager per back-end, which is created
-/// and destroyed by the respective manager factory class.
-class PgSqlHostContextPool {
-public:
-
-    /// @brief The vector of available contexts.
-    std::vector<PgSqlHostContextPtr> pool_;
-
-    /// @brief The mutex to protect pool access.
-    std::mutex mutex_;
-};
-
-/// @brief Type of pointers to context pools.
-typedef boost::shared_ptr<PgSqlHostContextPool> PgSqlHostContextPoolPtr;
-
 /// @brief Implementation of the @ref PgSqlHostDataSource.
 class PgSqlHostDataSourceImpl {
 public:
@@ -1550,9 +1531,6 @@ public:
 
     /// @brief The parameters
     PgSqlConnection::ParameterMap parameters_;
-
-    /// @brief The pool of contexts
-    PgSqlHostContextPoolPtr pool_;
 };
 
 namespace {
@@ -2054,35 +2032,11 @@ PgSqlHostContext::PgSqlHostContext(const DatabaseConnection::ParameterMap& param
 PgSqlHostDataSource::PgSqlHostContextAlloc::PgSqlHostContextAlloc(
     const PgSqlHostDataSourceImpl& mgr) : ctx_(), mgr_(mgr) {
 
-    if (MultiThreadingMgr::instance().getMode()) {
-        // multi-threaded
-        {
-            // we need to protect the whole pool_ operation, hence extra scope {}
-            lock_guard<mutex> lock(mgr_.pool_->mutex_);
-            if (!mgr_.pool_->pool_.empty()) {
-                ctx_ = mgr_.pool_->pool_.back();
-                mgr_.pool_->pool_.pop_back();
-            }
-        }
-        if (!ctx_) {
-            ctx_ = mgr_.createContext();
-        }
-    } else {
-        // single-threaded
-        if (mgr_.pool_->pool_.empty()) {
-            isc_throw(Unexpected, "No available PostgreSQL host context?!");
-        }
-        ctx_ = mgr_.pool_->pool_.back();
-    }
+    thread_local PgSqlHostContextPtr ctx = mgr_.createContext();
+    ctx_ = ctx;
 }
 
 PgSqlHostDataSource::PgSqlHostContextAlloc::~PgSqlHostContextAlloc() {
-    if (MultiThreadingMgr::instance().getMode()) {
-        // multi-threaded
-        lock_guard<mutex> lock(mgr_.pool_->mutex_);
-        mgr_.pool_->pool_.push_back(ctx_);
-    }
-    // If running in single-threaded mode, there's nothing to do here.
 }
 
 PgSqlHostDataSourceImpl::PgSqlHostDataSourceImpl(const PgSqlConnection::ParameterMap& parameters)
@@ -2099,10 +2053,6 @@ PgSqlHostDataSourceImpl::PgSqlHostDataSourceImpl(const PgSqlConnection::Paramete
                       << " found version: " << db_version.first << "."
                       << db_version.second);
     }
-
-    // Create an initial context.
-    pool_.reset(new PgSqlHostContextPool());
-    pool_->pool_.push_back(createContext());
 }
 
 // Create context.
