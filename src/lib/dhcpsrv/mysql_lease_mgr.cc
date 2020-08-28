@@ -1738,9 +1738,16 @@ MySqlLeaseContext::MySqlLeaseContext(const DatabaseConnection::ParameterMap& par
 // MySqlLeaseContextAlloc Constructor and Destructor
 
 MySqlLeaseMgr::MySqlLeaseContextAlloc::MySqlLeaseContextAlloc(
-    const MySqlLeaseMgr& mgr) : ctx_(), mgr_(mgr) {
+    const MySqlLeaseMgr& mgr, bool reset) : ctx_(), mgr_(mgr) {
 
-    thread_local MySqlLeaseContextPtr ctx = mgr_.createContext();
+    thread_local MySqlLeaseContextPtr ctx;
+    if (reset) {
+        ctx.reset();
+        return;
+    }
+    if (!ctx || !mgr_.ctx_) {
+        ctx = mgr_.createContext();
+    }
     ctx_ = ctx;
 }
 
@@ -1750,7 +1757,7 @@ MySqlLeaseMgr::MySqlLeaseContextAlloc::~MySqlLeaseContextAlloc() {
 // MySqlLeaseMgr Constructor and Destructor
 
 MySqlLeaseMgr::MySqlLeaseMgr(const MySqlConnection::ParameterMap& parameters)
-    : parameters_(parameters) {
+    : parameters_(parameters), ctx_() {
 
     // Validate schema version first.
     std::pair<uint32_t, uint32_t> code_version(MYSQL_SCHEMA_VERSION_MAJOR,
@@ -1763,9 +1770,13 @@ MySqlLeaseMgr::MySqlLeaseMgr(const MySqlConnection::ParameterMap& parameters)
                       << " found version: " << db_version.first << "."
                       << db_version.second);
     }
+
+    // Get a context
+    ctx_ = MySqlLeaseContextAlloc(*this).ctx_;
 }
 
 MySqlLeaseMgr::~MySqlLeaseMgr() {
+    MySqlLeaseContextAlloc(*this, true);
 }
 
 // Create context.

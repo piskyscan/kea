@@ -1172,9 +1172,16 @@ PgSqlLeaseContext::PgSqlLeaseContext(const DatabaseConnection::ParameterMap& par
 // PgSqlLeaseContextAlloc Constructor and Destructor
 
 PgSqlLeaseMgr::PgSqlLeaseContextAlloc::PgSqlLeaseContextAlloc(
-    const PgSqlLeaseMgr& mgr) : ctx_(), mgr_(mgr) {
+    const PgSqlLeaseMgr& mgr, bool reset) : ctx_(), mgr_(mgr) {
 
-    thread_local PgSqlLeaseContextPtr ctx = mgr_.createContext();
+    thread_local PgSqlLeaseContextPtr ctx;
+    if (reset) {
+        ctx.reset();
+        return;
+    }
+    if (!ctx || !mgr_.ctx_) {
+        ctx = mgr_.createContext();
+    }
     ctx_ = ctx;
 }
 
@@ -1184,7 +1191,7 @@ PgSqlLeaseMgr::PgSqlLeaseContextAlloc::~PgSqlLeaseContextAlloc() {
 // PgSqlLeaseMgr Constructor and Destructor
 
 PgSqlLeaseMgr::PgSqlLeaseMgr(const DatabaseConnection::ParameterMap& parameters)
-    : parameters_(parameters) {
+    : parameters_(parameters), ctx_() {
 
     // Validate schema version first.
     std::pair<uint32_t, uint32_t> code_version(PG_SCHEMA_VERSION_MAJOR,
@@ -1197,9 +1204,13 @@ PgSqlLeaseMgr::PgSqlLeaseMgr(const DatabaseConnection::ParameterMap& parameters)
                       << " found version: " << db_version.first << "."
                       << db_version.second);
     }
+
+    // Get a context
+    ctx_ = PgSqlLeaseContextAlloc(*this).ctx_;
 }
 
 PgSqlLeaseMgr::~PgSqlLeaseMgr() {
+    PgSqlLeaseContextAlloc(*this, true);
 }
 
 // Create context.

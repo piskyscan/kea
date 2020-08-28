@@ -2177,6 +2177,9 @@ public:
 
     /// @brief The parameters
     DatabaseConnection::ParameterMap parameters_;
+
+    /// @brief Manager context
+    MySqlHostContextPtr ctx_;
 };
 
 namespace {
@@ -2599,9 +2602,16 @@ MySqlHostContext::MySqlHostContext(const DatabaseConnection::ParameterMap& param
 // MySqlHostContextAlloc Constructor and Destructor
 
 MySqlHostDataSource::MySqlHostContextAlloc::MySqlHostContextAlloc(
-    const MySqlHostDataSourceImpl& mgr) : ctx_(), mgr_(mgr) {
+    const MySqlHostDataSourceImpl& mgr, bool reset) : ctx_(), mgr_(mgr) {
 
-    thread_local MySqlHostContextPtr ctx = mgr_.createContext();
+    thread_local MySqlHostContextPtr ctx;
+    if (reset) {
+        ctx.reset();
+        return;
+    }
+    if (!ctx || !mgr_.ctx_) {
+        ctx = mgr_.createContext();
+    }
     ctx_ = ctx;
 }
 
@@ -2609,7 +2619,7 @@ MySqlHostDataSource::MySqlHostContextAlloc::~MySqlHostContextAlloc() {
 }
 
 MySqlHostDataSourceImpl::MySqlHostDataSourceImpl(const MySqlConnection::ParameterMap& parameters)
-    : parameters_(parameters) {
+    : parameters_(parameters), ctx_() {
 
     // Validate the schema version first.
     std::pair<uint32_t, uint32_t> code_version(MYSQL_SCHEMA_VERSION_MAJOR,
@@ -2622,6 +2632,9 @@ MySqlHostDataSourceImpl::MySqlHostDataSourceImpl(const MySqlConnection::Paramete
                       << " found version: " << db_version.first << "."
                       << db_version.second);
     }
+
+    // Get a context
+    ctx_ = MySqlHostDataSource::MySqlHostContextAlloc(*this).ctx_;
 }
 
 // Create context.
@@ -2665,6 +2678,7 @@ MySqlHostDataSourceImpl::createContext() const {
 }
 
 MySqlHostDataSourceImpl::~MySqlHostDataSourceImpl() {
+    MySqlHostDataSource::MySqlHostContextAlloc(*this, true);
 }
 
 std::pair<uint32_t, uint32_t>
