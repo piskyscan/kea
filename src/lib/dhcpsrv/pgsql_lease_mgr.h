@@ -838,7 +838,8 @@ private:
         /// or creates a new one.
         ///
         /// @param mgr A parent instance
-        PgSqlLeaseContextAlloc(const PgSqlLeaseMgr& mgr);
+        /// @param reset Flag which resets thread context
+        PgSqlLeaseContextAlloc(const PgSqlLeaseMgr& mgr, bool reset = false);
 
         /// @brief Destructor
         ///
@@ -860,6 +861,9 @@ private:
 
     /// @brief The parameters
     db::DatabaseConnection::ParameterMap parameters_;
+
+    /// @brief Manager context
+    PgSqlLeaseContextPtr ctx_;
 };
 
 }  // namespace dhcp

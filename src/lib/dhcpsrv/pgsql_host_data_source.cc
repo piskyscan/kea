@@ -1529,6 +1529,9 @@ public:
 
     /// @brief The parameters
     PgSqlConnection::ParameterMap parameters_;
+
+    /// @brief Manager context
+    PgSqlHostContextPtr ctx_;
 };
 
 namespace {
@@ -1977,9 +1980,16 @@ PgSqlHostContext::PgSqlHostContext(const DatabaseConnection::ParameterMap& param
 // PgSqlHostContextAlloc Constructor and Destructor
 
 PgSqlHostDataSource::PgSqlHostContextAlloc::PgSqlHostContextAlloc(
-    const PgSqlHostDataSourceImpl& mgr) : ctx_(), mgr_(mgr) {
+    const PgSqlHostDataSourceImpl& mgr, bool reset) : ctx_(), mgr_(mgr) {
 
-    thread_local PgSqlHostContextPtr ctx = mgr_.createContext();
+    thread_local PgSqlHostContextPtr ctx;
+    if (reset) {
+        ctx.reset();
+        return;
+    }
+    if (!ctx || !mgr_.ctx_) {
+        ctx = mgr_.createContext();
+    }
     ctx_ = ctx;
 }
 
@@ -1987,7 +1997,7 @@ PgSqlHostDataSource::PgSqlHostContextAlloc::~PgSqlHostContextAlloc() {
 }
 
 PgSqlHostDataSourceImpl::PgSqlHostDataSourceImpl(const PgSqlConnection::ParameterMap& parameters)
-    : parameters_(parameters) {
+    : parameters_(parameters), ctx_() {
 
     // Validate the schema version first.
     std::pair<uint32_t, uint32_t> code_version(PG_SCHEMA_VERSION_MAJOR,
@@ -2000,6 +2010,9 @@ PgSqlHostDataSourceImpl::PgSqlHostDataSourceImpl(const PgSqlConnection::Paramete
                       << " found version: " << db_version.first << "."
                       << db_version.second);
     }
+
+    // Get a context
+    ctx_ = PgSqlHostDataSource::PgSqlHostContextAlloc(*this).ctx_;
 }
 
 // Create context.
@@ -2038,6 +2051,7 @@ PgSqlHostDataSourceImpl::createContext() const {
 }
 
 PgSqlHostDataSourceImpl::~PgSqlHostDataSourceImpl() {
+    PgSqlHostDataSource::PgSqlHostContextAlloc(*this, true);
 }
 
 uint64_t

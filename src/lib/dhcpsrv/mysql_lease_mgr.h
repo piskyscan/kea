@@ -879,7 +879,8 @@ private:
         /// or creates a new one.
         ///
         /// @param mgr A parent instance
-        MySqlLeaseContextAlloc(const MySqlLeaseMgr& mgr);
+        /// @param reset Flag which resets thread context
+        MySqlLeaseContextAlloc(const MySqlLeaseMgr& mgr, bool reset = false);
 
         /// @brief Destructor
         ///
@@ -901,6 +902,9 @@ private:
 
     /// @brief The parameters
     db::DatabaseConnection::ParameterMap parameters_;
+
+    /// @brief Manager context
+    MySqlLeaseContextPtr ctx_;
 };
 
 }  // namespace dhcp

@@ -920,20 +920,20 @@ public:
 
     virtual std::string invalidConnectString() {
         return (connectionString(PGSQL_VALID_TYPE, VALID_NAME, INVALID_HOST,
-                        VALID_USER, VALID_PASSWORD));
+                                 VALID_USER, VALID_PASSWORD));
     }
 };
 
 /// @brief Verifies that db lost callback is not invoked on an open failure
 TEST_F(PgSqlLeaseMgrDbLostCallbackTest, testNoCallbackOnOpenFailure) {
     MultiThreadingTest mt(false);
-    testDbLostCallback();
+    testNoCallbackOnOpenFailure();
 }
 
 /// @brief Verifies that db lost callback is not invoked on an open failure
 TEST_F(PgSqlLeaseMgrDbLostCallbackTest, testNoCallbackOnOpenFailureMultiThreading) {
     MultiThreadingTest mt(true);
-    testDbLostCallback();
+    testNoCallbackOnOpenFailure();
 }
 
 /// @brief Verifies that loss of connectivity to PostgreSQL is handled correctly.

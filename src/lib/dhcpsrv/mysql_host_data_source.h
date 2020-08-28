@@ -364,7 +364,9 @@ public:
         /// or creates a new one.
         ///
         /// @param mgr A parent instance
-        MySqlHostContextAlloc(const MySqlHostDataSourceImpl& mgr);
+        /// @param reset Flag which resets thread context
+        MySqlHostContextAlloc(const MySqlHostDataSourceImpl& mgr,
+                              bool reset = false);
 
         /// @brief Destructor
         ///
