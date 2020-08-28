@@ -861,9 +861,6 @@ private:
 
     /// @brief The parameters
     db::DatabaseConnection::ParameterMap parameters_;
-
-    /// @brief Manager context
-    PgSqlLeaseContextPtr ctx_;
 };
 
 }  // namespace dhcp
