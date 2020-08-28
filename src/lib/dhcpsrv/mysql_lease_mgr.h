@@ -59,25 +59,6 @@ public:
 /// @brief Type of pointers to contexts.
 typedef boost::shared_ptr<MySqlLeaseContext> MySqlLeaseContextPtr;
 
-/// @brief MySQL Lease Context Pool
-///
-/// This class provides a pool of contexts.
-/// The manager will use this class to handle avalilable contexts.
-/// There is only one ContextPool per manager per back-end, which is created
-/// and destroyed by the respective manager factory class.
-class MySqlLeaseContextPool {
-public:
-
-    /// @brief The vector of available contexts.
-    std::vector<MySqlLeaseContextPtr> pool_;
-
-    /// @brief The mutex to protect pool access.
-    std::mutex mutex_;
-};
-
-/// @brief Type of pointers to context pools.
-typedef boost::shared_ptr<MySqlLeaseContextPool> MySqlLeaseContextPoolPtr;
-
 /// @brief MySQL Lease Manager
 ///
 /// This class provides the \ref isc::dhcp::LeaseMgr interface to the MySQL
@@ -920,9 +901,6 @@ private:
 
     /// @brief The parameters
     db::DatabaseConnection::ParameterMap parameters_;
-
-    /// @brief The pool of contexts
-    MySqlLeaseContextPoolPtr pool_;
 };
 
 }  // namespace dhcp

@@ -1958,25 +1958,6 @@ public:
     bool is_readonly_;
 };
 
-/// @brief MySQL Host Context Pool
-///
-/// This class provides a pool of contexts.
-/// The manager will use this class to handle avalilable contexts.
-/// There is only one ContextPool per manager per back-end, which is created
-/// and destroyed by the respective manager factory class.
-class MySqlHostContextPool {
-public:
-
-    /// @brief The vector of available contexts.
-    std::vector<MySqlHostContextPtr> pool_;
-
-    /// @brief The mutex to protect pool access.
-    std::mutex mutex_;
-};
-
-/// @brief Type of pointers to context pools.
-typedef boost::shared_ptr<MySqlHostContextPool> MySqlHostContextPoolPtr;
-
 /// @brief Implementation of the @ref MySqlHostDataSource.
 class MySqlHostDataSourceImpl {
 public:
@@ -2194,9 +2175,6 @@ public:
 
     /// @brief The parameters
     DatabaseConnection::ParameterMap parameters_;
-
-    /// @brief The pool of contexts
-    MySqlHostContextPoolPtr pool_;
 };
 
 namespace {
@@ -2574,35 +2552,11 @@ MySqlHostContext::MySqlHostContext(const DatabaseConnection::ParameterMap& param
 MySqlHostDataSource::MySqlHostContextAlloc::MySqlHostContextAlloc(
     const MySqlHostDataSourceImpl& mgr) : ctx_(), mgr_(mgr) {
 
-    if (MultiThreadingMgr::instance().getMode()) {
-        // multi-threaded
-        {
-            // we need to protect the whole pool_ operation, hence extra scope {}
-            lock_guard<mutex> lock(mgr_.pool_->mutex_);
-            if (!mgr_.pool_->pool_.empty()) {
-                ctx_ = mgr_.pool_->pool_.back();
-                mgr_.pool_->pool_.pop_back();
-            }
-        }
-        if (!ctx_) {
-            ctx_ = mgr_.createContext();
-        }
-    } else {
-        // single-threaded
-        if (mgr_.pool_->pool_.empty()) {
-            isc_throw(Unexpected, "No available MySQL host context?!");
-        }
-        ctx_ = mgr_.pool_->pool_.back();
-    }
+    thread_local MySqlHostContextPtr ctx = mgr_.createContext();
+    ctx_ = ctx;
 }
 
 MySqlHostDataSource::MySqlHostContextAlloc::~MySqlHostContextAlloc() {
-    if (MultiThreadingMgr::instance().getMode()) {
-        // multi-threaded
-        lock_guard<mutex> lock(mgr_.pool_->mutex_);
-        mgr_.pool_->pool_.push_back(ctx_);
-    }
-    // If running in single-threaded mode, there's nothing to do here.
 }
 
 MySqlHostDataSourceImpl::MySqlHostDataSourceImpl(const MySqlConnection::ParameterMap& parameters)
@@ -2619,10 +2573,6 @@ MySqlHostDataSourceImpl::MySqlHostDataSourceImpl(const MySqlConnection::Paramete
                       << " found version: " << db_version.first << "."
                       << db_version.second);
     }
-
-    // Create an initial context.
-    pool_.reset(new MySqlHostContextPool());
-    pool_->pool_.push_back(createContext());
 }
 
 // Create context.

@@ -1740,35 +1740,11 @@ MySqlLeaseContext::MySqlLeaseContext(const DatabaseConnection::ParameterMap& par
 MySqlLeaseMgr::MySqlLeaseContextAlloc::MySqlLeaseContextAlloc(
     const MySqlLeaseMgr& mgr) : ctx_(), mgr_(mgr) {
 
-    if (MultiThreadingMgr::instance().getMode()) {
-        // multi-threaded
-        {
-            // we need to protect the whole pool_ operation, hence extra scope {}
-            lock_guard<mutex> lock(mgr_.pool_->mutex_);
-            if (!mgr_.pool_->pool_.empty()) {
-                ctx_ = mgr_.pool_->pool_.back();
-                mgr_.pool_->pool_.pop_back();
-            }
-        }
-        if (!ctx_) {
-            ctx_ = mgr_.createContext();
-        }
-    } else {
-        // single-threaded
-        if (mgr_.pool_->pool_.empty()) {
-            isc_throw(Unexpected, "No available MySQL lease context?!");
-        }
-        ctx_ = mgr_.pool_->pool_.back();
-    }
+    thread_local MySqlLeaseContextPtr ctx = mgr_.createContext();
+    ctx_ = ctx;
 }
 
 MySqlLeaseMgr::MySqlLeaseContextAlloc::~MySqlLeaseContextAlloc() {
-    if (MultiThreadingMgr::instance().getMode()) {
-        // multi-threaded
-        lock_guard<mutex> lock(mgr_.pool_->mutex_);
-        mgr_.pool_->pool_.push_back(ctx_);
-    }
-    // If running in single-threaded mode, there's nothing to do here.
 }
 
 // MySqlLeaseMgr Constructor and Destructor
@@ -1787,10 +1763,6 @@ MySqlLeaseMgr::MySqlLeaseMgr(const MySqlConnection::ParameterMap& parameters)
                       << " found version: " << db_version.first << "."
                       << db_version.second);
     }
-
-    // Create an initial context.
-    pool_.reset(new MySqlLeaseContextPool());
-    pool_->pool_.push_back(createContext());
 }
 
 MySqlLeaseMgr::~MySqlLeaseMgr() {
