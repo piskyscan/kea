@@ -869,32 +869,12 @@ private:
                     int status, StatementIndex index,
                     const char* what) const;
 
-    /// @brief Context RAII Allocator.
-    class MySqlLeaseContextAlloc {
-    public:
-
-        /// @brief Constructor
-        ///
-        /// This constructor takes a context of the pool if one is available
-        /// or creates a new one.
-        ///
-        /// @param mgr A parent instance
-        /// @param reset Flag which resets thread context
-        MySqlLeaseContextAlloc(const MySqlLeaseMgr& mgr, bool reset = false);
-
-        /// @brief Destructor
-        ///
-        /// This destructor puts back the context in the pool.
-        ~MySqlLeaseContextAlloc();
-
-        /// @brief The context
-        MySqlLeaseContextPtr ctx_;
-
-    private:
-
-        /// @brief The manager
-        const MySqlLeaseMgr& mgr_;
-    };
+    /// @brief Handle thread context
+    ///
+    /// @param reset Flag which resets thread context
+    ///
+    /// @return The thread context
+    MySqlLeaseContextPtr handleMySqlLeaseContext(bool reset = false) const;
 
 private:
 
