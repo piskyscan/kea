@@ -2175,6 +2175,13 @@ public:
     /// @throw DbReadOnly if backend is operating in read only mode.
     void checkReadOnly(MySqlHostContextPtr& ctx) const;
 
+    /// @brief Handle thread context
+    ///
+    /// @param reset Flag which resets thread context
+    ///
+    /// @return The thread context
+    MySqlHostContextPtr handleMySqlHostContext(bool reset = false) const;
+
     /// @brief The parameters
     DatabaseConnection::ParameterMap parameters_;
 };
@@ -2596,23 +2603,15 @@ MySqlHostContext::MySqlHostContext(const DatabaseConnection::ParameterMap& param
     : conn_(parameters), is_readonly_(true) {
 }
 
-// MySqlHostContextAlloc Constructor and Destructor
-
-MySqlHostDataSource::MySqlHostContextAlloc::MySqlHostContextAlloc(
-    const MySqlHostDataSourceImpl& mgr, bool reset) : ctx_(), mgr_(mgr) {
-
+MySqlHostContextPtr
+MySqlHostDataSourceImpl::handleMySqlHostContext(bool reset) const {
     thread_local MySqlHostContextPtr ctx;
     if (reset) {
         ctx.reset();
-        return;
+    } else if (!ctx) {
+        ctx = createContext();
     }
-    if (!ctx) {
-        ctx = mgr_.createContext();
-    }
-    ctx_ = ctx;
-}
-
-MySqlHostDataSource::MySqlHostContextAlloc::~MySqlHostContextAlloc() {
+    return (ctx);
 }
 
 MySqlHostDataSourceImpl::MySqlHostDataSourceImpl(const MySqlConnection::ParameterMap& parameters)
@@ -2631,7 +2630,7 @@ MySqlHostDataSourceImpl::MySqlHostDataSourceImpl(const MySqlConnection::Paramete
     }
 
     // Get a context
-    MySqlHostDataSource::MySqlHostContextAlloc(*this);
+    handleMySqlHostContext();
 }
 
 // Create context.
@@ -2675,7 +2674,7 @@ MySqlHostDataSourceImpl::createContext() const {
 }
 
 MySqlHostDataSourceImpl::~MySqlHostDataSourceImpl() {
-    MySqlHostDataSource::MySqlHostContextAlloc(*this, true);
+    handleMySqlHostContext(true);
 }
 
 std::pair<uint32_t, uint32_t>
@@ -2907,7 +2906,7 @@ MySqlHostDataSource::~MySqlHostDataSource() {
 void
 MySqlHostDataSource::add(const HostPtr& host) {
     // Get a context
-    MySqlHostContextPtr ctx = MySqlHostContextAlloc(*impl_).ctx_;
+    MySqlHostContextPtr ctx = impl_->handleMySqlHostContext();
 
     // If operating in read-only mode, throw exception.
     impl_->checkReadOnly(ctx);
@@ -2958,7 +2957,7 @@ bool
 MySqlHostDataSource::del(const SubnetID& subnet_id,
                          const asiolink::IOAddress& addr) {
     // Get a context
-    MySqlHostContextPtr ctx = MySqlHostContextAlloc(*impl_).ctx_;
+    MySqlHostContextPtr ctx = impl_->handleMySqlHostContext();
 
     // If operating in read-only mode, throw exception.
     impl_->checkReadOnly(ctx);
@@ -2999,7 +2998,7 @@ MySqlHostDataSource::del4(const SubnetID& subnet_id,
                           const uint8_t* identifier_begin,
                           const size_t identifier_len) {
     // Get a context
-    MySqlHostContextPtr ctx = MySqlHostContextAlloc(*impl_).ctx_;
+    MySqlHostContextPtr ctx = impl_->handleMySqlHostContext();
 
     // If operating in read-only mode, throw exception.
     impl_->checkReadOnly(ctx);
@@ -3039,7 +3038,7 @@ MySqlHostDataSource::del6(const SubnetID& subnet_id,
                           const uint8_t* identifier_begin,
                           const size_t identifier_len) {
     // Get a context
-    MySqlHostContextPtr ctx = MySqlHostContextAlloc(*impl_).ctx_;
+    MySqlHostContextPtr ctx = impl_->handleMySqlHostContext();
 
     // If operating in read-only mode, throw exception.
     impl_->checkReadOnly(ctx);
@@ -3078,7 +3077,7 @@ MySqlHostDataSource::getAll(const Host::IdentifierType& identifier_type,
                             const uint8_t* identifier_begin,
                             const size_t identifier_len) const {
     // Get a context
-    MySqlHostContextPtr ctx = MySqlHostContextAlloc(*impl_).ctx_;
+    MySqlHostContextPtr ctx = impl_->handleMySqlHostContext();
 
     // Set up the WHERE clause value
     MYSQL_BIND inbind[2];
@@ -3109,7 +3108,7 @@ MySqlHostDataSource::getAll(const Host::IdentifierType& identifier_type,
 ConstHostCollection
 MySqlHostDataSource::getAll4(const SubnetID& subnet_id) const {
     // Get a context
-    MySqlHostContextPtr ctx = MySqlHostContextAlloc(*impl_).ctx_;
+    MySqlHostContextPtr ctx = impl_->handleMySqlHostContext();
 
     // Set up the WHERE clause value
     MYSQL_BIND inbind[1];
@@ -3129,7 +3128,7 @@ MySqlHostDataSource::getAll4(const SubnetID& subnet_id) const {
 ConstHostCollection
 MySqlHostDataSource::getAll6(const SubnetID& subnet_id) const {
     // Get a context
-    MySqlHostContextPtr ctx = MySqlHostContextAlloc(*impl_).ctx_;
+    MySqlHostContextPtr ctx = impl_->handleMySqlHostContext();
 
     // Set up the WHERE clause value
     MYSQL_BIND inbind[1];
@@ -3149,7 +3148,7 @@ MySqlHostDataSource::getAll6(const SubnetID& subnet_id) const {
 ConstHostCollection
 MySqlHostDataSource::getAllbyHostname(const std::string& hostname) const {
     // Get a context
-    MySqlHostContextPtr ctx = MySqlHostContextAlloc(*impl_).ctx_;
+    MySqlHostContextPtr ctx = impl_->handleMySqlHostContext();
 
     // Set up the WHERE clause value
     MYSQL_BIND inbind[1];
@@ -3175,7 +3174,7 @@ ConstHostCollection
 MySqlHostDataSource::getAllbyHostname4(const std::string& hostname,
                                        const SubnetID& subnet_id) const {
     // Get a context
-    MySqlHostContextPtr ctx = MySqlHostContextAlloc(*impl_).ctx_;
+    MySqlHostContextPtr ctx = impl_->handleMySqlHostContext();
 
     // Set up the WHERE clause value
     MYSQL_BIND inbind[2];
@@ -3207,7 +3206,7 @@ ConstHostCollection
 MySqlHostDataSource::getAllbyHostname6(const std::string& hostname,
                                        const SubnetID& subnet_id) const {
     // Get a context
-    MySqlHostContextPtr ctx = MySqlHostContextAlloc(*impl_).ctx_;
+    MySqlHostContextPtr ctx = impl_->handleMySqlHostContext();
 
     // Set up the WHERE clause value
     MYSQL_BIND inbind[2];
@@ -3241,7 +3240,7 @@ MySqlHostDataSource::getPage4(const SubnetID& subnet_id,
                               uint64_t lower_host_id,
                               const HostPageSize& page_size) const {
     // Get a context
-    MySqlHostContextPtr ctx = MySqlHostContextAlloc(*impl_).ctx_;
+    MySqlHostContextPtr ctx = impl_->handleMySqlHostContext();
 
     // Set up the WHERE clause value
     MYSQL_BIND inbind[3];
@@ -3278,7 +3277,7 @@ MySqlHostDataSource::getPage6(const SubnetID& subnet_id,
                               uint64_t lower_host_id,
                               const HostPageSize& page_size) const {
     // Get a context
-    MySqlHostContextPtr ctx = MySqlHostContextAlloc(*impl_).ctx_;
+    MySqlHostContextPtr ctx = impl_->handleMySqlHostContext();
 
     // Set up the WHERE clause value
     MYSQL_BIND inbind[3];
@@ -3374,7 +3373,7 @@ MySqlHostDataSource::getPage6(size_t& /*source_index*/,
 ConstHostCollection
 MySqlHostDataSource::getAll4(const asiolink::IOAddress& address) const {
     // Get a context
-    MySqlHostContextPtr ctx = MySqlHostContextAlloc(*impl_).ctx_;
+    MySqlHostContextPtr ctx = impl_->handleMySqlHostContext();
 
     // Set up the WHERE clause value
     MYSQL_BIND inbind[1];
@@ -3398,7 +3397,7 @@ MySqlHostDataSource::get4(const SubnetID& subnet_id,
                           const uint8_t* identifier_begin,
                           const size_t identifier_len) const {
     // Get a context
-    MySqlHostContextPtr ctx = MySqlHostContextAlloc(*impl_).ctx_;
+    MySqlHostContextPtr ctx = impl_->handleMySqlHostContext();
 
     return (impl_->getHost(ctx, subnet_id, identifier_type, identifier_begin, identifier_len,
                            MySqlHostDataSourceImpl::GET_HOST_SUBID4_DHCPID,
@@ -3414,7 +3413,7 @@ MySqlHostDataSource::get4(const SubnetID& subnet_id,
     }
 
     // Get a context
-    MySqlHostContextPtr ctx = MySqlHostContextAlloc(*impl_).ctx_;
+    MySqlHostContextPtr ctx = impl_->handleMySqlHostContext();
 
     // Set up the WHERE clause value
     MYSQL_BIND inbind[2];
@@ -3448,7 +3447,7 @@ MySqlHostDataSource::get6(const SubnetID& subnet_id,
                           const uint8_t* identifier_begin,
                           const size_t identifier_len) const {
     // Get a context
-    MySqlHostContextPtr ctx = MySqlHostContextAlloc(*impl_).ctx_;
+    MySqlHostContextPtr ctx = impl_->handleMySqlHostContext();
 
     return (impl_->getHost(ctx, subnet_id, identifier_type, identifier_begin, identifier_len,
                            MySqlHostDataSourceImpl::GET_HOST_SUBID6_DHCPID,
@@ -3464,7 +3463,7 @@ MySqlHostDataSource::get6(const asiolink::IOAddress& prefix,
     }
 
     // Get a context
-    MySqlHostContextPtr ctx = MySqlHostContextAlloc(*impl_).ctx_;
+    MySqlHostContextPtr ctx = impl_->handleMySqlHostContext();
 
     // Set up the WHERE clause value
     MYSQL_BIND inbind[2];
@@ -3506,7 +3505,7 @@ MySqlHostDataSource::get6(const SubnetID& subnet_id,
     }
 
     // Get a context
-    MySqlHostContextPtr ctx = MySqlHostContextAlloc(*impl_).ctx_;
+    MySqlHostContextPtr ctx = impl_->handleMySqlHostContext();
 
     // Set up the WHERE clause value
     MYSQL_BIND inbind[2];
@@ -3545,7 +3544,7 @@ std::string
 MySqlHostDataSource::getName() const {
     std::string name = "";
     // Get a context
-    MySqlHostContextPtr ctx = MySqlHostContextAlloc(*impl_).ctx_;
+    MySqlHostContextPtr ctx = impl_->handleMySqlHostContext();
 
     try {
         name = ctx->conn_.getParameter("name");
@@ -3569,7 +3568,7 @@ MySqlHostDataSource::getVersion() const {
 void
 MySqlHostDataSource::commit() {
     // Get a context
-    MySqlHostContextPtr ctx = MySqlHostContextAlloc(*impl_).ctx_;
+    MySqlHostContextPtr ctx = impl_->handleMySqlHostContext();
 
     // If operating in read-only mode, throw exception.
     impl_->checkReadOnly(ctx);
@@ -3579,7 +3578,7 @@ MySqlHostDataSource::commit() {
 void
 MySqlHostDataSource::rollback() {
     // Get a context
-    MySqlHostContextPtr ctx = MySqlHostContextAlloc(*impl_).ctx_;
+    MySqlHostContextPtr ctx = impl_->handleMySqlHostContext();
 
     // If operating in read-only mode, throw exception.
     impl_->checkReadOnly(ctx);

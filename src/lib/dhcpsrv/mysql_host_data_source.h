@@ -384,33 +384,6 @@ public:
     /// Rolls back all pending database operations.
     virtual void rollback();
 
-    /// @brief Context RAII Allocator.
-    class MySqlHostContextAlloc {
-    public:
-
-        /// @brief Constructor
-        ///
-        /// This constructor takes a context of the pool if one is available
-        /// or creates a new one.
-        ///
-        /// @param mgr A parent instance
-        /// @param reset Flag which resets thread context
-        MySqlHostContextAlloc(const MySqlHostDataSourceImpl& mgr,
-                              bool reset = false);
-
-        /// @brief Destructor
-        ///
-        /// This destructor puts back the context in the pool.
-        ~MySqlHostContextAlloc();
-
-        /// @brief The context
-        MySqlHostContextPtr ctx_;
-
-    private:
-        /// @brief The manager
-        const MySqlHostDataSourceImpl& mgr_;
-    };
-
 private:
     /// @brief Pointer to the implementation of the @ref MySqlHostDataSource.
     MySqlHostDataSourceImplPtr impl_;

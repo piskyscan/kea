@@ -435,33 +435,6 @@ public:
     /// Rolls back all pending database operations.
     virtual void rollback();
 
-    /// @brief Context RAII Allocator.
-    class PgSqlHostContextAlloc {
-    public:
-
-        /// @brief Constructor
-        ///
-        /// This constructor takes a context of the pool if one is available
-        /// or creates a new one.
-        ///
-        /// @param mgr A parent instance
-        /// @param reset Flag which resets thread context
-        PgSqlHostContextAlloc(const PgSqlHostDataSourceImpl& mgr,
-                              bool reset = false);
-
-        /// @brief Destructor
-        ///
-        /// This destructor puts back the context in the pool.
-        ~PgSqlHostContextAlloc();
-
-        /// @brief The context
-        PgSqlHostContextPtr ctx_;
-
-    private:
-        /// @brief The manager
-        const PgSqlHostDataSourceImpl& mgr_;
-    };
-
 private:
     /// @brief Pointer to the implementation of the @ref PgSqlHostDataSource.
     PgSqlHostDataSourceImplPtr impl_;
