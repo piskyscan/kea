@@ -871,17 +871,25 @@ private:
 
     /// @brief Handle thread context
     ///
+    /// @return The thread context
+    MySqlLeaseContextPtr handleMySqlLeaseContext() const;
+
+private:
+
+    /// @brief Handle thread context
+    ///
     /// @param reset Flag which resets thread context
     ///
     /// @return The thread context
-    MySqlLeaseContextPtr handleMySqlLeaseContext(bool reset = false) const;
-
-private:
+    MySqlLeaseContextPtr handleMySqlLeaseContextMultiThreading(bool reset = false) const;
 
     // Members
 
     /// @brief The parameters
     db::DatabaseConnection::ParameterMap parameters_;
+
+    /// @brief The context used when multi-threading is disabled
+    MySqlLeaseContextPtr ctx_;
 };
 
 }  // namespace dhcp

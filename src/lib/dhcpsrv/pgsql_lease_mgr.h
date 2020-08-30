@@ -830,17 +830,25 @@ private:
 
     /// @brief Handle thread context
     ///
+    /// @return The thread context
+    PgSqlLeaseContextPtr handlePgSqlLeaseContext() const;
+
+private:
+
+    /// @brief Handle thread context
+    ///
     /// @param reset Flag which resets thread context
     ///
     /// @return The thread context
-    PgSqlLeaseContextPtr handlePgSqlLeaseContext(bool reset = false) const;
-
-private:
+    PgSqlLeaseContextPtr handlePgSqlLeaseContextMultiThreading(bool reset = false) const;
 
     // Members
 
     /// @brief The parameters
     db::DatabaseConnection::ParameterMap parameters_;
+
+    /// @brief The context used when multi-threading is disabled
+    PgSqlLeaseContextPtr ctx_;
 };
 
 }  // namespace dhcp

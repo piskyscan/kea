@@ -1169,8 +1169,18 @@ PgSqlLeaseContext::PgSqlLeaseContext(const DatabaseConnection::ParameterMap& par
     : conn_(parameters) {
 }
 
+
 PgSqlLeaseContextPtr
-PgSqlLeaseMgr::handlePgSqlLeaseContext(bool reset) const {
+PgSqlLeaseMgr::handlePgSqlLeaseContext() const {
+    if (MultiThreadingMgr::instance().getMode()) {
+        return (handlePgSqlLeaseContextMultiThreading());
+    } else {
+        return (ctx_);
+    }
+}
+
+PgSqlLeaseContextPtr
+PgSqlLeaseMgr::handlePgSqlLeaseContextMultiThreading(bool reset) const {
     thread_local PgSqlLeaseContextPtr ctx;
     if (reset) {
         ctx.reset();
@@ -1197,12 +1207,16 @@ PgSqlLeaseMgr::PgSqlLeaseMgr(const DatabaseConnection::ParameterMap& parameters)
                       << db_version.second);
     }
 
-    // Get a context
-    handlePgSqlLeaseContext();
+    if (MultiThreadingMgr::instance().getMode()) {
+        // Get a context
+        handlePgSqlLeaseContextMultiThreading();
+    } else {
+        ctx_ = createContext();
+    }
 }
 
 PgSqlLeaseMgr::~PgSqlLeaseMgr() {
-    handlePgSqlLeaseContext(true);
+    handlePgSqlLeaseContextMultiThreading(true);
 }
 
 // Create context.

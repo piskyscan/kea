@@ -1519,10 +1519,15 @@ public:
 
     /// @brief Handle thread context
     ///
+    /// @return The thread context
+    PgSqlHostContextPtr handlePgSqlHostContext() const;
+
+    /// @brief Handle thread context
+    ///
     /// @param reset Flag which resets thread context
     ///
     /// @return The thread context
-    PgSqlHostContextPtr handlePgSqlHostContext(bool reset = false) const;
+    PgSqlHostContextPtr handlePgSqlHostContextMultiThreading(bool reset = false) const;
 
     /// @brief Returns PostgreSQL schema version of the open database
     ///
@@ -1536,6 +1541,9 @@ public:
 
     /// @brief The parameters
     PgSqlConnection::ParameterMap parameters_;
+
+    /// @brief The context used when multi-threading is disabled
+    PgSqlHostContextPtr ctx_;
 };
 
 namespace {
@@ -1982,7 +1990,16 @@ PgSqlHostContext::PgSqlHostContext(const DatabaseConnection::ParameterMap& param
 }
 
 PgSqlHostContextPtr
-PgSqlHostDataSourceImpl::handlePgSqlHostContext(bool reset) const {
+PgSqlHostDataSourceImpl::handlePgSqlHostContext() const {
+    if (MultiThreadingMgr::instance().getMode()) {
+        return (handlePgSqlHostContextMultiThreading());
+    } else {
+        return (ctx_);
+    }
+}
+
+PgSqlHostContextPtr
+PgSqlHostDataSourceImpl::handlePgSqlHostContextMultiThreading(bool reset) const {
     thread_local PgSqlHostContextPtr ctx;
     if (reset) {
         ctx.reset();
@@ -2007,8 +2024,12 @@ PgSqlHostDataSourceImpl::PgSqlHostDataSourceImpl(const PgSqlConnection::Paramete
                       << db_version.second);
     }
 
-    // Get a context
-    handlePgSqlHostContext();
+    if (MultiThreadingMgr::instance().getMode()) {
+        // Get a context
+        handlePgSqlHostContextMultiThreading();
+    } else {
+        ctx_ = createContext();
+    }
 }
 
 // Create context.
@@ -2047,7 +2068,7 @@ PgSqlHostDataSourceImpl::createContext() const {
 }
 
 PgSqlHostDataSourceImpl::~PgSqlHostDataSourceImpl() {
-    handlePgSqlHostContext(true);
+    handlePgSqlHostContextMultiThreading(true);
 }
 
 uint64_t

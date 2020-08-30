@@ -1736,7 +1736,16 @@ MySqlLeaseContext::MySqlLeaseContext(const DatabaseConnection::ParameterMap& par
 }
 
 MySqlLeaseContextPtr
-MySqlLeaseMgr::handleMySqlLeaseContext(bool reset) const {
+MySqlLeaseMgr::handleMySqlLeaseContext() const {
+    if (MultiThreadingMgr::instance().getMode()) {
+        return (handleMySqlLeaseContextMultiThreading());
+    } else {
+        return (ctx_);
+    }
+}
+
+MySqlLeaseContextPtr
+MySqlLeaseMgr::handleMySqlLeaseContextMultiThreading(bool reset) const {
     thread_local MySqlLeaseContextPtr ctx;
     if (reset) {
         ctx.reset();
@@ -1763,12 +1772,16 @@ MySqlLeaseMgr::MySqlLeaseMgr(const MySqlConnection::ParameterMap& parameters)
                       << db_version.second);
     }
 
-    // Get a context
-    handleMySqlLeaseContext();
+    if (MultiThreadingMgr::instance().getMode()) {
+        // Get a context
+        handleMySqlLeaseContextMultiThreading();
+    } else {
+        ctx_ = createContext();
+    }
 }
 
 MySqlLeaseMgr::~MySqlLeaseMgr() {
-    handleMySqlLeaseContext(true);
+    handleMySqlLeaseContextMultiThreading(true);
 }
 
 // Create context.

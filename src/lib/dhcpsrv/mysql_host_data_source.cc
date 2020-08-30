@@ -2175,13 +2175,21 @@ public:
 
     /// @brief Handle thread context
     ///
+    /// @return The thread context
+    MySqlHostContextPtr handleMySqlHostContext() const;
+
+    /// @brief Handle thread context
+    ///
     /// @param reset Flag which resets thread context
     ///
     /// @return The thread context
-    MySqlHostContextPtr handleMySqlHostContext(bool reset = false) const;
+    MySqlHostContextPtr handleMySqlHostContextMultiThreading(bool reset = false) const;
 
     /// @brief The parameters
     DatabaseConnection::ParameterMap parameters_;
+
+    /// @brief The context used when multi-threading is disabled
+    MySqlHostContextPtr ctx_;
 };
 
 namespace {
@@ -2555,7 +2563,16 @@ MySqlHostContext::MySqlHostContext(const DatabaseConnection::ParameterMap& param
 }
 
 MySqlHostContextPtr
-MySqlHostDataSourceImpl::handleMySqlHostContext(bool reset) const {
+MySqlHostDataSourceImpl::handleMySqlHostContext() const {
+    if (MultiThreadingMgr::instance().getMode()) {
+        return (handleMySqlHostContextMultiThreading());
+    } else {
+        return (ctx_);
+    }
+}
+
+MySqlHostContextPtr
+MySqlHostDataSourceImpl::handleMySqlHostContextMultiThreading(bool reset) const {
     thread_local MySqlHostContextPtr ctx;
     if (reset) {
         ctx.reset();
@@ -2580,8 +2597,12 @@ MySqlHostDataSourceImpl::MySqlHostDataSourceImpl(const MySqlConnection::Paramete
                       << db_version.second);
     }
 
-    // Get a context
-    handleMySqlHostContext();
+    if (MultiThreadingMgr::instance().getMode()) {
+        // Get a context
+        handleMySqlHostContextMultiThreading();
+    } else {
+        ctx_ = createContext();
+    }
 }
 
 // Create context.
@@ -2625,7 +2646,7 @@ MySqlHostDataSourceImpl::createContext() const {
 }
 
 MySqlHostDataSourceImpl::~MySqlHostDataSourceImpl() {
-    handleMySqlHostContext(true);
+    handleMySqlHostContextMultiThreading(true);
 }
 
 std::pair<uint32_t, uint32_t>
