@@ -178,6 +178,8 @@ man_pages = [
     ('man/kea-dhcp-ddns.8', 'kea-dhcp-ddns', 'DHCP-DDNS process in Kea', author, 8),
     ('man/kea-lfc.8', 'kea-lfc', 'Lease File Cleanup process in Kea', author, 8),
     ('man/kea-netconf.8', 'kea-netconf', 'NETCONF agent for Kea environment', author, 8),
+    ('man/kea-reverse-proxy.8', 'kea-reverse-proxy', 'Reverse-proxy with role-based access control for the kea control agent', author, 8),
+    ('man/kea-secure-shell.8', 'kea-secure-shell', 'Secure text client for Control Agent process', author, 8),
     ('man/kea-shell.8', 'kea-shell', 'Text client for Control Agent process', author, 8),
     ('man/perfdhcp.8', 'perfdhcp', 'DHCP benchmarking tool', author, 8),
 ]
