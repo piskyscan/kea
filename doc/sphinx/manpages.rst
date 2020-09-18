@@ -26,3 +26,5 @@ Manual Pages
    man/kea-shell.8
    man/kea-netconf.8
    man/perfdhcp.8
+   man/kea-secure-shell.8
+   man/kea-reverse-proxy.8
