@@ -1,0 +1,253 @@
+#!/usr/bin/env python3
+
+# Copyright (C) 2020 Internet Systems Consortium, Inc. ("ISC")
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+"""
+Role-Based Access Control Reverse Proxy for Control Agent
+"""
+
+import sys
+import argparse
+import json
+import socket
+#import socketserver
+import ssl
+from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
+import requests
+
+sys.path.append('@PKGPYTHONDIR@')
+
+# Specific imports
+
+import kea_config
+from kea_error_messages import HttpErrorMessage
+
+VERSION = "@PACKAGE_VERSION@"
+
+class ThreadingHTTPServer6(ThreadingHTTPServer):
+    """
+    ThreadingHTTPServer derived class to set the address family.
+    """
+    address_family = socket.AF_INET6
+
+class ReverseProxy(BaseHTTPRequestHandler):
+    """
+    Receives HTTPS POST queries from clients.
+    Filters and forwards them to the control agent.
+    Gets and filters responses from the control agent.
+    Sends them to clients.
+    """
+
+    ca_url = ''
+    config = kea_config.KeaReverseProxyConfig()
+    server_version = 'KeaReverseProxy/' + VERSION
+
+    class ErrorResponseSent(Exception):
+        """
+        Exception raised when an error response was send.
+        """
+
+    def do_POST(self):
+        """
+        Handles POST requests (called when a POST is received)
+        Calls process_post_request.
+        """
+        try:
+            self.process_post_request()
+        except self.ErrorResponseSent:
+            pass
+
+    def process_post_request(self):
+        """
+        Process a POST request:
+          get the role
+          get JSON request body
+          accept or reject command
+          forward the request to the control agent
+          get the response from the control agent
+          filter the response
+          send the response to the client
+        """
+        # Get role
+        try:
+            peer_cert = self.connection.getpeercert()
+        except (ValueError, AttributeError):
+            # no TLS handshake or no TLS at all
+            peer_cert = None
+        if self.config.assign.use_request_handler:
+            role = self.config.assign.assign(self)
+        elif peer_cert is not None:
+            role = self.config.assign.assign(peer_cert)
+        else:
+            role = None
+        if role is None:
+            role = self.config.default
+        print('role is', role)
+        if role is None:
+            self.print_send_error('drop on no role')
+        action = self.config.roles.get(role)
+        if action is None:
+            self.print_send_error('drop on unknown role')
+
+        # Parse request
+        req_headers = dict((k.lower(), v) for k, v in self.headers.items())
+        content_type = req_headers.get('content-type')
+        if content_type is None:
+            self.print_send_error('no content-type', content_type)
+        if content_type.lower() != 'application/json':
+            self.print_send_error('bad content-type')
+        if req_headers.get('content-length') is None:
+            self.print_send_error('no Content-Length')
+        content_length = int(req_headers['content-length'])
+        req_body = self.rfile.read(content_length)
+        try:
+            query = json.loads(req_body)
+        except json.JSONDecodeError:
+            self.print_send_error('bad request body', req_body)
+
+        # Accept or reject commands
+        if not isinstance(query, dict):
+            self.print_send_error('query is not a dict')
+        command = query.get('command')
+        if command is None:
+            self.print_send_error('no command in query')
+        if not kea_config.command_accept(action, command):
+            self.print_send_error('command filtered out')
+
+        # Call the control agent
+        print('Forwarding to', self.ca_url)
+        try:
+            resp = requests.post(self.ca_url,
+                                 headers=self.headers,
+                                 data=req_body,
+                                 verify=False,
+                                 timeout=self.config.timeouts,
+                                 auth=kea_config.basic_auth(action))
+        except requests.Timeout:
+            self.print_send_error('request timeout')
+        except requests.ConnectionError:
+            self.print_send_error('connection error')
+        print('Got final with', resp.status_code)
+        resp_body = resp.content
+        try:
+            response = json.loads(resp_body)
+        except json.JSONDecodeError:
+            self.print_send_error('bad response body')
+
+        # Filter response
+        response = kea_config.response_filter(action, command, response)
+        try:
+            resp_body = json.dumps(response, sort_keys=True).encode()
+        except (TypeError, json.JSONDecodeError):
+            self.print_send_error('bad response')
+
+        # Respond with the requested data
+        self.send_response_only(resp.status_code)
+        self.send_resp_headers(resp.headers)
+        self.send_header('Content-Length', str(len(resp_body)))
+        self.end_headers()
+        self.wfile.write(resp_body)
+
+    def print_send_error(self, error, detail=None):
+        """
+        Send an error response
+        """
+        if detail is not None:
+            print(error, detail)
+        else:
+            print(error)
+        code, message = HttpErrorMessage.get(error)
+        self.send_response(code, message)
+        self.send_header('Content-Type', 'application/json')
+        body_format = '{{ "result": {0}, "text": "{1}" }}'
+        body = body_format.format(code, message).encode()
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+        raise self.ErrorResponseSent
+
+    def send_resp_headers(self, headers):
+        """
+        Copy HTTP headers from response
+        """
+        for key, value in headers.items():
+            if key != 'Content-Length':
+                self.send_header(key, value)
+
+def reverse_proxy():
+    """
+    Parse command line parameters using argparse.
+    """
+    descr = 'kea-reverse-proxy is a simple reverse proxy providing '
+    descr += 'role-based access control and https / http translation between '
+    descr += 'clients and Kea Control Agent.'
+    parser = argparse.ArgumentParser(description=descr)
+    parser.add_argument('-v', action="store_true", help="Prints version")
+    parser.add_argument('--ipv4', '-4', action="store_true", help="IPv4")
+    parser.add_argument('--ipv6', '-6', action="store_true", help="IPv6")
+    parser.add_argument('-c', type=str, default='', metavar='config-file',
+                        help='config-file')
+    parser.add_argument('-t', type=str, default='', metavar='config-file',
+                        help='config-file')
+    cmd_args = parser.parse_args()
+
+    if cmd_args.v:
+        print(VERSION)
+        sys.exit(0)
+    elif cmd_args.t != '':
+        rp = ReverseProxy
+        rp.config.load(cmd_args.t)
+        print('Successfully loaded')
+        sys.exit(0)
+    elif cmd_args.c == '':
+        print('A config file is required.')
+        parser.print_help()
+        sys.exit(1)
+
+    if cmd_args.ipv6:
+        if cmd_args.ipv4:
+            raise ValueError("IPv4 and IPv6 can't be configured together")
+        http_server = ThreadingHTTPServer6
+    else:
+        http_server = ThreadingHTTPServer
+
+    rp = ReverseProxy
+    rp.config.load(cmd_args.c)
+    rp.ca_url = 'http://' + rp.config.host + ':' + str(rp.config.ca_port)
+
+    server = (rp.config.host, rp.config.rp_port)
+    httpd = http_server(server, rp)
+
+    if rp.config.tls.key_file is not None:
+        rp.ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH,
+                                            cafile=rp.config.tls.ca_file,
+                                            capath=rp.config.tls.ca_path)
+        rp.ctx.load_cert_chain(rp.config.tls.cert_file, rp.config.tls.key_file)
+        if rp.config.tls.cert_required:
+            rp.ctx.verify_mode = ssl.CERT_REQUIRED
+        else:
+            rp.ctx.verify_mode = ssl.CERT_OPTIONAL
+        if rp.config.extension is not None:
+            try:
+                rp.config.extension.tls_setup(rp.config, rp.ctx)
+            except AttributeError:
+                pass
+        httpd.socket = rp.ctx.wrap_socket(httpd.socket, server_side=True)
+        print('set TLS')
+    else:
+        print('no TLS?')
+
+    # main loop
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        print('existing on ^C')
+
+    sys.exit(0)
+
+if __name__ == "__main__":
+    reverse_proxy()

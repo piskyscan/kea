@@ -1,3 +1,9 @@
+1827.	[func]		fdupont
+	Added kea-secure-shell script a version of kea-shell with HTTPS
+	support, and kea-reverse-proxy a prototype of a HTTPS reverse
+	proxy with role based access control (RBAC).
+	(Gitlab #1263)
+
 Kea 1.9.1 (development) released on Oct 28, 2020
 
 1826.	[build]		razvan

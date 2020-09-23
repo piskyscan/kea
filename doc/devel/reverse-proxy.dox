@@ -1,0 +1,296 @@
+// Copyright (C) 2020 Internet Systems Consortium, Inc. ("ISC")
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+/**
+
+ @page reverseProxy Kea Reverse Proxy
+
+Welcome to Kea Reverse Proxy. This documentation is addressed at
+developers who are interested in internal operation of the Kea Reverse
+Proxy. This file provides information needed to understand and perhaps
+extend this program.
+
+This documentation is stand-alone: you should have read and
+understood <a href="https://jenkins.isc.org/job/Kea_doc/doxygen/">Kea
+Developer's Guide</a> and in particular its section about hooks: <a
+href="https://jenkins.isc.org/job/Kea_doc/doxygen/df/d46/hooksdgDevelopersGuide.html">
+Hooks Developer's Guide</a>.
+
+@section reverse_proxy Overview
+## Introduction
+
+The Kea Reverse Proxy processes received POST requests following these
+individual steps:
+ - first a role is assigned to the request sender (the client), by
+  default using its end-entity public key certificate
+ - when no role can be assigned a HTTP 500 error is returned to the client
+ - the JSON request is parsed into a python object
+ - the command is extracted from this object
+ - when the request can't be decoded or command can't be found
+  a HTTP 400 error is returned to the clint
+ - according to the assigned role the command is accepted or rejected
+ - when the command is rejected a HTTP 403 error is returned to the client
+ - when the command is accepted the request is forwarded to the control agent
+ - the control agent sends the JSON response
+ - if there is a connection error or a timeout a gateway error is returned
+ - the JSON response is parsed into a python object
+ - when the response can't be decoded a HTTP 502 error is returned to
+  the client
+ - according to the assigned role a list of filters is applied to this
+  python object
+ - the python object is dumped into a filtered response
+ - the filtered response with HTTP headers from the control agent is
+  returned to the client
+
+## Role assignement
+
+The Kea Reverse Proxy provides two predefined role assignment procedure,
+both using the peer (i.e. the client) end-entity public key certificate:
+ - the issuer procedure using the issuer commonName
+ - the subject procedure using the subject commonName
+The mapping from a commonName to a role is done automatically by
+using the same string (e.g. the issuer commonName management is mapped into
+the management role) or using an explicit commonName map given by
+the configuration file (assign-role-parameter).
+
+In addition when a role can't be assigned a default can be applied
+(default-role). Of course it is recommended to give low privilege to
+this default role.
+
+Note the access to the Kea Reverse Proxy can be limited using the TLS
+settings too, e.g. by requiring a client certificate or with other words
+requiring mutual authentication.
+
+The role assignment procedure can be extended by defining new procedures
+and by using the use_request_handler flag of the base class. When it is
+set to True the handler object is passed to the assign method instead
+the peer certificate giving access to the whole request context. For
+instance the client IP address can be used. Beware that from a security
+point of view it can be weaker than the peer certificate.
+
+The parsing of the assign-role-parameter should be defined too for
+new role assignment procedures. Predefined are using a string, and
+using a string x string map.
+
+## Command accept or reject
+
+The command description files from the src/share/api (source) or
+share/kea/api (install) directory are loaded before the procedures
+are applied to build accepts (positive) and rejects (negative)
+command access lists for a given role.
+
+The Kea Reverse Proxy provides some predefined procedures to build
+command access list:
+ - the all procedure which returns all known commands
+ - the access procedure which returns all commands with the given access
+  (e.g. read or write). Note that unknown access names are rejected at
+  configuration parsing time.
+ - the commands procedure which returns all specified commands. Note
+  that unknown command names are rejected at configuration parsing time.
+ - the hooks procedure which returns all commands for one of the given hooks.
+  Note that unknown hooks names are rejected at configuration parsing time.
+ - the not procedure which returns the complement of its procedure argument.
+ - the and procedure which returns the intersection of its procedure list
+  argument.
+ - the or procedure which returns the union of its procedure list argument.
+When the accepts and rejects access lists are built they are made disjoint
+i.e. commands which are in both lists are removed from one list. The
+prefedence configuration parameter specified what access list has the
+preference so common commands are removed from the other list.
+
+When a command is not in any access list the others-commands parameter
+is applied. By default it is False so such commands are rejected.
+
+The accept method is simple (True means accepted, False means rejected):
+@code
+def accept(self, command):
+    if command in self.accepts:
+        return True
+    if command in self.rejects:
+        return False
+    return self.others
+@endcode
+
+The command accept can be extended by defining new procedures both for
+building access lists and for parsing configuration arguments.
+
+## Response filters
+
+The Kea Reverse Proxy provides some predefined filters to build response
+filters for a given role:
+ - the list-commands filter which removes rejected commands from the
+  list-commands command response
+ - the config-control filter which removes the config-control entry from
+  the config-get command response
+ - the redact-password which applies the same redaction on all passwords
+  as for the database accesslogging
+
+Response filters can be extended by defining new filters both for the
+filter itself and for parsing configuration arguments.
+
+## TLS setting
+
+The Kea Reverse Proxy TLS setting includes the trusted-anchor (i.e.
+the Certification Authority) certificate(s) file or directory,
+the server certificate and key files, and a cert-required flag
+which makes client certificate required or optional.
+
+The TLS setting can be extended for instance to add an option or change
+the verify flags in the SSLContext object before the call to wrap_socket.
+
+Note that for easier testing it is currently not required to setup TLS,
+i.e. when the server key file is not configured TLS is not used.
+
+## Configuration file syntax
+
+The configuration file is in JSON with # and // comments (but not
+the / * * / recursive comments). The configuration must be a map with
+only one entry with ReverseProxy key and a map value (i.e. same than
+for other Kea agent and server configuration).
+
+Global parameters are:
+ - 'extension-search-path': the search path of the extension in the case
+  the extension can't be found using the default search path.
+  The value is passed in sys.path.append().
+ - 'extension-module-name': the name of the extension module.
+ - 'extension-package-name': the name of the extension package. It makes
+  sense only when the extension module name is specified.
+ - 'host': the hostname or IP address of the reverse proxy and the control
+  agent: the reverse proxy listens on this address and forwards requests
+  to the control agent at this address. This means the reverse proxy and
+  the control agent must be co-located. Default is "127.0.0.1".
+ - 'reverse-proxy-port': the TCP port the reverse proxy listens on.
+  Default is 443 i.e. the standard HTTPS reserved port.
+ - 'control-agent-port': the TCP port the reverse proxy connects to,
+  The control agent must listen on it. Default is 8000 i.e. the same
+  as the Kea shell.
+ - 'connect-timeout': the connect timeout in seconds. Default is 5 seconds
+  i.e. a bit more than default TCP first retransmit.
+ - 'read-timeout': the read timeout in seconds. Default is 10 seconds
+  i.e. the same as for Kea HTTP clients. Note the control agent can itself
+  use a 60 seconds timeout so when large responses from the server are
+  expected the default could be too small.
+ - 'api-files': the directory where to find the command description files.
+  There is no default and this parameter is mandatory.
+ - 'assign-role-by': the role assignment procedure name, e.g. "issuer" or
+  "subject". There is no default and this parameter is mandatory.
+ - 'assign-role-parameter': the role assignment procedure parameter.
+  Its exact syntax and behavior when not specified depends on the
+  role assignment procedure. For issuer and subject procedures the syntax
+  is a commonName string to role name map, and default is to use the
+  role names as commonNames.
+ - 'default-role': the default role when the role assignment procedure
+  fails to assign a role. When it is not specified such failures are
+  reported as internal errors. Note that TLS constraints the possible
+  values used by the role assignment procedure so makes sense to have
+  no default role in some cases.
+ - 'roles': the list of roles (see down).
+ - 'trust-anchor': the file or path name where the Certification Authority
+  certificate(s) can be found. Required for TLS service.
+ - 'cert-file': the server certificate file name. Required for TLS service.
+ - 'key-file': the server key file name. The key must be not ciphered.
+  Required for TLS service.
+ - 'cert-required': specified of client certificates are required or optional.
+  Related to the default role as when false clients can provide no
+  certificates. Default is true i.e. enforcing mutual authentication.
+
+Role syntax is a map with:
+ - 'name': the role name. Duplicate role names are not allowed.
+  The parameter is mandatory.
+ - 'accept-commands': the positive command access list. The value is
+  a command access list procedure. When a command is member of this list
+  it is accepted. Default is an empty access list.
+ - 'reject-commands': the negative command access list. The value is
+  a command access list procedure. When a command is member of this list
+  it is rejected. Default is an empty access list.
+ - 'others-commands': the action for commands which are not member of
+  the accept and reject lists: true means accept and false reject.
+  The default is false i.e. reject.
+ - 'preference': where to leave a command which is in both access lists
+  after procedure evaluation. Possible values are 'accept' and 'reject'.
+  The default is 'accept'.
+ - 'response-filters': the list of response filters to apply in sequence
+  on responses from the control agent. The syntax is a list of names
+  and the default is the empty list i.e. to keep the JSON response as
+  it was received before sending it to the client.
+ - 'basic-auth-user': the user to use for basic HTTP authentication. If
+  specified it must be a string. The default is to use the role name.
+  Note it should not include the ':' character but this is not checked.
+ - 'basic-auth-password': the password to use for basic HTTP authentication.
+  If specified it must be a string. If not specified the reverse proxy does
+  not add the basic HTTP authentication header.
+
+Command access list procedures:
+ - 'all': the procedure returning all known commands. The syntax is
+  the string "all".
+ - 'access': the procedure returning all known commands matching the
+  specified access value. The syntax is a single entry map with
+  the "access" key and either "read" and "write" value.
+ - 'commands': the procedure returning specified known commands.
+  The syntax is a single entry map with the "commands" key and
+  a list of known command names for value.
+ - 'hooks': the procedure returning known commands for specified hooks.
+  The syntax is a single entry map with the "hooks" key and a list of
+  known hook names or value.
+ - 'not': the procedure returning the complement in known commands of
+  its argument procedure. The syntax is a single entry map with the
+  "not" key and the argument procedure name value.
+ - 'and': the procedure returning the union of the argument procedure list.
+  The syntax is a single entry map with the "and" key and the list of
+  procedure names for value.
+ - 'or': the procedure returning the union of the argument procedure list.
+  The syntax is a single entry map with the "or" key or the list of
+  procedure names for value.
+
+Response filters:
+ - 'list-commands': this filter removes rejected commands from the
+  "list-commands" command response. It uses the same algorithm as the
+  command access list application.
+ - 'config-control': this filter removes the "config-control" entry from
+  the "config-get" response.
+ - 'redact-password': the filter replaces all passwords by the values
+  "*****" (i.e same as database password redaction done by Kea
+  libraries for logging).
+
+## Extension mechanisms
+
+The first way to extend the Kea Reverse Proxy is to modify the command
+description files:
+ - add new files / commands
+ - remove new files / commands
+ - change the access value
+ - change / add / delete the hook value
+
+The KeaReverseProxyConfig uses some dictionaries for an easy extension:
+ - 'assign_creates': keyed by the role assignment procedure name.
+  The value is a factory function taking no argument and returning
+  a KeaReverseProxyRole subclass instance.
+ - 'assign_setup': keyed by the role assignment procedure name.
+  The value is a KeaReverseProxyConfig method taking the procedure name
+  and the assign role parameter value. It must call the setup method
+  of the procedure stored in the assign config value. When possible
+  simply use one of the two defined methods setup_assign_dict or
+  setup_assign_default.
+ - 'parsers': keyed by a command access list procedure name. The value
+  must be a function or method taking the role config and a context error
+  message. It must return a CommandFilter subclass instance.
+ - 'filters': keyed by the response filter name. The value must be a
+  factory function taking the role object as argument and returning
+  a KeaReverseProxyResponseFilter subclass instance.
+
+The KeaReverseProxyConfig parse method tries to load an extension module
+from it specified name ('extension-module-name') and optional package
+name ('extension-package-name'). These parameters are given to
+importlib.import_module and the resilt is stored into 'extension' and
+calls when they exist:
+ - pre_parse function with KeaReverseProxyConfig instance and reverse
+  proxy config before other parameter parsing
+ - post_parse function with KeaReverseProxyConfig instance and reverse
+  proxy config after parsing
+ - tls_setup with KeaReverseProxyConfig instance and SSLContext before
+  wrap_socket
+
+*/
