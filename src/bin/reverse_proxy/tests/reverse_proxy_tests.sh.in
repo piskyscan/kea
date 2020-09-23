@@ -1,0 +1,261 @@
+# Copyright (C) 2020 Internet Systems Consortium, Inc. ("ISC")
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# Path to the temporary Control Agent configuration file.
+CFG_FILE=@abs_top_builddir@/src/bin/reverse_proxy/tests/test_config.json
+# Path to the Control Agent log file.
+LOG_FILE=@abs_top_builddir@/src/bin/reverse_proxy/tests/test.log
+# Path to the temporary Reverse Proxy configuration file.
+RP_CFG_FILE=@abs_top_builddir@/src/bin/reverse_proxy/tests/rp_test_config.json
+# Expected version
+EXPECTED_VERSION="@PACKAGE_VERSION@"
+
+# Control Agent configuration to be stored in the configuration file.
+# todo: use actual configuration once we support it.
+CONFIG="{
+    \"Control-agent\":
+    {
+        \"http-host\": \"127.0.0.1\",
+        \"http-port\": 8081,
+        \"loggers\": [
+        {
+            \"name\": \"kea-ctrl-agent\",
+            \"output_options\": [
+                {
+                    \"output\": \"$LOG_FILE\"
+                }
+            ],
+            \"severity\": \"DEBUG\"
+        }
+        ]
+    }
+}"
+
+# Reverse Proxy configuration to be stored in the configuration file.
+RP_CONFIG="{
+    \"ReverseProxy\":
+    {
+        \"host\": \"localhost\",
+        \"reverse-proxy-port\": 4563,
+        \"control-agent-port\": 8081,
+        \"api-files\": \"@abs_top_srcdir@/src/share/api\",
+        \"assign-role-by\": \"issuer\",
+        \"assign-role-parameter\": { \"kea-ca\": \"admin\" },
+        \"default-role\": \"user\",
+        \"roles\": [
+        {
+            \"name\": \"admin\",
+            \"accept-commands\": \"all\"
+        },{
+            \"name\": \"user\",
+            \"accept-commands\": { \"access\": \"read\" },
+            \"response-filters\": [ \"list-commands\" ]
+        } ],
+        \"trust-anchor\": \"$TESTSRCDIR/ca/kea-ca.crt\",
+        \"cert-file\": \"$TESTSRCDIR/ca/kea-server.crt\",
+        \"key-file\": \"$TESTSRCDIR/ca/kea-server.key\",
+        \"cert-required\": false
+    }
+}"
+
+# In these tests we need to use three binaries: Control Agent, Secure
+# Shell and Kea Reverse Proxy.
+# Using bin and bin_path would be confusing, so we omit defining bin
+# and bin_path on purpose.
+ss_bin="kea-secure-shell"
+ss_bin_path=@abs_top_builddir@/src/bin/secure_shell
+
+ca_bin="kea-ctrl-agent"
+ca_bin_path=@abs_top_builddir@/src/bin/agent
+
+rp_bin="kea-reverse-proxy"
+rp_bin_path=@abs_top_builddir@/src/bin/reverse_proxy
+
+tmpfile_path=@abs_top_builddir@/src/bin/reverse_proxy/tests
+
+# Import common test library.
+. @abs_top_builddir@/src/lib/testutils/dhcp_test_lib.sh
+
+# Specialized cleanup for the Reverse Proxy
+cleanup_reverse_proxy() {
+    # The Reverse Proxy does not create pid files.
+    local pids=$( pgrep -f reverse_proxy/kea-reverse-proxy )
+    for pid in ${pids}
+    do
+        printf "Shutting down Kea Reverse Proxy having pid %s.\n" ${pid}
+        kill ${pid}
+    done
+
+    rm -rf ${RP_CFG_FILE}
+}
+
+# Stores the Reverse Proxy configuration specified as a parameter in the
+# configuration file which name has been set in the ${RP_CFG_FILE}
+# variable.
+create_reverse_proxy_config() {
+    local cfg="${1}"  # Configuration string.
+    if [ -z ${RP_CFG_FILE} ]; then
+        test_lib_error "create_reverse_proxy_config requires RP_CFG_FILE \
+variable be set"
+        clean_exit 1
+
+    elif [ -z "${cfg}" ]; then
+        test_lib_error "create_reverse_proxy_config requires argument \
+holding a configuration"
+        clean_exit 1
+    fi
+
+    printf "Create Reverse Proxy configuration file: %s.\n" ${RP_CFG_FILE}
+    printf "%b" "${RP_CONFIG}" > ${RP_CFG_FILE}
+}
+
+# This test sends a command to the reverse proxy and verify the result
+reverse_proxy_command_test() {
+    test_name=${1}  # Test name
+    cmd=${2}        # Command to be sent
+    exp_rsp=${3}    # Expected response
+    arguments=${4}  # Any extra arguments
+
+    # Setup phase: start CA.
+
+    # Log the start of the test and print test name.
+    test_start ${test_name}
+
+    # Remove any dangling Reverse Proxy instances.
+    cleanup_reverse_proxy
+
+    # Create new Reverse Proxy configuration file.
+    create_reverse_proxy_config ${RP_CONFIG}
+
+    # Start Reverse Proxy
+    printf "Running command %s.\n" "\"${rp_bin} -c ${RP_CFG_FILE}\""
+    ${rp_bin_path}/${rp_bin} -c  ${RP_CFG_FILE} &
+
+    # Remove any dangling CA instances and remove log files.
+    cleanup
+
+    # Create new CA configuration file.
+    create_config "${CONFIG}"
+
+    # Instruct Control Agent to log to the specific file.
+    set_logger
+    # Start Control Agent.
+    start_kea ${ca_bin_path}/${ca_bin}
+    # Wait up to 20s for Control Agent to start.
+    wait_for_kea 20
+    if [ ${_WAIT_FOR_KEA} -eq 0 ]; then
+        printf "ERROR: timeout waiting for Control Agent to start.\n"
+        clean_exit 1
+    fi
+
+    # Check if it is still running. It could have terminated (e.g. as a result
+    # of configuration failure).
+    get_pid ${ca_bin}
+    if [ ${_GET_PIDS_NUM} -ne 1 ]; then
+        printf "ERROR: expected one Control Agent process to be started.\
+ Found %d processes started.\n" ${_GET_PIDS_NUM}
+        clean_exit 1
+    fi
+
+    # Check in the log file, how many times agent has been configured.
+    # It should be just once on startup.
+    get_reconfigs
+    if [ ${_GET_RECONFIGS} -ne 1 ]; then
+        printf "ERROR: agent been configured ${_GET_RECONFIGS} time(s),\
+ but exactly 1 was expected.\n"
+        clean_exit 1
+    else
+        printf "Agent successfully configured.\n"
+    fi
+
+    # Main test phase: send command, check response.
+    tmp="echo | ${ss_bin_path}/${ss_bin} --host localhost \
+ --port 4563 --ca ${TESTSRCDIR}/ca/kea-ca.crt ${arguments} \
+ ${cmd} > ${tmpfile_path}/shell-stdout.txt"
+    echo "Executing ($tmp)"
+
+    echo | ${ss_bin_path}/${ss_bin} --host localhost \
+ --port 4563 --ca ${TESTSRCDIR}/ca/kea-ca.crt ${arguments} \
+ ${cmd} > ${tmpfile_path}/shell-stdout.txt
+
+    # Check the exit code
+    shell_exit_code=$?
+    if [ ${shell_exit_code} -ne 0 ]; then
+        echo "ERROR:" \
+        "kea-secure-shell returned ${shell_exit_code} exit code,  expected 0."
+    else
+        echo "kea-secure-shell returned ${shell_exit_code} exit code as expected."
+    fi
+
+    # Now check the response
+    rm -f ${tmpfile_path}/shell-expected.txt
+    echo ${exp_rsp} > ${tmpfile_path}/shell-expected.txt
+    diff ${tmpfile_path}/shell-stdout.txt ${tmpfile_path}/shell-expected.txt
+    diff_code=$?
+    if [ ${diff_code} -ne 0 ]; then
+        echo "ERROR:" \
+        "content returned is different than expected." \
+        "See ${tmpfile_path}/shell-*.txt"
+        echo "EXPECTED:"
+        cat ${tmpfile_path}/shell-expected.txt
+        echo "ACTUAL RESULT:"
+        cat ${tmpfile_path}/shell-stdout.txt
+        clean_exit 1
+    else
+        echo "Content returned by kea-secure-shell meets expectation."
+        rm ${tmpfile_path}/shell-*.txt
+    fi
+    # Main test phase ends.
+
+    # Cleanup phase: shutdown Reverse Proxy and Control Agent
+
+    # Cleanup phase: shutdown Reverse Proxy
+    cleanup_reverse_proxy
+
+    # Send SIGTERM signal to Control Agent
+    send_signal 15 ${ca_bin}
+
+    # Now wait for process to log that it is exiting.
+    wait_for_message 10 "DCTL_SHUTDOWN" 1
+    if [ ${_WAIT_FOR_MESSAGE} -eq 0 ]; then
+        printf "ERROR: Control Agent did not log shutdown.\n"
+        clean_exit 1
+    fi
+
+    # Make sure the agent is down.
+    wait_for_server_down 5 ${ca_bin}
+    assert_eq 1 ${_WAIT_FOR_SERVER_DOWN} \
+        "Expected wait_for_server_down return %d, returned %d"
+
+    test_finish 0
+}
+
+# This test verifies that the binary is reporting its version properly.
+version_test() {
+    test_name=${1}  # Test name
+
+    # Log the start of the test and print test name.
+    test_start ${test_name}
+
+    # Remove dangling Kea instances and remove log files.
+    cleanup
+
+    REPORTED_VERSION="`${rp_bin_path}/${rp_bin} -v`"
+
+    if test "${REPORTED_VERSION}" == "${EXPECTED_VERSION}"; then
+        test_finish 0
+    else
+        echo "ERROR:" \
+        "Expected version ${EXPECTED_VERSION}, got ${REPORTED_VERSION}"
+        test_finish 1
+    fi
+}
+
+version_test "reverse-proxy.version"
+reverse_proxy_command_test "reverse-proxy.list-commands-user" "list-commands" \
+    "[{\"arguments\": [\"build-report\", \"config-get\", \"list-commands\", \"status-get\", \"version-get\"], \"result\": 0}]" ""
+reverse_proxy_command_test "reverse-proxy.list-commands-admin" "list-commands" "[{\"arguments\": [\"build-report\", \"config-get\", \"config-reload\", \"config-set\", \"config-test\", \"config-write\", \"list-commands\", \"shutdown\", \"status-get\", \"version-get\"], \"result\": 0}]" "--cert ${TESTSRCDIR}/ca/kea-client.crt --key ${TESTSRCDIR}/ca/kea-client.key"
+reverse_proxy_command_test "reverse-proxy.shutdown-user-bogus" "shutdown" "{ \"result\": 403, \"text\": \"Forbidden\" }" ""

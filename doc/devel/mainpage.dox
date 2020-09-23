@@ -138,6 +138,9 @@
  * - @subpage libyang
  * - @subpage libhttp
  *
+ * @section rbacReverseProxy Role Based Access Control Reverse Proxy
+ * - @subpage reverseProxy
+ *
  * @section miscellaneousTopics Miscellaneous Topics
  * - @subpage terminology
  * - @subpage parser

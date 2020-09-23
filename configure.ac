@@ -1339,16 +1339,28 @@ AC_ARG_ENABLE(generate_docs, [AC_HELP_STRING([--enable-generate-docs],
   enable_generate_docs=$enableval, enable_generate_docs=no)
 
 
+# RBAC code is in python 3 and relies on request which is also a sphinx
+# dependency...
+AC_ARG_ENABLE(rbac, [AC_HELP_STRING([--enable-rbac],
+  [enable kea-reverse-proxy, a TLS reverse proxy with Role Based Access Control [default=no]])],
+  enable_rbac=$enableval, enable_rbac=no)
+
 DISTCHECK_KEA_SHELL_CONFIGURE_FLAG=
+DISTCHECK_RBAC_CONFIGURE_FLAG=
 PKGPYTHONDIR=
 shell_report=no
+rbac_report=no
 m4_define_default([_AM_PYTHON_INTERPRETER_LIST],
  [python3 python3.9 python3.8 python3.7 python3.6 python3.5 python3.4 dnl
   python3.3 python3.2 python3.1 python3.0 python python2 python2.7])
-if test "x$enable_shell" != xno -o "x$enable_generate_docs" != xno; then
+if test "x$enable_shell" != xno -o "x$enable_generate_docs" != xno -o "x$enable_rbac" != xno; then
 # If kea-shell is enabled, we really need python. 2.7 or anything newer will do.
 # We try to find 3.x first. If not found, we can do with 2.7.
-  AM_PATH_PYTHON([2.7])
+  if test "x$enable_rbac" != xno; then
+     AM_PATH_PYTHON([3.2])
+  else
+     AM_PATH_PYTHON([2.7])
+  fi
 
   AC_ARG_WITH(site-packages,
            AC_HELP_STRING([--with-site-packages],
@@ -1371,8 +1383,14 @@ if test "x$enable_shell" != xno -o "x$enable_generate_docs" != xno; then
     eval PKGPYTHONDIR="\"$OLD\""
   done
   prefix="$saved_prefix"
-  DISTCHECK_KEA_SHELL_CONFIGURE_FLAG="--enable-shell"
-  shell_report="yes, install to $pythondir"
+  if test "x$enable_shell" != xno; then
+    DISTCHECK_KEA_SHELL_CONFIGURE_FLAG="--enable-shell"
+    shell_report="yes, install to $pythondir"
+  fi
+  if test "x$enable_rbac" != xno; then
+    DISTCHECK_RBAC_CONFIGURE_FLAG="--enable-rbac"
+    rbac_report="yes, install to $pythondir"
+  fi
 else
   PYTHON=no
 fi
@@ -1380,6 +1398,9 @@ fi
 # Export to makefiles the info whether we have shell enabled or not
 AM_CONDITIONAL(KEA_SHELL, test x$enable_shell != xno)
 AC_SUBST(DISTCHECK_KEA_SHELL_CONFIGURE_FLAG)
+AM_CONDITIONAL(KEA_RBAC, test x$enable_rbac != xno)
+AC_SUBST(DISTCHECK_RBAC_CONFIGURE_FLAG)
+AM_CONDITIONAL(KEA_SECURE_SHELL, test x$enable_shell != xno -a test x$enable_rbac != xno)
 AC_SUBST(PKGPYTHONDIR)
 
 AC_ARG_WITH([sphinx],
@@ -1624,6 +1645,16 @@ AC_CONFIG_FILES([Makefile
                  src/bin/perfdhcp/Makefile
                  src/bin/perfdhcp/tests/Makefile
                  src/bin/perfdhcp/tests/testdata/Makefile
+                 src/bin/reverse_proxy/Makefile
+                 src/bin/reverse_proxy/kea-reverse-proxy
+                 src/bin/reverse_proxy/tests/Makefile
+                 src/bin/reverse_proxy/tests/reverse_proxy_tests.sh
+                 src/bin/secure_shell/Makefile
+                 src/bin/secure_shell/kea-secure-shell
+                 src/bin/secure_shell/tests/Makefile
+                 src/bin/secure_shell/tests/basic_auth_tests.sh
+                 src/bin/secure_shell/tests/shell_process_tests.sh
+                 src/bin/secure_shell/tests/shell_unittest.py
                  src/bin/shell/Makefile
                  src/bin/shell/kea-shell
                  src/bin/shell/tests/Makefile
@@ -1788,6 +1819,12 @@ AC_CONFIG_COMMANDS([permissions], [
            chmod +x src/bin/dhcp6/tests/dhcp6_process_tests.sh
            chmod +x src/bin/keactrl/keactrl
            chmod +x src/bin/keactrl/tests/keactrl_tests.sh
+           chmod +x src/bin/reverse_proxy/kea-reverse-proxy
+           chmod +x src/bin/reverse_proxy/tests/reverse_proxy_tests.sh
+           chmod +x src/bin/secure_shell/kea-secure-shell
+           chmod +x src/bin/secure_shell/tests/basic_auth_tests.sh
+           chmod +x src/bin/secure_shell/tests/shell_process_tests.sh
+           chmod +x src/bin/secure_shell/tests/shell_unittest.py
            chmod +x src/bin/shell/kea-shell
            chmod +x src/bin/shell/tests/shell_process_tests.sh
            chmod +x src/bin/shell/tests/shell_unittest.py
@@ -1923,7 +1960,7 @@ else
 cat >> config.report << END
 
 Python:
-  PYTHON_VERSION:  not needed (because kea-shell is disabled)
+  PYTHON_VERSION:  not needed (because kea-shell and other dependencies are disabled)
 
 END
 fi
@@ -2094,6 +2131,7 @@ Developer:
   Generate Messages Files:   $enable_generate_messages
   Perfdhcp:                  $enable_perfdhcp
   Kea-shell:                 $shell_report
+  Role Based Access Control: $rbac_report
   Enable fuzzing:            $enable_fuzzing
 
 END

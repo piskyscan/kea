@@ -1,0 +1,143 @@
+#!@PYTHON@
+
+# Copyright (C) 2017-2020 Internet Systems Consortium, Inc. ("ISC")
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+"""
+Secure text client for Control Agent process
+"""
+
+import sys
+import argparse
+from base64 import b64encode
+import requests
+
+sys.path.append('@PKGPYTHONDIR@')
+
+from kea_sec_conn import CARequest, CAResponse
+
+def send_to_control_agent(params):
+    """ Sends a request to Control Agent, receives a response and returns it."""
+
+    # First, create the URL
+    url = params.scheme + "://" + params.http_host + ":"
+    url += str(params.http_port) + str(params.path)
+
+    # Establish connection, send the request.
+    resp = requests.post(url,
+                         data=params.content,
+                         headers=params.headers,
+                         timeout=params.timeout,
+                         verify=params.ca,
+                         cert=params.cert)
+
+    # Now get the response details, put it in CAResponse and return it
+    result = CAResponse(resp.status_code, resp.reason, resp.text)
+
+    return result
+
+VERSION = "@PACKAGE_VERSION@"
+
+def secure_shell_body():
+    """
+    Second step: Need to parse command line parameters. We will use
+    argparse for that purpose. It does great job with having default
+    values, taking care of the help and sanity checking input
+    parameters.
+    """
+    parser = argparse.ArgumentParser(description='kea-secure-shell is a simple'
+                                     ' text client that uses REST interface to'
+                                     ' connect to Kea Control Agent.')
+    parser.add_argument('--host', type=str, default='127.0.0.1',
+                        help='hostname of the CA to connect to '
+                        '(default:; 127.0.0.1)')
+    parser.add_argument('--port', type=int, default=8000,
+                        help='TCP port of the CA to connect to '
+                        '(default: 8000)')
+    parser.add_argument('--path', type=str, default='',
+                        help='Path of the URL to connect to '
+                        '(default: "")')
+    parser.add_argument('--ca', type=str, default='',
+                        help='File or directory name of the CA '
+                        '(default: "" i.e. do not use HTTPS)')
+    parser.add_argument('--cert', type=str, default='',
+                        help='File name of the client certificate '
+                        '(default: "" i.e. do not use HTTPS)')
+    parser.add_argument('--key', type=str, default='',
+                        help='File name of the client private key '
+                        '(default: "" i.e. do not use HTTPS)')
+    parser.add_argument('--timeout', type=int, default='10',
+                        help='Timeout (in seconds) when attempting to '
+                        'connect to CA (default: 10)')
+    parser.add_argument('--service', nargs="?", action="append",
+                        help='target specified service. If not specified,'
+                        'control agent will receive command.')
+    parser.add_argument('--auth-user', type=str, default='',
+                        help='Basic HTTP authentication user')
+    parser.add_argument('--auth-password', type=str, default='',
+                        help='Basic HTTP authentication password')
+    parser.add_argument('command', type=str, nargs="?",
+                        default='list-commands',
+                        help='command to be executed. If not specified, '
+                        '"list-commands" is used')
+    parser.add_argument('-v', action="store_true", help="Prints version")
+    cmd_args = parser.parse_args()
+
+    if cmd_args.v:
+        print(VERSION)
+        sys.exit(0)
+
+    # Ok, now it's time to put the parameters parsed into the structure to be
+    # used by the connection.
+    params = CARequest()
+    params.command = cmd_args.command
+    params.service = cmd_args.service
+    params.http_host = cmd_args.host
+    params.http_port = cmd_args.port
+    params.path += cmd_args.path
+    if cmd_args.ca:
+        params.ca = cmd_args.ca
+        params.scheme = 'https'
+    if (cmd_args.cert != '' and cmd_args.key == '') or \
+       (cmd_args.cert == '' and cmd_args.key != ''):
+        print("--cert and --key must be used together")
+        sys.exit(1)
+    if cmd_args.cert:
+        params.cert = (cmd_args.cert, cmd_args.key)
+    if cmd_args.auth_user != '':
+        user = cmd_args.auth_user.encode('utf-8')
+        password = cmd_args.auth_password.encode('utf-8')
+        secret = b':'.join((user, password))
+        params.auth = b64encode(secret).strip().decode('ascii')
+    params.timeout = cmd_args.timeout
+    params.version = VERSION
+
+    # Load command processor
+    # @todo - command specific processing will be added as part of
+    # future work (either #5138 or #5139, whichever is implemented
+    # first)
+
+    # Read arguments from stdin (they're optional for some commands)
+    for line in sys.stdin:
+        params.args += line
+
+    # Now we have the arguments so we can build the request
+    params.generate_body()
+    params.generate_headers()
+
+    # Ok, everything is ready. Let's send the command and get a response.
+    try:
+        resp = send_to_control_agent(params)
+    except Exception as exc:
+        print("Failed to run: " + str(exc))
+        sys.exit(1)
+
+    resp.print_response()
+
+    sys.exit(0)
+
+if __name__ == "__main__":
+    secure_shell_body()
