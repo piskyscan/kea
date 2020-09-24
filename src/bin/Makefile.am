@@ -9,12 +9,8 @@ if KEA_SHELL
 SUBDIRS += shell
 endif
 
-if KEA_SECURE_SHELL
-SUBDIRS += secure_shell
-endif
-
 if KEA_RBAC
-SUBDIRS += reverse_proxy
+SUBDIRS += secure_shell reverse_proxy
 endif
 
 if HAVE_SYSREPO
