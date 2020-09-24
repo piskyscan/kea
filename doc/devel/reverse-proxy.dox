@@ -30,7 +30,7 @@ individual steps:
  - the JSON request is parsed into a python object
  - the command is extracted from this object
  - when the request can't be decoded or command can't be found
-  a HTTP 400 error is returned to the clint
+  a HTTP 400 error is returned to the client
  - according to the assigned role the command is accepted or rejected
  - when the command is rejected a HTTP 403 error is returned to the client
  - when the command is accepted the request is forwarded to the control agent
