@@ -178,10 +178,10 @@ AC_COMPILE_IFELSE(
     [AC_LANG_PROGRAM(
         [#include <chrono>
         #include <type_traits>]
-	[static_assert(!std::is_same<
+        [static_assert(!std::is_same<
                            std::chrono::system_clock::duration,
-	                   std::chrono::steady_clock::duration
-			            >::value, "");])],
+                           std::chrono::steady_clock::duration
+                                    >::value, "");])],
     [AC_MSG_RESULT(yes)],
     [AC_MSG_RESULT(no)
     AC_DEFINE([CHRONO_SAME_DURATION], [1],
@@ -1333,30 +1333,28 @@ AC_ARG_ENABLE(shell, [AC_HELP_STRING([--enable-shell],
   [enable kea-shell, a text management client for Control Agent [default=no]])],
   enable_shell=$enableval, enable_shell=no)
 
-
 AC_ARG_ENABLE(generate_docs, [AC_HELP_STRING([--enable-generate-docs],
   [regenerate documentation using Sphinx [default=no]])],
   enable_generate_docs=$enableval, enable_generate_docs=no)
 
-
-# RBAC reverse proxy code is in python 3 and relies on request which
-# is also a sphinx dependency...
-AC_ARG_ENABLE(rbac, [AC_HELP_STRING([--enable-rbac],
+# RBAC reverse proxy code is in python 3 and relies on request which is
+# also a sphinx dependency...
+AC_ARG_ENABLE(reverse_proxy, [AC_HELP_STRING([--enable-reverse-proxy],
   [enable kea-reverse-proxy, a HTTPS reverse proxy with Role Based Access Control [default=no]])],
-  enable_rbac=$enableval, enable_rbac=no)
+   enable_reverse_proxy=$enableval, enable_reverse_proxy=no)
 
 DISTCHECK_KEA_SHELL_CONFIGURE_FLAG=
-DISTCHECK_RBAC_CONFIGURE_FLAG=
+DISTCHECK_REVERSE_PROXY_CONFIGURE_FLAG=
 PKGPYTHONDIR=
 shell_report=no
-rbac_report=no
+reverse_proxy_report=no
 m4_define_default([_AM_PYTHON_INTERPRETER_LIST],
  [python3 python3.9 python3.8 python3.7 python3.6 python3.5 python3.4 dnl
   python3.3 python3.2 python3.1 python3.0 python python2 python2.7])
-if test "x$enable_shell" != xno -o "x$enable_generate_docs" != xno -o "x$enable_rbac" != xno; then
+if test "x$enable_shell" != xno -o "x$enable_generate_docs" != xno -o "x$enable_reverse_proxy" != xno; then
 # If kea-shell is enabled, we really need python. 2.7 or anything newer will do.
 # We try to find 3.x first. If not found, we can do with 2.7.
-  if test "x$enable_rbac" != xno; then
+  if test "x$enable_reverse_proxy" != xno; then
      AM_PATH_PYTHON([3.2])
   else
      AM_PATH_PYTHON([2.7])
@@ -1387,9 +1385,9 @@ if test "x$enable_shell" != xno -o "x$enable_generate_docs" != xno -o "x$enable_
     DISTCHECK_KEA_SHELL_CONFIGURE_FLAG="--enable-shell"
     shell_report="yes, install to $pythondir"
   fi
-  if test "x$enable_rbac" != xno; then
-    DISTCHECK_RBAC_CONFIGURE_FLAG="--enable-rbac"
-    rbac_report="yes, install to $pythondir"
+  if test "x$enable_reverse_proxy" != xno; then
+    DISTCHECK_REVERSE_PROXY_CONFIGURE_FLAG="--enable-reverse-proxy"
+    reverse_proxy_report="yes, install to $pythondir"
   fi
 else
   PYTHON=no
@@ -1398,8 +1396,8 @@ fi
 # Export to makefiles the info whether we have shell enabled or not
 AM_CONDITIONAL(KEA_SHELL, test x$enable_shell != xno)
 AC_SUBST(DISTCHECK_KEA_SHELL_CONFIGURE_FLAG)
-AM_CONDITIONAL(KEA_RBAC, test x$enable_rbac != xno)
-AC_SUBST(DISTCHECK_RBAC_CONFIGURE_FLAG)
+AM_CONDITIONAL(REVERSE_PROXY, test x$enable_reverse_proxy != xno)
+AC_SUBST(DISTCHECK_REVERSE_PROXY_CONFIGURE_FLAG)
 AC_SUBST(PKGPYTHONDIR)
 
 AC_ARG_WITH([sphinx],
@@ -2130,7 +2128,7 @@ Developer:
   Generate Messages Files:   $enable_generate_messages
   Perfdhcp:                  $enable_perfdhcp
   Kea-shell:                 $shell_report
-  Role Based Access Control: $rbac_report
+  RBAC Reverse Proxy:        $reverse_proxy_report
   Enable fuzzing:            $enable_fuzzing
 
 END

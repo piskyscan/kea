@@ -9,7 +9,7 @@ if KEA_SHELL
 SUBDIRS += shell
 endif
 
-if KEA_RBAC
+if REVERSE_PROXY
 SUBDIRS += secure_shell reverse_proxy
 endif
 
