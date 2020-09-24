@@ -1399,7 +1399,6 @@ AM_CONDITIONAL(KEA_SHELL, test x$enable_shell != xno)
 AC_SUBST(DISTCHECK_KEA_SHELL_CONFIGURE_FLAG)
 AM_CONDITIONAL(KEA_RBAC, test x$enable_rbac != xno)
 AC_SUBST(DISTCHECK_RBAC_CONFIGURE_FLAG)
-AM_CONDITIONAL(KEA_SECURE_SHELL, test x$enable_shell != xno -a test x$enable_rbac != xno)
 AC_SUBST(PKGPYTHONDIR)
 
 AC_ARG_WITH([sphinx],
