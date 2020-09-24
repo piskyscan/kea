@@ -1339,10 +1339,10 @@ AC_ARG_ENABLE(generate_docs, [AC_HELP_STRING([--enable-generate-docs],
   enable_generate_docs=$enableval, enable_generate_docs=no)
 
 
-# RBAC code is in python 3 and relies on request which is also a sphinx
-# dependency...
+# RBAC reverse proxy code is in python 3 and relies on request which
+# is also a sphinx dependency...
 AC_ARG_ENABLE(rbac, [AC_HELP_STRING([--enable-rbac],
-  [enable kea-reverse-proxy, a TLS reverse proxy with Role Based Access Control [default=no]])],
+  [enable kea-reverse-proxy, a HTTPS reverse proxy with Role Based Access Control [default=no]])],
   enable_rbac=$enableval, enable_rbac=no)
 
 DISTCHECK_KEA_SHELL_CONFIGURE_FLAG=
