@@ -114,6 +114,13 @@ public:
     uint16_t port_;
 };
 
+/// @brief Tag for the index for searching by subnet modification time.
+struct SubnetModificationTimeIndexTag { };
+
+/// @brief Tag for the index for searching by shared network modification
+/// time.
+struct SharedNetworkModificationTimeIndexTag { };
+
 } // namespace test
 } // namespace dhcp
 } // namespace isc

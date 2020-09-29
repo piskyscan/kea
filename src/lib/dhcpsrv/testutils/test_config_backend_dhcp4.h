@@ -24,6 +24,72 @@ namespace isc {
 namespace dhcp {
 namespace test {
 
+/// @brief Extended Subnet4 collection with modification time.
+typedef boost::multi_index_container<
+    // Multi index container holds pointers to the subnets.
+    Subnet4Ptr,
+    // The following holds all indexes.
+    boost::multi_index::indexed_by<
+        // First index allows for searching using subnet identifier.
+        boost::multi_index::ordered_unique<
+            boost::multi_index::tag<SubnetSubnetIdIndexTag>,
+            boost::multi_index::const_mem_fun<Subnet, SubnetID, &Subnet::getID>
+        >,
+        // Second index allows for searching using an output from toText function.
+        boost::multi_index::ordered_unique<
+            boost::multi_index::tag<SubnetPrefixIndexTag>,
+            boost::multi_index::const_mem_fun<Subnet, std::string, &Subnet::toText>
+        >,
+
+        // Third index allows for searching using subnet modification time.
+        boost::multi_index::ordered_non_unique<
+            boost::multi_index::tag<SubnetModificationTimeIndexTag>,
+            boost::multi_index::const_mem_fun<data::BaseStampedElement,
+                                              boost::posix_time::ptime,
+                                              &data::BaseStampedElement::getModificationTime>
+        >
+    >
+> TestSubnet4Collection;
+
+/// @brief Extended shared network4 collection with modification time.
+typedef boost::multi_index_container<
+    // Multi index container holds pointers to the shared networks.
+    SharedNetwork4Ptr,
+    boost::multi_index::indexed_by<
+        // First is the random access index allowing for accessing objects
+        // just like we'd do with vector.
+        boost::multi_index::random_access<
+            boost::multi_index::tag<SharedNetworkRandomAccessIndexTag>
+        >,
+        // Second index allows for access by shared network id.
+        boost::multi_index::hashed_non_unique<
+            boost::multi_index::tag<SharedNetworkIdIndexTag>,
+            boost::multi_index::const_mem_fun<data::BaseStampedElement, uint64_t,
+                                              &data::BaseStampedElement::getId>
+        >,
+        // Third index allows for access by shared network's name.
+        boost::multi_index::ordered_unique<
+            boost::multi_index::tag<SharedNetworkNameIndexTag>,
+            boost::multi_index::const_mem_fun<SharedNetwork4, std::string,
+                                              &SharedNetwork4::getName>
+        >,
+        // Fourth index allows for access by server identifier specified for the
+        // network.
+        boost::multi_index::ordered_non_unique<
+            boost::multi_index::tag<SharedNetworkServerIdIndexTag>,
+            boost::multi_index::const_mem_fun<Network4, asiolink::IOAddress,
+                                              &Network4::getServerId>
+        >,
+        // Fifth index allows for searching using subnet modification time.
+        boost::multi_index::ordered_non_unique<
+            boost::multi_index::tag<SharedNetworkModificationTimeIndexTag>,
+            boost::multi_index::const_mem_fun<data::BaseStampedElement,
+                                              boost::posix_time::ptime,
+                                              &data::BaseStampedElement::getModificationTime>
+        >
+    >
+> TestSharedNetwork4Collection;
+
 /// @brief Test config backend that implements all of the DHCPv4 API calls
 ///
 /// This backend should be used for unit testing the DHCPv4 server and the
@@ -475,8 +541,8 @@ public:
 
 /// @{
 /// @brief Containers used to house the "database" entries
-    Subnet4Collection subnets_;
-    SharedNetwork4Collection shared_networks_;
+    TestSubnet4Collection subnets_;
+    TestSharedNetwork4Collection shared_networks_;
     OptionDefContainer option_defs_;
     OptionContainer options_;
     data::StampedValueCollection globals_;

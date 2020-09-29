@@ -810,9 +810,6 @@ struct SubnetPrefixIndexTag { };
 /// @brief Tag for the index for searching by server identifier.
 struct SubnetServerIdIndexTag { };
 
-/// @brief Tag for the index for searching by subnet modification time.
-struct SubnetModificationTimeIndexTag { };
-
 /// @brief A collection of @c Subnet4 objects.
 ///
 /// This container provides a set of indexes which can be used to retrieve
@@ -857,14 +854,6 @@ typedef boost::multi_index_container<
             boost::multi_index::tag<SubnetServerIdIndexTag>,
             boost::multi_index::const_mem_fun<Network4, asiolink::IOAddress,
                                               &Network4::getServerId>
-        >,
-
-        // Forth index allows for searching using subnet modification time.
-        boost::multi_index::ordered_non_unique<
-            boost::multi_index::tag<SubnetModificationTimeIndexTag>,
-            boost::multi_index::const_mem_fun<data::BaseStampedElement,
-                                              boost::posix_time::ptime,
-                                              &data::BaseStampedElement::getModificationTime>
         >
     >
 > Subnet4Collection;
@@ -905,13 +894,6 @@ typedef boost::multi_index_container<
         boost::multi_index::ordered_unique<
             boost::multi_index::tag<SubnetPrefixIndexTag>,
             boost::multi_index::const_mem_fun<Subnet, std::string, &Subnet::toText>
-        >,
-        // Third index allows for searching using subnet modification time.
-        boost::multi_index::ordered_non_unique<
-            boost::multi_index::tag<SubnetModificationTimeIndexTag>,
-            boost::multi_index::const_mem_fun<data::BaseStampedElement,
-                                              boost::posix_time::ptime,
-                                              &data::BaseStampedElement::getModificationTime>
         >
     >
 > Subnet6Collection;
