@@ -16,9 +16,14 @@
 #include <dhcpsrv/subnet_selector.h>
 #include <boost/shared_ptr.hpp>
 #include <string>
+#include <map>
+#include <set>
 
 namespace isc {
 namespace dhcp {
+
+/// @brief Table used for server id existence.
+typedef std::map<asiolink::IOAddress, std::set<SubnetID> > SubnetServerIdMap;
 
 /// @brief Holds subnets configured for the DHCPv4 server.
 ///
@@ -321,9 +326,21 @@ public:
 
 private:
 
+    /// @brief Add subnet in server id table.
+    ///
+    /// @param subnet Pointer to the subnet being added.
+    void serverIdAdd(const Subnet4Ptr& subnet);
+
+    /// @brief Remove subnet in server id table.
+    ///
+    /// @param subnet Pointer to the subnet being removed.
+    void serverIdDel(const ConstSubnet4Ptr& subnet);
+
     /// @brief A container for IPv4 subnets.
     Subnet4Collection subnets_;
 
+    /// @brief A table implementing hasSubnetWithServerId.
+    SubnetServerIdMap server_ids_;
 };
 
 /// @name Pointer to the @c CfgSubnets4 objects.

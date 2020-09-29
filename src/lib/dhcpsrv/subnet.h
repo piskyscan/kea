@@ -807,26 +807,16 @@ struct SubnetSubnetIdIndexTag { };
 /// @brief Tag for the index for searching by subnet prefix.
 struct SubnetPrefixIndexTag { };
 
-/// @brief Tag for the index for searching by server identifier.
-struct SubnetServerIdIndexTag { };
-
 /// @brief A collection of @c Subnet4 objects.
 ///
 /// This container provides a set of indexes which can be used to retrieve
 /// subnets by various properties.
 ///
-/// This multi index container can hold pointers to @ref Subnet4
-/// objects representing subnets. It provides indexes for subnet lookups
-/// using subnet properties such as: subnet identifier,
-/// subnet prefix or server identifier specified for a subnet. It also
-/// provides a random access index which allows for using the container
-/// like a vector.
+/// This multi index container can hold pointers to @ref Subnet4 objects
+/// representing subnets. It provides indexes for subnet lookups using
+/// subnet properties such as: subnet identifier or subnet prefix.
 ///
-/// The random access index is used by the DHCP servers which perform
-/// a full scan on subnets to find the one that matches some specific
-/// criteria for subnet selection.
-///
-/// The remaining indexes are used for searching for a specific subnet
+/// The indexes are used for searching for a specific subnet
 /// as a result of receiving a command over the control API, e.g.
 /// when 'subnet-get' command is received.
 ///
@@ -847,13 +837,6 @@ typedef boost::multi_index_container<
         boost::multi_index::ordered_unique<
             boost::multi_index::tag<SubnetPrefixIndexTag>,
             boost::multi_index::const_mem_fun<Subnet, std::string, &Subnet::toText>
-        >,
-
-        // Third index allows for searching using an output from getServerId.
-        boost::multi_index::ordered_non_unique<
-            boost::multi_index::tag<SubnetServerIdIndexTag>,
-            boost::multi_index::const_mem_fun<Network4, asiolink::IOAddress,
-                                              &Network4::getServerId>
         >
     >
 > Subnet4Collection;
@@ -865,13 +848,7 @@ typedef boost::multi_index_container<
 ///
 /// This multi index container can hold pointers to @ref Subnet6 objects
 /// representing subnets. It provides indexes for subnet lookups using
-/// subnet properties such as: subnet identifier or subnet prefix. It
-/// also provides a random access index which allows for using the
-/// container like a vector.
-///
-/// The random access index is used by the DHCP servers which perform
-/// a full scan on subnets to find the one that matches some specific
-/// criteria for subnet selection.
+/// subnet properties such as: subnet identifier or subnet prefix.
 ///
 /// The remaining indexes are used for searching for a specific subnet
 /// as a result of receiving a command over the control API, e.g.
