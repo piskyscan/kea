@@ -331,7 +331,7 @@ private:
     /// @param subnet Pointer to the subnet being added.
     void serverIdAdd(const Subnet4Ptr& subnet);
 
-    /// @brief Remove subnet in server id table.
+    /// @brief Remove subnet from server id table.
     ///
     /// @param subnet Pointer to the subnet being removed.
     void serverIdDel(const ConstSubnet4Ptr& subnet);

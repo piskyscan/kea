@@ -33,9 +33,6 @@ struct SharedNetworkIdIndexTag { };
 /// @brief A tag for accessing index by shared network name.
 struct SharedNetworkNameIndexTag { };
 
-/// @brief A tag for accessing index by server identifier.
-struct SharedNetworkServerIdIndexTag { };
-
 class SharedNetwork4;
 
 /// @brief Pointer to @ref SharedNetwork4 object.
@@ -236,13 +233,6 @@ typedef boost::multi_index_container<
             boost::multi_index::tag<SharedNetworkNameIndexTag>,
             boost::multi_index::const_mem_fun<SharedNetwork4, std::string,
                                               &SharedNetwork4::getName>
-        >,
-        // Fourth index allows for access by server identifier specified for the
-        // network.
-        boost::multi_index::ordered_non_unique<
-            boost::multi_index::tag<SharedNetworkServerIdIndexTag>,
-            boost::multi_index::const_mem_fun<Network4, asiolink::IOAddress,
-                                              &Network4::getServerId>
         >
     >
 > SharedNetwork4Collection;

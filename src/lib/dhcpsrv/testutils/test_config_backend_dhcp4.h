@@ -73,14 +73,7 @@ typedef boost::multi_index_container<
             boost::multi_index::const_mem_fun<SharedNetwork4, std::string,
                                               &SharedNetwork4::getName>
         >,
-        // Fourth index allows for access by server identifier specified for the
-        // network.
-        boost::multi_index::ordered_non_unique<
-            boost::multi_index::tag<SharedNetworkServerIdIndexTag>,
-            boost::multi_index::const_mem_fun<Network4, asiolink::IOAddress,
-                                              &Network4::getServerId>
-        >,
-        // Fifth index allows for searching using subnet modification time.
+        // Forth index allows for searching using subnet modification time.
         boost::multi_index::ordered_non_unique<
             boost::multi_index::tag<SharedNetworkModificationTimeIndexTag>,
             boost::multi_index::const_mem_fun<data::BaseStampedElement,
