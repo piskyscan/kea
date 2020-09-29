@@ -1,4 +1,4 @@
-// Copyright (C) 2014-2019 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2014-2020 Internet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -22,7 +22,7 @@
 namespace isc {
 namespace dhcp {
 
-/// @brief Table used for server id existence.
+/// @brief Type of the auxiliary table used for server id existence.
 typedef std::map<asiolink::IOAddress, std::set<SubnetID> > SubnetServerIdMap;
 
 /// @brief Holds subnets configured for the DHCPv4 server.
@@ -326,20 +326,34 @@ public:
 
 private:
 
+    /// @brief Add subnet in auxiliary tables.
+    ///
+    /// @param subnet Pointer to the subnet being added.
+    void addAuxTables(const Subnet4Ptr& subnet) {
+        addServerId(subnet);
+    }
+
+    /// @brief Remove subnet from auxiliary tables.
+    ///
+    /// @param subnet Pointer to the subnet being removed.
+    void delAuxTables(const ConstSubnet4Ptr& subnet) {
+        delServerId(subnet);
+    }
+
     /// @brief Add subnet in server id table.
     ///
     /// @param subnet Pointer to the subnet being added.
-    void serverIdAdd(const Subnet4Ptr& subnet);
+    void addServerId(const Subnet4Ptr& subnet);
 
     /// @brief Remove subnet from server id table.
     ///
     /// @param subnet Pointer to the subnet being removed.
-    void serverIdDel(const ConstSubnet4Ptr& subnet);
+    void delServerId(const ConstSubnet4Ptr& subnet);
 
     /// @brief A container for IPv4 subnets.
     Subnet4Collection subnets_;
 
-    /// @brief A table implementing hasSubnetWithServerId.
+    /// @brief Auxiliary table implementing hasSubnetWithServerId.
     SubnetServerIdMap server_ids_;
 };
 

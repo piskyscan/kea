@@ -24,7 +24,7 @@ namespace isc {
 namespace dhcp {
 
 void
-CfgSubnets4::serverIdAdd(const Subnet4Ptr& subnet) {
+CfgSubnets4::addServerId(const Subnet4Ptr& subnet) {
     const IOAddress& server_id = subnet->getServerId();
     if (server_id.isV4Zero()) {
         return;
@@ -34,7 +34,7 @@ CfgSubnets4::serverIdAdd(const Subnet4Ptr& subnet) {
 }
 
 void
-CfgSubnets4::serverIdDel(const ConstSubnet4Ptr& subnet) {
+CfgSubnets4::delServerId(const ConstSubnet4Ptr& subnet) {
     const IOAddress& server_id = subnet->getServerId();
     if (server_id.isV4Zero()) {
         return;
@@ -62,7 +62,7 @@ CfgSubnets4::add(const Subnet4Ptr& subnet) {
     LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE, DHCPSRV_CFGMGR_ADD_SUBNET4)
               .arg(subnet->toText());
     static_cast<void>(subnets_.insert(subnet));
-    serverIdAdd(subnet);
+    addAuxTables(subnet);
 }
 
 Subnet4Ptr
@@ -75,16 +75,17 @@ CfgSubnets4::replace(const Subnet4Ptr& subnet) {
         isc_throw(BadValue, "There is no IPv4 subnet with ID " <<subnet_id);
     }
     Subnet4Ptr old = *subnet_it;
-    serverIdDel(old);
     bool ret = index.replace(subnet_it, subnet);
+    if (ret) {
+        delAuxTables(old);
+        addAuxTables(subnet);
+    }
 
     LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE, DHCPSRV_CFGMGR_UPDATE_SUBNET4)
         .arg(subnet_id).arg(ret);
     if (ret) {
-        serverIdAdd(subnet);
         return (old);
     } else {
-        serverIdAdd(old);
         return (Subnet4Ptr());
     }
 }
@@ -105,7 +106,7 @@ CfgSubnets4::del(const SubnetID& subnet_id) {
 
     Subnet4Ptr subnet = *subnet_it;
 
-    serverIdDel(subnet);
+    delAuxTables(subnet);
     index.erase(subnet_it);
 
     LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE, DHCPSRV_CFGMGR_DEL_SUBNET4)
@@ -153,7 +154,7 @@ CfgSubnets4::merge(CfgOptionDefPtr cfg_def, CfgSharedNetworks4Ptr networks,
             }
 
             // Now we remove the existing subnet.
-            serverIdDel(existing_subnet);
+            delAuxTables(existing_subnet);
             index_id.erase(subnet_id_it);
         }
 
@@ -178,7 +179,7 @@ CfgSubnets4::merge(CfgOptionDefPtr cfg_def, CfgSharedNetworks4Ptr networks,
             }
 
             // Now we remove the existing subnet.
-            serverIdDel(existing_subnet);
+            delAuxTables(existing_subnet);
             index_prefix.erase(subnet_prefix_it);
         }
 
@@ -191,8 +192,8 @@ CfgSubnets4::merge(CfgOptionDefPtr cfg_def, CfgSharedNetworks4Ptr networks,
         // Add the "other" subnet to the our collection of subnets.
         static_cast<void>(subnets_.insert(*other_subnet));
 
-        // Add it to the server id table.
-        serverIdAdd(*other_subnet);
+        // Add it to auxiliary tables.
+        addAuxTables(*other_subnet);
 
         // If it belongs to a shared network, find the network and
         // add the subnet to it

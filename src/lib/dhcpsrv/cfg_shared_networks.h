@@ -46,13 +46,14 @@ public:
     ///
     /// @throw isc::BadValue when name is a duplicate of existing network's
     /// name.
-    virtual void add(const SharedNetworkPtrType& network) {
+    void add(const SharedNetworkPtrType& network) {
         if (getByName(network->getName())) {
             isc_throw(BadValue, "duplicate network '" << network->getName() <<
                       "' found in the configuration");
         }
 
         static_cast<void>(networks_.push_back(network));
+        addAuxTables(network);
     }
 
     /// @brief Deletes shared network from the configuration.
@@ -60,14 +61,15 @@ public:
     /// @param name Name of the network to be deleted.
     ///
     /// @throw isc::BadValue if the network can't be found.
-    virtual void del(const std::string& name) {
+    void del(const std::string& name) {
         auto& index = networks_.template get<SharedNetworkNameIndexTag>();
         auto shared_network = index.find(name);
         if (shared_network != index.end()) {
             // Delete all subnets from the network
             (*shared_network)->delAll();
 
-            // Then delete the network from the networks list.
+            // Then delete the network from the networks list and tables.
+            delAuxTables(*shared_network);
             index.erase(shared_network);
         } else {
             isc_throw(BadValue, "unable to delete non-existing network '"
@@ -87,14 +89,15 @@ public:
     /// @param id Identifier of the shared networks to be deleted.
     ///
     /// @return Number of deleted shared networks.
-    virtual uint64_t del(const uint64_t id) {
+    uint64_t del(const uint64_t id) {
         auto& index = networks_.template get<SharedNetworkIdIndexTag>();
         auto sn_range = index.equal_range(id);
 
         // For each shared network found, dereference the subnets belonging
-        // to it.
+        // to it and remove from auxiliary tables.
         for (auto it = sn_range.first; it != sn_range.second; ++it) {
             (*it)->delAll();
+            delAuxTables(*it);
         }
 
         // Remove the shared networks.
@@ -132,6 +135,94 @@ public:
         return (list);
     }
 
+    /// @brief Merges specified shared network configuration into this
+    /// configuration.
+    ///
+    /// This method merges networks from the @c other configuration into this
+    /// configuration. The general rule is that existing networks are replaced
+    /// by the networks from @c other.
+    ///
+    /// For each network in @c other, do the following:
+    ///
+    /// - Any associated subnets are removed.  Shared networks retrieved from
+    /// config backends, do not carry their associated subnets (if any) with
+    /// them. (Subnet assignments are maintained by subnet merges).
+    /// - If a shared network of the same name already exists in this
+    /// configuration:
+    ///     - All of its associated subnets are moved to the "other" network.
+    ///     - The existing network is removed from this configuration.
+    /// - The "other" network's option instances are created.
+    /// - The "other" network is added to this configuration.
+    ///
+    /// @warning The merge operation may affect the @c other configuration.
+    /// Therefore, the caller must not rely on the data held in the @c other
+    /// object after the call to @c merge. Also, the data held in @c other must
+    /// not be modified after the call to @c merge because it may affect the
+    /// merged configuration.
+    ///
+    /// @param cfg_def set of of user-defined option definitions to use
+    /// when creating option instances.
+    /// @param other the shared network configuration to be merged into this
+    /// configuration.
+    void merge(CfgOptionDefPtr cfg_def, CfgSharedNetworks& other) {
+        auto& index = networks_.template get<SharedNetworkNameIndexTag>();
+
+        // Iterate over the subnets to be merged. They will replace the existing
+        // subnets with the same id. All new subnets will be inserted into this
+        // configuration.
+        auto other_networks = other.getAll();
+        for (auto other_network = other_networks->begin();
+            other_network != other_networks->end(); ++other_network) {
+
+            // In theory we should drop subnet assignments from "other". The
+            // idea being  those that come from the CB should not have subnets_
+            // populated.  We will quietly throw them away, just in case.
+            (*other_network)->delAll();
+
+            // Check if the other network exists in this config.
+            auto existing_network = index.find((*other_network)->getName());
+            if (existing_network != index.end()) {
+
+                // Somehow the same instance is in both, skip it.
+                if (*existing_network == *other_network) {
+                    continue;
+                }
+
+                // Network exists, which means we're updating it.
+                // First we need to move its subnets to the new
+                // version of the network.
+                const auto subnets = (*existing_network)->getAllSubnets();
+
+                auto copy_subnets(*subnets);
+                for (auto subnet = copy_subnets.cbegin(); subnet != copy_subnets.cend(); ++subnet) {
+                    (*existing_network)->del((*subnet)->getID());
+                    (*other_network)->add(*subnet);
+                }
+
+                // Now we discard the existing copy of the network.
+                delAuxTables(*existing_network);
+                index.erase(existing_network);
+            }
+
+            // Create the network's options based on the given definitions.
+            (*other_network)->getCfgOption()->createOptions(cfg_def);
+
+            // Add the new/updated nework.
+            static_cast<void>(networks_.push_back(*other_network));
+            addAuxTables(*other_network);
+        }
+    }
+
+    /// @brief Add shared network in auxiliary tables.
+    ///
+    /// @param network Pointer to a network.
+    virtual void addAuxTables(const SharedNetworkPtrType& network) = 0;
+
+    /// @brief Remove shared network from auxiliary tables.
+    ///
+    /// @param network Pointer to a network.
+    virtual void delAuxTables(const SharedNetworkPtrType& network) = 0;
+
 protected:
 
     /// @brief Multi index container holding shared networks.
@@ -145,68 +236,6 @@ typedef std::map<asiolink::IOAddress, std::set<std::string> > SharedNetworkServe
 class CfgSharedNetworks4 : public CfgSharedNetworks<SharedNetwork4Ptr,
                                                     SharedNetwork4Collection> {
 public:
-    typedef CfgSharedNetworks<SharedNetwork4Ptr, SharedNetwork4Collection> ParentType;
-
-    /// @brief Adds new shared network to the configuration.
-    ///
-    /// @param network Pointer to a network
-    ///
-    /// @throw isc::BadValue when name is a duplicate of existing network's
-    /// name.
-    virtual void add(const SharedNetwork4Ptr& network);
-
-    /// @brief Deletes shared network from the configuration.
-    ///
-    /// @param name Name of the network to be deleted.
-    ///
-    /// @throw isc::BadValue if the network can't be found.
-    virtual void del(const std::string& name);
-
-    /// @brief Deletes shared networks from the configuration by id.
-    ///
-    /// Note that there are cases when there will be multiple shared
-    /// networks having the same id (typically id of 0). When configuration
-    /// backend is in use it sets the unique ids from the database.
-    /// In cases when the configuration backend is not used, the ids
-    /// default to 0. Passing the id of 0 would result in deleting all
-    /// shared networks that were not added via the database.
-    ///
-    /// @param id Identifier of the shared networks to be deleted.
-    ///
-    /// @return Number of deleted shared networks.
-    virtual uint64_t del(const uint64_t id);
-
-    /// @brief Merges specified shared network configuration into this
-    /// configuration.
-    ///
-    /// This method merges networks from the @c other configuration into this
-    /// configuration. The general rule is that existing networks are replaced
-    /// by the networks from @c other.
-    ///
-    /// For each network in @c other, do the following:
-    ///
-    /// - Any associated subnets are removed.  Shared networks retrieved from
-    /// config backends, do not carry their associated subnets (if any) with
-    /// them. (Subnet assignments are maintained by subnet merges).
-    /// - If a shared network of the same name already exists in this
-    /// configuration:
-    ///     - All of its associated subnets are moved to the "other" network.
-    ///     - The existing network is removed from this configuration.
-    /// - The "other" network's option instances are created.
-    /// - The "other" network is added to this configuration.
-    ///
-    /// @warning The merge operation may affect the @c other configuration.
-    /// Therefore, the caller must not rely on the data held in the @c other
-    /// object after the call to @c merge. Also, the data held in @c other must
-    /// not be modified after the call to @c merge because it may affect the
-    /// merged configuration.
-    ///
-    /// @param cfg_def set of of user-defined option definitions to use
-    /// when creating option instances.
-    /// @param other the shared network configuration to be merged into this
-    /// configuration.
-    void merge(CfgOptionDefPtr cfg_def, CfgSharedNetworks4& other);
-
     /// @brief Checks if specified server identifier has been specified for
     /// any network.
     ///
@@ -215,17 +244,33 @@ public:
     /// @return true if there is a network with a specified server identifier.
     bool hasNetworkWithServerId(const asiolink::IOAddress& server_id) const;
 
-private:
+protected:
+    /// @brief Add shared network in auxiliary tables.
+    ///
+    /// @param network Pointer to a network.
+    virtual void addAuxTables(const SharedNetwork4Ptr& network) {
+        addServerId(network);
+    }
 
+    /// @brief Remove shared network from auxiliary tables.
+    ///
+    /// @param network Pointer to a network.
+    virtual void delAuxTables(const SharedNetwork4Ptr& network) {
+        delServerId(network);
+    }
+
+private:
     /// @brief Add shared network in server id table.
     ///
-    /// @param network Pointer to a network
-    void serverIdAdd(const SharedNetwork4Ptr& network);
+    /// @param network Pointer to a network.
+    virtual void addServerId(const SharedNetwork4Ptr& network);
 
     /// @brief Remove shared network from server id table.
-    void serverIdDel(const SharedNetwork4Ptr& network);
+    ///
+    /// @param network Pointer to a network.
+    virtual void delServerId(const SharedNetwork4Ptr& network);
 
-    /// @brief A table implementing hasNetworkWithServerId.
+    /// @brief Auxiliary table implementing hasNetworkWithServerId.
     SharedNetworkServerIdMap server_ids_;
 };
 
@@ -235,37 +280,18 @@ typedef boost::shared_ptr<CfgSharedNetworks4> CfgSharedNetworks4Ptr;
 /// @brief Represents configuration of IPv6 shared networks.
 class CfgSharedNetworks6 : public CfgSharedNetworks<SharedNetwork6Ptr,
                                                     SharedNetwork6Collection> {
-public:
-    /// @brief Merges specified shared network configuration into this
-    /// configuration.
+protected:
+    /// @brief Add shared network in auxiliary tables.
     ///
-    /// This method merges networks from the @c other configuration into this
-    /// configuration. The general rule is that existing networks are replaced
-    /// by the networks from @c other.
+    /// @param network Pointer to a network.
+    virtual void addAuxTables(const SharedNetwork6Ptr& network) {
+    }
+
+    /// @brief Remove shared network from auxiliary tables.
     ///
-    /// For each network in @c other, do the following:
-    ///
-    /// - Any associated subnets are removed.  Shared networks retrieved from
-    /// config backends, do not carry their associated subnets (if any) with
-    /// them. (Subnet assignments are maintained by subnet merges).
-    /// - If a shared network of the same name already exists in this
-    /// configuration:
-    ///     - All of its associated subnets are moved to the "other" network.
-    ///     - The existing network is removed from this configuration.
-    /// - The "other" network's option instances are created.
-    /// - The "other" network is added to this configuration.
-    ///
-    /// @warning The merge operation may affect the @c other configuration.
-    /// Therefore, the caller must not rely on the data held in the @c other
-    /// object after the call to @c merge. Also, the data held in @c other must
-    /// not be modified after the call to @c merge because it may affect the
-    /// merged configuration.
-    ///
-    /// @param cfg_def set of of user-defined option definitions to use
-    /// when creating option instances.
-    /// @param other the shared network configuration to be merged into this
-    /// configuration.
-    void merge(CfgOptionDefPtr cfg_def, CfgSharedNetworks6& other);
+    /// @param network Pointer to a network.
+    virtual void delAuxTables(const SharedNetwork6Ptr& network) {
+    }
 };
 
 /// @brief Pointer to the configuration of IPv6 shared networks.
