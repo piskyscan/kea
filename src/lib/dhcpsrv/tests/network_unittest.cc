@@ -286,7 +286,7 @@ TEST_F(NetworkTest, inheritanceSupport4) {
         testNetworkInheritance<TestNetwork4>(&Network4::getDdnsReplaceClientNameMode,
                                              &Network4::setDdnsReplaceClientNameMode,
                                              D2ClientConfig::RCM_WHEN_PRESENT,
-                                             D2ClientConfig::RCM_ALWAYS); 
+                                             D2ClientConfig::RCM_ALWAYS);
     }
     {
         SCOPED_TRACE("ddns-generated-prefix");
@@ -375,7 +375,7 @@ TEST_F(NetworkTest, inheritanceSupport6) {
         testNetworkInheritance<TestNetwork4>(&Network4::getDdnsReplaceClientNameMode,
                                              &Network4::setDdnsReplaceClientNameMode,
                                              D2ClientConfig::RCM_WHEN_PRESENT,
-                                             D2ClientConfig::RCM_ALWAYS); 
+                                             D2ClientConfig::RCM_ALWAYS);
     }
     {
         SCOPED_TRACE("ddns-generated-prefix");

@@ -324,8 +324,6 @@ public:
     /// @return a pointer to unparsed configuration
     virtual isc::data::ElementPtr toElement() const;
 
-private:
-
     /// @brief Add subnet in auxiliary tables.
     ///
     /// @param subnet Pointer to the subnet being added.
@@ -339,6 +337,8 @@ private:
     void delAuxTables(const ConstSubnet4Ptr& subnet) {
         delServerId(subnet);
     }
+
+private:
 
     /// @brief Add subnet in server id table.
     ///

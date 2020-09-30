@@ -1,4 +1,4 @@
-// Copyright (C) 2014-2019 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2014-2020 Internet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -268,6 +268,18 @@ public:
     ///
     /// @return a pointer to unparsed configuration
     virtual isc::data::ElementPtr toElement() const;
+
+    /// @brief Add subnet in auxiliary tables.
+    ///
+    /// @param subnet Pointer to the subnet being added.
+    void addAuxTables(const Subnet6Ptr& subnet) {
+    }
+
+    /// @brief Remove subnet from auxiliary tables.
+    ///
+    /// @param subnet Pointer to the subnet being removed.
+    void delAuxTables(const ConstSubnet6Ptr& subnet) {
+    }
 
 private:
 

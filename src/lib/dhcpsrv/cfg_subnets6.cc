@@ -39,6 +39,7 @@ CfgSubnets6::add(const Subnet6Ptr& subnet) {
     LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE, DHCPSRV_CFGMGR_ADD_SUBNET6)
               .arg(subnet->toText());
     static_cast<void>(subnets_.insert(subnet));
+    addAuxTables(subnet);
 }
 
 Subnet6Ptr
@@ -52,6 +53,10 @@ CfgSubnets6::replace(const Subnet6Ptr& subnet) {
     }
     Subnet6Ptr old = *subnet_it;
     bool ret = index.replace(subnet_it, subnet);
+    if (ret) {
+        delAuxTables(old);
+        addAuxTables(subnet);
+    }
 
     LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE, DHCPSRV_CFGMGR_UPDATE_SUBNET6)
         .arg(subnet_id).arg(ret);
@@ -78,6 +83,7 @@ CfgSubnets6::del(const SubnetID& subnet_id) {
 
     Subnet6Ptr subnet = *subnet_it;
 
+    delAuxTables(subnet);
     index.erase(subnet_it);
 
     LOG_DEBUG(dhcpsrv_logger, DHCPSRV_DBG_TRACE, DHCPSRV_CFGMGR_DEL_SUBNET6)
@@ -121,6 +127,7 @@ CfgSubnets6::merge(CfgOptionDefPtr cfg_def, CfgSharedNetworks6Ptr networks,
             }
 
             // Now we remove the existing subnet.
+            delAuxTables(existing_subnet);
             index_id.erase(subnet_it);
         }
 
@@ -145,6 +152,7 @@ CfgSubnets6::merge(CfgOptionDefPtr cfg_def, CfgSharedNetworks6Ptr networks,
             }
 
             // Now we remove the existing subnet.
+            delAuxTables(existing_subnet);
             index_prefix.erase(subnet_prefix_it);
         }
 
@@ -162,6 +170,9 @@ CfgSubnets6::merge(CfgOptionDefPtr cfg_def, CfgSharedNetworks6Ptr networks,
 
         // Add the "other" subnet to the our collection of subnets.
         static_cast<void>(subnets_.insert(*other_subnet));
+
+        // Add it to auxiliary tables.
+        addAuxTables(*other_subnet);
 
         // If it belongs to a shared network, find the network and
         // add the subnet to it
