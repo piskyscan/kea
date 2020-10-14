@@ -207,11 +207,11 @@ JSONFeed::getNextFromBuffer() {
     return (c);
 }
 
-void
-JSONFeed::invalidEventError(const std::string& handler_name,
-                            const unsigned int event) {
-    isc_throw(JSONFeedError, handler_name << ": "
-              << " invalid event " << getEventLabel(static_cast<int>(event)));
+void JSONFeed::invalidEventError(const std::string& handler_name,
+                                 const unsigned int event) {
+    isc_throw(JSONFeedError, handler_name
+                                 << ": invalid event "
+                                 << getEventLabel(static_cast<int>(event)));
 }
 
 void

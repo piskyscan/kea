@@ -246,10 +246,11 @@ void D2SimpleParser::parse(const D2CfgContextPtr& ctx,
 
     ncr_protocol = getProtocol(config, "ncr-protocol");
     if (ncr_protocol != dhcp_ddns::NCR_UDP) {
-        isc_throw(D2CfgError, "ncr-protocol : "
-                  << dhcp_ddns::ncrProtocolToString(ncr_protocol)
-                  << " is not yet supported "
-                  << " (" << config->get("ncr-protocol")->getPosition() << ")");
+        isc_throw(D2CfgError,
+                  "ncr-protocol : "
+                      << dhcp_ddns::ncrProtocolToString(ncr_protocol)
+                      << " is not yet supported ("
+                      << config->get("ncr-protocol")->getPosition() << ")");
     }
 
     ncr_format = getFormat(config, "ncr-format");

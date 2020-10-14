@@ -597,11 +597,13 @@ OptionDefinition::lexicalCastWithRangeCheck(const std::string& value_str)
     if (OptionDataTypeTraits<T>::integer_type) {
         if (result > numeric_limits<T>::max() ||
             result < numeric_limits<T>::min()) {
-            isc_throw(BadDataTypeCast, "unable to convert '"
-                      << value_str << "' to numeric type. This value is "
-                      " expected to be in the range of "
-                      << numeric_limits<T>::min()
-                      << ".." << numeric_limits<T>::max());
+            isc_throw(BadDataTypeCast,
+                      "unable to convert '"
+                          << value_str
+                          << "' to numeric type. This value is "
+                             "expected to be in the range of "
+                          << to_string(numeric_limits<T>::min()) << ".."
+                          << to_string(numeric_limits<T>::max()));
         }
     }
     return (static_cast<T>(result));
