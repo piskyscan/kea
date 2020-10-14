@@ -236,7 +236,8 @@ OptionDataTypeUtil::writeTuple(const std::string& value,
         if (value.size() > std::numeric_limits<uint8_t>::max()) {
             isc_throw(BadDataTypeCast, "invalid tuple value (size "
                       << value.size() << " larger than "
-                      << std::numeric_limits<uint8_t>::max() << ")");
+                      << std::to_string(std::numeric_limits<uint8_t>::max())
+                      << ")");
         }
         buf.push_back(static_cast<uint8_t>(value.size()));
 
@@ -267,7 +268,8 @@ OptionDataTypeUtil::writeTuple(const OpaqueDataTuple& tuple,
         if (tuple.getLength() > std::numeric_limits<uint8_t>::max()) {
             isc_throw(BadDataTypeCast, "invalid tuple value (size "
                       << tuple.getLength() << " larger than "
-                      << std::numeric_limits<uint8_t>::max() << ")");
+                      << std::to_string(std::numeric_limits<uint8_t>::max())
+                      << ")");
         }
         buf.push_back(static_cast<uint8_t>(tuple.getLength()));
 
@@ -580,7 +582,7 @@ OptionDataTypeUtil::readString(const std::vector<uint8_t>& buf) {
         auto end = util::str::seekTrimmed(begin, buf.end(), 0x0);
         if (std::distance(begin, end) == 0) {
             isc_throw(isc::OutOfRange, "string value carried by the option "
-                      << " contained only NULLs");
+                                       "contained only NULLs");
         }
 
         value.insert(value.end(), begin, end);

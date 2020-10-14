@@ -254,8 +254,9 @@ T HAConfigParser::getAndValidateInteger(const ConstElementPtr& config,
         isc_throw(ConfigError, "'" << parameter_name << "' must not be negative");
 
     } else if (value > std::numeric_limits<T>::max()) {
-        isc_throw(ConfigError, "'" << parameter_name << "' must not be greater than "
-                  << std::numeric_limits<T>::max());
+        isc_throw(ConfigError,
+                  "'" << parameter_name << "' must not be greater than "
+                      << std::to_string(std::numeric_limits<T>::max()));
     }
 
     return (static_cast<T>(value));

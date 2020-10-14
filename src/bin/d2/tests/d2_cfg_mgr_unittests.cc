@@ -939,8 +939,7 @@ TEST_F(D2CfgMgrTest, configPermutations) {
 
         // Grab the test's configuration data.
         isc::data::ConstElementPtr data = test->get("data");
-        ASSERT_TRUE(data) << "No data for test: "
-                          << " : " << test->getPosition();
+        ASSERT_TRUE(data) << "No data for test: " << test->getPosition();
 
         // Convert the test data back to JSON text, then submit it for parsing.
         stringstream os;
