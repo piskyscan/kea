@@ -1,3 +1,9 @@
+1823.	[doc]		andrei
+	Examples for option definitions, option data, standardized option
+	spaces other than "dhcp[46]", custom option spaces, option
+	embedding under doc/examples/kea[46]/all-options.json.
+	(Gitlab #1298)
+
 1822.	[func]		fdupont
 	When multi-threading is enabled the status-get command displays
 	the average lenght of the multi-threading packet queue for last
