@@ -3027,7 +3027,32 @@ SET version = '9', minor = '4';
 
 # This line concludes database upgrade to version 9.4.
 
-#### TODO
+# Add new reservations flags.
+ALTER TABLE dhcp4_subnet
+    ADD COLUMN reservations_global BOOL DEFAULT NULL,
+    ADD COLUMN reservations_in_subnet BOOL DEFAULT NULL,
+    ADD COLUMN reservations_out_of_pool BOOL DEFAULT NULL;
+
+ALTER TABLE dhcp4_shared_network
+    ADD COLUMN reservations_global BOOL DEFAULT NULL,
+    ADD COLUMN reservations_in_subnet BOOL DEFAULT NULL,
+    ADD COLUMN reservations_out_of_pool BOOL DEFAULT NULL;
+
+ALTER TABLE dhcp6_subnet
+    ADD COLUMN reservations_global BOOL DEFAULT NULL,
+    ADD COLUMN reservations_in_subnet BOOL DEFAULT NULL,
+    ADD COLUMN reservations_out_of_pool BOOL DEFAULT NULL;
+
+ALTER TABLE dhcp6_shared_network
+    ADD COLUMN reservations_global BOOL DEFAULT NULL,
+    ADD COLUMN reservations_in_subnet BOOL DEFAULT NULL,
+    ADD COLUMN reservations_out_of_pool BOOL DEFAULT NULL;
+
+# DROP reservation_mode
+ALTER TABLE dhcp4_subnet DROP COLUMN reservation_mode;
+ALTER TABLE dhcp4_shared_network DROP COLUMN reservation_mode;
+ALTER TABLE dhcp6_subnet DROP COLUMN reservation_mode;
+ALTER TABLE dhcp6_shared_network DROP COLUMN reservation_mode;
 
 # Update the schema version number
 UPDATE schema_version

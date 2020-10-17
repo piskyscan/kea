@@ -211,7 +211,7 @@ TEST_F(NetworkTest, inheritanceSupport4) {
         SCOPED_TRACE("reservation-in-subnet");
         testNetworkInheritance<TestNetwork>(&Network::getReservationsInSubnet,
                                             &Network::setReservationsInSubnet,
-                                            false, true);
+                                            true, false);
     }
     {
         SCOPED_TRACE("reservation-out-of-pool");
