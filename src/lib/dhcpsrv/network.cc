@@ -99,24 +99,6 @@ Network::getRequiredClasses() const {
     return (required_classes_);
 }
 
-Network::HRMode
-Network::hrModeFromString(const std::string& hr_mode_name) {
-    if ( (hr_mode_name.compare("disabled") == 0) ||
-         (hr_mode_name.compare("off") == 0) )  {
-        return (Network::HR_DISABLED);
-    } else if (hr_mode_name.compare("out-of-pool") == 0) {
-        return (Network::HR_OUT_OF_POOL);
-    } else if (hr_mode_name.compare("global") == 0) {
-        return (Network::HR_GLOBAL);
-    } else if (hr_mode_name.compare("all") == 0) {
-        return (Network::HR_ALL);
-    } else {
-        // Should never happen...
-        isc_throw(BadValue, "Can't convert '" << hr_mode_name
-                  << "' into any valid reservation-mode values");
-    }
-}
-
 Optional<IOAddress>
 Network::getGlobalProperty(Optional<IOAddress> property,
                            const std::string& global_name) const {
@@ -201,28 +183,22 @@ Network::toElement() const {
         }
     }
 
-    // Set reservation mode
-    Optional<Network::HRMode> hrmode = host_reservation_mode_;
-    if (!hrmode.unspecified()) {
-        std::string mode;
-        switch (hrmode.get()) {
-        case HR_DISABLED:
-            mode = "disabled";
-            break;
-        case HR_OUT_OF_POOL:
-            mode = "out-of-pool";
-            break;
-        case HR_GLOBAL:
-            mode = "global";
-            break;
-        case HR_ALL:
-            mode = "all";
-            break;
-        default:
-            isc_throw(ToElementError,
-                      "invalid host reservation mode: " << hrmode.get());
-        }
-        map->set("reservation-mode", Element::create(mode));
+    // Set reservations-global
+    if (!reservations_global_.unspecified()) {
+	map->set("reservations-global",
+		 Element::create(reservations_global_.get()));
+    }
+
+    // Set reservations-in-subnet
+    if (!reservations_in_subnet_.unspecified()) {
+	map->set("reservations-in-subnet",
+		 Element::create(reservations_in_subnet_.get()));
+    }
+
+    // Set reservations-out-of-pool
+    if (!reservations_out_of_pool_.unspecified()) {
+	map->set("reservations-out-of-pool",
+		 Element::create(reservations_out_of_pool_.get()));
     }
 
     // Set options

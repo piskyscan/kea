@@ -3027,6 +3027,14 @@ SET version = '9', minor = '4';
 
 # This line concludes database upgrade to version 9.4.
 
+#### TODO
+
+# Update the schema version number
+UPDATE schema_version
+SET version = '9', minor = '5';
+
+# This line concludes database upgrade to version 9.5.
+
 # Notes:
 #
 # Indexes

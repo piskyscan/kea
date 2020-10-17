@@ -16,6 +16,41 @@ using namespace isc::util;
 namespace isc {
 namespace dhcp {
 
+void
+BaseNetworkParser::moveReservationMode(ElementPtr config) {
+    if (!config->contains("reservation-mode")) {
+        return;
+    }
+    if (config->contains("reservations-global") ||
+        config->contains("reservations-in-subnet") ||
+        config->contains("reservations-out-of-pool")) {
+        isc_throw(DhcpConfigError, "invalid use of both 'reservation-mode'"
+                  " one of 'reservations-global', 'reservations-in-subnet'"
+                  " or 'reservations-out-of-pool' parameters");
+    }
+    std::string hr_mode = getString(config, "reservation-mode");
+    if ((hr_mode == "disabled") || (hr_mode == "off")) {
+        config->set("reservations-global", Element::create(false));
+        config->set("reservations-in-subnet", Element::create(false));
+    } else if (hr_mode == "out-of-pool") {
+        config->set("reservations-global", Element::create(false));
+        config->set("reservations-in-subnet", Element::create(true));
+        config->set("reservations-out-of-pool", Element::create(true));
+    } else if (hr_mode == "global") {
+        config->set("reservations-global", Element::create(true));
+        config->set("reservations-in-subnet", Element::create(false));
+    } else if (hr_mode == "all") {
+        config->set("reservations-global", Element::create(false));
+        config->set("reservations-in-subnet", Element::create(true));
+        config->set("reservations-out-of-pool", Element::create(false));
+    } else {
+        isc_throw(DhcpConfigError, "invalid reservation-mode parameter: '"
+                  << hr_mode << "' ("
+                  << getPosition("reservation-mode", config) << ")");
+    }
+    config->remove("reservation-mode");
+}
+
 const Triplet<uint32_t>
 BaseNetworkParser::parseLifetime(const ConstElementPtr& scope,
                                  const std::string& name) {
@@ -135,6 +170,21 @@ BaseNetworkParser::parseCommon(const ConstElementPtr& network_data,
         network->setStoreExtendedInfo(getBoolean(network_data,
                                                  "store-extended-info"));
     }
+
+    if (network_data->contains("reservations-global")) {
+        network->setReservationsGlobal(getBoolean(network_data,
+                                                  "reservations-global"));
+    }
+
+    if (network_data->contains("reservations-in-subnet")) {
+        network->setReservationsInSubnet(getBoolean(network_data,
+                                                    "reservations-in-subnet"));
+    }
+
+    if (network_data->contains("reservations-out-of-pool")) {
+        network->setReservationsOutOfPool(getBoolean(network_data,
+                                                     "reservations-out-of-pool"));
+    }
 }
 
 void
@@ -194,21 +244,6 @@ BaseNetworkParser::parseCacheParams(const ConstElementPtr& network_data,
 
     if (network_data->contains("cache-max-age")) {
         network->setCacheMaxAge(getInteger(network_data, "cache-max-age"));
-    }
-}
-
-void
-BaseNetworkParser::parseHostReservationMode(const data::ConstElementPtr& network_data,
-                                            NetworkPtr& network) {
-    if (network_data->contains("reservation-mode")) {
-        try {
-            std::string hr_mode = getString(network_data, "reservation-mode");
-            network->setHostReservationMode(Network::hrModeFromString(hr_mode));
-        } catch (const BadValue& ex) {
-            isc_throw(DhcpConfigError, "invalid reservation-mode parameter: "
-                      << ex.what() << " (" << getPosition("reservation-mode",
-                                                          network_data) << ")");
-        }
     }
 }
 

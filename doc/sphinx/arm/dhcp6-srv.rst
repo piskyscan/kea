@@ -4067,6 +4067,135 @@ An example configuration using global reservations is shown below:
        ]
    }
 
+Since Kea 1.9.1, the ``reservation-mode`` is replaced by the
+``reservations-global``, ``reservations-in-subnet`` and
+``reservations-out-of-pool`` flags.
+The flags can be activated independently and can produce various combinations,
+some of them being unsuported by the deprecated ``reservation-mode``.
+
+The meaning of these flags are:
+
+- ``reservations-global``: fetch global reservations.
+
+- ``reservations-in-subnet``: fetch subnet reservations. For a shared network
+  this includes all subnets member of the shared network.
+
+- ``reservations-out-of-pool``: the makes sense only when the
+  ``reservations-in-subnet`` flag is true. When ``reservations-out-of-pool``
+  is true the may assume that all host reservations of the subnet are
+  are for addresses or prefixes that do not belong to the dynamic pool
+  as described in the ``out-of-pool`` reservation mode.
+
+The ``reservation-mode`` will be deprecated in a future Kea version.
+
+The correspondence of old values are:
+
+``disabled``:
+
+::
+
+   "Dhcp6": {
+
+       "reservations-global": false,
+       "reservations-in-subnet": false,
+       ...
+   }
+
+``global``:
+
+::
+
+   "Dhcp6": {
+
+       "reservations-global": true,
+       "reservations-in-subnet": false,
+       "reservations-out-of-pool": false,
+       ...
+   }
+
+``out-of-pool``:
+
+::
+
+   "Dhcp6": {
+
+       "reservations-global": false,
+       "reservations-in-subnet": true,
+       "reservations-out-of-pool": true,
+       ...
+   }
+
+``all``:
+
+::
+
+   "Dhcp6": {
+
+       "reservations-global": false,
+       "reservations-in-subnet": true,
+       "reservations-out-of-pool": false,
+       ...
+   }
+
+To activate both ``global`` and ``all``, the following combination can be used:
+
+::
+
+   "Dhcp6": {
+
+       "reservations-global": true,
+       "reservations-in-subnet": true,
+       "reservations-out-of-pool": false,
+       ...
+   }
+
+The parameter can be specified at global, subnet, and shared-network
+levels.
+
+An example configuration that disables reservation looks as follows:
+
+::
+
+   "Dhcp6": {
+       "subnet6": [
+       {
+           "subnet": "2001:db8:1::/64",
+           "reservations-global": false,
+           "reservations-in-subnet": false,
+           ...
+       }
+       ]
+   }
+
+
+An example configuration using only global reservations is shown below:
+
+::
+
+   "Dhcp6": {
+
+       "reservations-global": true,
+       "reservations-in-subnet": false,
+       "reservations-out-of-pool": false,
+       "reservations": [
+          {
+           "duid": "00:03:00:01:11:22:33:44:55:66",
+           "hostname": "host-one"
+          },
+          {
+           "duid": "00:03:00:01:99:88:77:66:55:44",
+           "hostname": "host-two"
+          }
+       ],
+
+       "subnet6": [
+       {
+           "subnet": "2001:db8:1::/64",
+           ...
+       }
+       ]
+   }
+
 For more details regarding global reservations, see :ref:`global-reservations6`.
 
 Another aspect of host reservations is the different types of
@@ -4168,7 +4297,17 @@ following can be used:
        "valid-lifetime": 600,
        "subnet4": [ {
            "subnet": "2001:db8:1::/64",
-           "reservation-mode": "global",
+           # It is replaced by the "reservations-global"
+           # "reservations-in-subnet" and "reservations-out-of-pool"
+           # parameters.
+           # "reservation-mode": "global",
+           # Specify if server should lookup global reservations.
+           "reservations-global": true,
+           # Specify if server should lookup in-subnet reservations.
+           "reservations-in-subnet": false,
+           # Specify if server can assume that all reserved addresses
+           # are out-of-pool.
+           "reservations-out-of-pool": false,
            "pools": [ { "pool": "2001:db8:1::-2001:db8:1::100" } ]
        } ]
    }
@@ -4271,7 +4410,15 @@ following example:
             "hw-address": "aa:bb:cc:dd:ee:fe",
             "client-classes": [ "reserved_class" ]
         }],
-        "reservation-mode": "global",
+        # It is replaced by the "reservations-global"
+        # "reservations-in-subnet" and "reservations-out-of-pool" parameters.
+        # Specify if server should lookup global reservations.
+        "reservations-global": true,
+        # Specify if server should lookup in-subnet reservations.
+        "reservations-in-subnet": false,
+        # Specify if server can assume that all reserved addresses
+        # are out-of-pool.
+        "reservations-out-of-pool": false,
         "shared-networks": [{
             "subnet6": [
                 {
@@ -4304,8 +4451,8 @@ will be assigned an address from the subnet 2001:db8:2::/64. Clients having
 a reservation for the ``reserved_class`` will be assigned an address from
 the subnet 2001:db8:1::/64. The subnets must belong to the same shared network.
 In addition, the reservation for the client class must be specified at the
-global scope (global reservation) and the ``reservation-mode`` must be
-set to ``global``.
+global scope (global reservation) and the ``reservations-global`` must be
+set to true.
 
 In the example above the ``client-class`` could also be specified at the
 subnet level rather than pool level yielding the same effect.
@@ -6596,6 +6743,12 @@ the global DHCPv6 options (``option-data``) are modified using
    | require-client-classes      | n/a                        | yes       | yes       | yes       | yes        |
    +-----------------------------+----------------------------+-----------+-----------+-----------+------------+
    | reservation-mode            | yes                        | yes       | yes       | n/a       | n/a        |
+   +-----------------------------+----------------------------+-----------+-----------+-----------+------------+
+   | reservations-global         | yes                        | yes       | yes       | n/a       | n/a        |
+   +-----------------------------+----------------------------+-----------+-----------+-----------+------------+
+   | reservations-in-subnet      | yes                        | yes       | yes       | n/a       | n/a        |
+   +-----------------------------+----------------------------+-----------+-----------+-----------+------------+
+   | reservations-out-of-pool    | yes                        | yes       | yes       | n/a       | n/a        |
    +-----------------------------+----------------------------+-----------+-----------+-----------+------------+
    | t1-percent                  | yes                        | yes       | yes       | n/a       | n/a        |
    +-----------------------------+----------------------------+-----------+-----------+-----------+------------+

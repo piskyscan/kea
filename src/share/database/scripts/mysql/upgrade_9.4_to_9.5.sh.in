@@ -1,0 +1,33 @@
+#!/bin/sh
+
+prefix=@prefix@
+# Include utilities. Use installed version if available and
+# use build version if it isn't.
+if [ -e @datarootdir@/@PACKAGE_NAME@/scripts/admin-utils.sh ]; then
+    . @datarootdir@/@PACKAGE_NAME@/scripts/admin-utils.sh
+else
+    . @abs_top_builddir@/src/bin/admin/admin-utils.sh
+fi
+
+VERSION=`mysql_version "$@"`
+
+if [ "$VERSION" != "9.4" ]; then
+    printf "This script upgrades 9.4 to 9.5. Reported version is $VERSION. Skipping upgrade.\n"
+    exit 0
+fi
+
+mysql "$@" <<EOF
+
+### TODO
+
+# Update the schema version number
+UPDATE schema_version
+SET version = '9', minor = '5';
+
+# This line concludes database upgrade to version 9.5.
+
+EOF
+
+RESULT=$?
+
+exit $?

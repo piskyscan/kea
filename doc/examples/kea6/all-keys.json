@@ -653,7 +653,20 @@
 
                 // Enumeration specifying server's mode of operation when it
                 // fetches host reservations.
-                "reservation-mode": "all",
+                // It is replaced by the "reservations-global",
+                // "reservations-in-subnet" and "reservations-out-of-pool"
+                // parameters.
+                // "reservation-mode": "all",
+
+                // Specify if server should lookup global reservations.
+                "reservations-global": false,
+
+                // Specify if server should lookup in-subnet reservations.
+                "reservations-in-subnet": true,
+
+                // Specify if server can assume that all reserved addresses
+                // are out-of-pool.
+                "reservations-out-of-pool": true,
 
                 // List of client classes which must be evaluated when this shared
                 // network is selected for client assignments.
@@ -839,7 +852,20 @@
 
                         // Enumeration specifying server's mode of operation when it
                         // fetches host reservations.
-                        "reservation-mode": "all",
+                        // It is replaced by the "reservations-global",
+                        // "reservations-in-subnet" and
+                        // "reservations-out-of-pool" parameters.
+                        // "reservation-mode": "all",
+
+                        // Specify if server should lookup global reservations.
+                        "reservations-global": false,
+
+                        // Specify if server should lookup in-subnet reservations.
+                        "reservations-in-subnet": true,
+
+                        // Specify if server can assume that all reserved
+                        // addresses are out-of-pool.
+                        "reservations-out-of-pool": true,
 
                         // Subnet level compute T1 and T2 timers.
                         "calculate-tee-times": true,
@@ -966,7 +992,19 @@
         },
 
         // Fetches host reservations.
-        "reservation-mode": "all",
+        // It is replaced by the "reservations-global",
+        // "reservations-in-subnet" and "reservations-out-of-pool" parameters.
+        // "reservation-mode": "all",
+
+        // Specify if server should lookup global reservations.
+        "reservations-global": false,
+
+        // Specify if server should lookup in-subnet reservations.
+        "reservations-in-subnet": true,
+
+        // Specify if server can assume that all reserved addresses
+        // are out-of-pool.
+        "reservations-out-of-pool": true,
 
         // Data directory.
         "data-directory": "/tmp",

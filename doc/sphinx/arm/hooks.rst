@@ -2655,7 +2655,10 @@ An example response could look as follows:
                    "ip-address": "0.0.0.0"
                },
                "renew-timer": 60,
-               "reservation-mode": "all",
+               # "reservation-mode": "all", (replaced by reservations-* flags.
+               "reservations-global": false,
+               "reservations-in-subnet": true,
+               "reservations-out-of-pool": true,
                "subnet4": [
                    {
                        "subnet": "192.0.2.0/24",

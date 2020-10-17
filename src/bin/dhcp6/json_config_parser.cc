@@ -474,6 +474,9 @@ configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
         // Note this is done for backward compatibilty.
         srv_config->moveDdnsParams(mutable_cfg);
 
+        // Move from reservation mode to new reservations flags.
+        BaseNetworkParser::moveReservationMode(mutable_cfg);
+
         // Set all default values if not specified by the user.
         SimpleParser6::setAllDefaults(mutable_cfg);
 
@@ -761,6 +764,9 @@ configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
                  (config_pair.first == "dhcp4o6-port") ||
                  (config_pair.first == "server-tag") ||
                  (config_pair.first == "reservation-mode") ||
+                 (config_pair.first == "reservations-global") ||
+                 (config_pair.first == "reservations-in-subnet") ||
+                 (config_pair.first == "reservations-out-of-pool") ||
                  (config_pair.first == "calculate-tee-times") ||
                  (config_pair.first == "t1-percent") ||
                  (config_pair.first == "t2-percent") ||

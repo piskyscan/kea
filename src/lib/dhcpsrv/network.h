@@ -152,33 +152,6 @@ public:
         IOAddressList addresses_;
     };
 
-
-    /// @brief Specifies allowed host reservation mode.
-    ///
-    typedef enum  {
-
-        /// None - host reservation is disabled. No reservation types
-        /// are allowed.
-        HR_DISABLED,
-
-        /// Only out-of-pool reservations is allowed. This mode
-        /// allows AllocEngine to skip reservation checks when
-        /// dealing with with addresses that are in pool.
-        HR_OUT_OF_POOL,
-
-        /// Only global reservations are allowed. This mode
-        /// instructs AllocEngine to only look at global reservations.
-        HR_GLOBAL,
-
-        /// Both out-of-pool and in-pool reservations are allowed. This is the
-        /// most flexible mode, where sysadmin have biggest liberty. However,
-        /// there is a non-trivial performance penalty for it, as the
-        /// AllocEngine code has to check whether there are reservations, even
-        /// when dealing with reservations from within the dynamic pools.
-        /// @todo - should ALL include global?
-        HR_ALL
-    } HRMode;
-
     /// @brief Inheritance "mode" used when fetching an optional @c Network
     /// parameter.
     ///
@@ -203,7 +176,8 @@ public:
     /// @brief Constructor.
     Network()
         : iface_name_(), client_class_(), t1_(), t2_(), valid_(),
-          host_reservation_mode_(HR_ALL, true), cfg_option_(new CfgOption()),
+          reservations_global_(false, true), reservations_in_subnet_(true, true),
+          reservations_out_of_pool_(false, true), cfg_option_(new CfgOption()),
           calculate_tee_times_(), t1_percent_(), t2_percent_(),
           ddns_send_updates_(), ddns_override_no_update_(), ddns_override_client_update_(),
           ddns_replace_client_name_mode_(), ddns_generated_prefix_(), ddns_qualifying_suffix_(),
@@ -397,70 +371,59 @@ public:
         t2_ = t2;
     }
 
-    /// @brief Specifies what type of Host Reservations are supported.
-    ///
-    /// Host reservations may be either in-pool (they reserve an address that
-    /// is in the dynamic pool) or out-of-pool (they reserve an address that is
-    /// not in the dynamic pool). HR may also be completely disabled for
-    /// performance reasons.
+    /// @brief Returns whether global reservations should be fetched.
     ///
     /// @param inheritance inheritance mode to be used.
-    /// @return Host reservation mode enabled.
-    util::Optional<HRMode>
-    getHostReservationMode(const Inheritance& inheritance = Inheritance::ALL) const {
-        // Inheritance for host reservations is a little different than for other
-        // parameters. The reservation at the global level is given as a string.
-        // Thus we call getProperty here without a global name to check if the
-        // host reservation mode is specified on network level only.
-        const util::Optional<HRMode>& hr_mode = getProperty<Network>(&Network::getHostReservationMode,
-                                                                     host_reservation_mode_,
-                                                                     inheritance);
-        // If HR mode is not specified at network level we need this special
-        // case code to handle conversion of the globally configured HR
-        // mode to an enum.
-        if (hr_mode.unspecified() && (inheritance != Inheritance::NONE) &&
-            (inheritance != Inheritance::PARENT_NETWORK)) {
-            // Get global reservation mode.
-            util::Optional<std::string> hr_mode_name;
-            hr_mode_name = getGlobalProperty(hr_mode_name, "reservation-mode");
-            if (!hr_mode_name.unspecified()) {
-                try {
-                    // If the HR mode is globally configured, let's convert it from
-                    // a string to enum.
-                    return (hrModeFromString(hr_mode_name.get()));
-
-                } catch (...) {
-                    // This should not really happen because the configuration
-                    // parser should have already verified the globally configured
-                    // reservation mode. However, we want to be 100% sure that this
-                    // method doesn't throw. Let's just return unspecified.
-                    return (hr_mode);
-                }
-            }
-        }
-        return (hr_mode);
+    util::Optional<bool>
+    getReservationsGlobal(const Inheritance& inheritance = Inheritance::ALL) const {
+        return (getProperty<Network>(&Network::getReservationsGlobal,
+                                     reservations_global_,
+                                     inheritance,
+                                     "reservations-global"));
     }
 
-    /// @brief Sets host reservation mode.
+    /// @brief Sets whether global reservations should be fetched.
     ///
-    /// See @ref getHostReservationMode for details.
-    ///
-    /// @param mode mode to be set
-    void setHostReservationMode(const util::Optional<HRMode>& mode) {
-        host_reservation_mode_ = mode;
+    /// @param reservations_global new value of enabled/disabled.
+    void setReservationsGlobal(const util::Optional<bool>& reservations_global) {
+        reservations_global_ = reservations_global;
     }
 
-    /// @brief Attempts to convert text representation to HRMode enum.
+    /// @brief Returns whether subnet reservations should be fetched.
     ///
-    /// Allowed values are "disabled", "off" (alias for disabled),
-    /// "out-of-pool" and "all". See @c Network::HRMode for their exact meaning.
+    /// @param inheritance inheritance mode to be used.
+    util::Optional<bool>
+    getReservationsInSubnet(const Inheritance& inheritance = Inheritance::ALL) const {
+        return (getProperty<Network>(&Network::getReservationsInSubnet,
+                                     reservations_in_subnet_,
+                                     inheritance,
+                                     "reservations-in-subnet"));
+    }
+
+    /// @brief Sets whether subnet reservations should be fetched.
     ///
-    /// @param hr_mode_name Host Reservation mode in the textual form.
+    /// @param reservations_in_subnet new value of enabled/disabled.
+    void setReservationsInSubnet(const util::Optional<bool>& reservations_in_subnet) {
+        reservations_in_subnet_ = reservations_in_subnet;
+    }
+
+    /// @brief Returns whether only out-of-pool reservations are allowed.
     ///
-    /// @throw BadValue if the text cannot be converted.
+    /// @param inheritance inheritance mode to be used.
+    util::Optional<bool>
+    getReservationsOutOfPool(const Inheritance& inheritance = Inheritance::ALL) const {
+        return (getProperty<Network>(&Network::getReservationsOutOfPool,
+                                     reservations_out_of_pool_,
+                                     inheritance,
+                                     "reservations-out-of-pool"));
+    }
+
+    /// @brief Sets whether only out-of-pool reservations are allowed.
     ///
-    /// @return one of allowed HRMode values
-    static HRMode hrModeFromString(const std::string& hr_mode_name);
+    /// @param reservations_out_of_pool new value of enabled/disabled.
+    void setReservationsOutOfPool(const util::Optional<bool>& reservations_out_of_pool) {
+        reservations_out_of_pool_ = reservations_out_of_pool;
+    }
 
     /// @brief Returns pointer to the option data configuration for this network.
     CfgOptionPtr getCfgOption() {
@@ -1067,7 +1030,7 @@ protected:
     /// @brief Value in seconds to use as cache maximal age.
     util::Optional<uint32_t> cache_max_age_;
 
-    /// @brief Should Kea perform updates when leases are extended 
+    /// @brief Should Kea perform updates when leases are extended
     util::Optional<bool> ddns_update_on_renew_;
 
     /// @brief Used to to tell kea-dhcp-ddns whether or not to use conflict resolution.

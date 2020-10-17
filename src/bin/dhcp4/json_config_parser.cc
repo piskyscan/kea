@@ -373,6 +373,9 @@ configureDhcp4Server(Dhcpv4Srv& server, isc::data::ConstElementPtr config_set,
         // Note this is done for backward compatibility.
         srv_cfg->moveDdnsParams(mutable_cfg);
 
+        // Move from reservation mode to new reservations flags.
+        BaseNetworkParser::moveReservationMode(mutable_cfg);
+
         // Set all default values if not specified by the user.
         SimpleParser4::setAllDefaults(mutable_cfg);
 
@@ -628,6 +631,9 @@ configureDhcp4Server(Dhcpv4Srv& server, isc::data::ConstElementPtr config_set,
                  (config_pair.first == "boot-file-name") ||
                  (config_pair.first == "server-tag") ||
                  (config_pair.first == "reservation-mode") ||
+                 (config_pair.first == "reservations-global") ||
+                 (config_pair.first == "reservations-in-subnet") ||
+                 (config_pair.first == "reservations-out-of-pool") ||
                  (config_pair.first == "calculate-tee-times") ||
                  (config_pair.first == "t1-percent") ||
                  (config_pair.first == "t2-percent") ||

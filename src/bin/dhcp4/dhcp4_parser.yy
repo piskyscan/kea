@@ -156,6 +156,9 @@ using namespace std;
   OUT_OF_POOL "out-of-pool"
   GLOBAL "global"
   ALL "all"
+  RESERVATIONS_GLOBAL "reservations-global"
+  RESERVATIONS_IN_SUBNET "reservations-in-subnet"
+  RESERVATIONS_OUT_OF_POOL "reservations-out-of-pool"
 
   HOST_RESERVATION_IDENTIFIERS "host-reservation-identifiers"
 
@@ -483,6 +486,9 @@ global_param: valid_lifetime
             | config_control
             | server_tag
             | reservation_mode
+            | reservations_global
+            | reservations_in_subnet
+            | reservations_out_of_pool
             | calculate_tee_times
             | t1_percent
             | t2_percent
@@ -1368,6 +1374,9 @@ subnet4_param: valid_lifetime
              | require_client_classes
              | reservations
              | reservation_mode
+             | reservations_global
+             | reservations_in_subnet
+             | reservations_out_of_pool
              | relay
              | match_client_id
              | authoritative
@@ -1463,6 +1472,24 @@ require_client_classes: REQUIRE_CLIENT_CLASSES {
     ctx.leave();
 };
 
+reservations_global: RESERVATIONS_GLOBAL COLON BOOLEAN {
+    ctx.unique("reservations-global", ctx.loc2pos(@1));
+    ElementPtr b(new BoolElement($3, ctx.loc2pos(@3)));
+    ctx.stack_.back()->set("reservations-global", b);
+};
+
+reservations_in_subnet: RESERVATIONS_IN_SUBNET COLON BOOLEAN {
+    ctx.unique("reservations-in-subnet", ctx.loc2pos(@1));
+    ElementPtr b(new BoolElement($3, ctx.loc2pos(@3)));
+    ctx.stack_.back()->set("reservations-in-subnet", b);
+};
+
+reservations_out_of_pool: RESERVATIONS_OUT_OF_POOL COLON BOOLEAN {
+    ctx.unique("reservations-out-of-pool", ctx.loc2pos(@1));
+    ElementPtr b(new BoolElement($3, ctx.loc2pos(@3)));
+    ctx.stack_.back()->set("reservations-out-of-pool", b);
+};
+
 reservation_mode: RESERVATION_MODE {
     ctx.unique("reservation-mode", ctx.loc2pos(@1));
     ctx.enter(ctx.RESERVATION_MODE);
@@ -1531,6 +1558,9 @@ shared_network_param: name
                     | boot_file_name
                     | relay
                     | reservation_mode
+                    | reservations_global
+                    | reservations_in_subnet
+                    | reservations_out_of_pool
                     | client_class
                     | require_client_classes
                     | valid_lifetime
