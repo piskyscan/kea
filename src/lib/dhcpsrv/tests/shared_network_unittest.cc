@@ -53,8 +53,14 @@ TEST(SharedNetwork4Test, defaults) {
     EXPECT_TRUE(network->getT2().unspecified());
     EXPECT_EQ(0, network->getT2().get());
 
-    EXPECT_TRUE(network->getHostReservationMode().unspecified());
-    EXPECT_EQ(Network::HR_ALL, network->getHostReservationMode().get());
+    EXPECT_TRUE(network->getReservationsGlobal().unspecified());
+    EXPECT_FALSE(network->getReservationsGlobal().get());
+
+    EXPECT_TRUE(network->getReservationsInSubnet().unspecified());
+    EXPECT_TRUE(network->getReservationsInSubnet().get());
+
+    EXPECT_TRUE(network->getReservationsOutOfPool().unspecified());
+    EXPECT_FALSE(network->getReservationsOutOfPool().get());
 
     EXPECT_TRUE(network->getCalculateTeeTimes().unspecified());
     EXPECT_FALSE(network->getCalculateTeeTimes().get());
@@ -576,36 +582,6 @@ TEST(SharedNetwork4Test, subnetsIncludeMatchClientId) {
     EXPECT_TRUE(SharedNetwork4::subnetsIncludeMatchClientId(subnet1, classes));
 }
 
-// This test verifies that subnetsAllHRGlobal() works as expected.
-TEST(SharedNetwork4Test, subnetsAllHRGlobal) {
-    SharedNetwork4Ptr network(new SharedNetwork4("frog"));
-    Subnet4Ptr bad;
-
-    // Empty shared network is right.
-    ASSERT_NO_THROW(bad = network->subnetsAllHRGlobal());
-    EXPECT_FALSE(bad);
-
-    // Create a subnet and add it to the shared network.
-    Subnet4Ptr subnet(new Subnet4(IOAddress("10.0.0.0"), 8, 10, 20, 30,
-                                  SubnetID(1)));
-    ASSERT_NO_THROW(network->add(subnet));
-
-    // Default host reservation mode is ALL.
-    bad.reset();
-    ASSERT_NO_THROW(bad = network->subnetsAllHRGlobal());
-    ASSERT_TRUE(bad);
-    EXPECT_EQ(1, bad->getID());
-    EXPECT_EQ("10.0.0.0/8", bad->toText());
-
-    // Set the HR mode to global.
-    subnet->setHostReservationMode(Network::HR_GLOBAL);
-
-    // Now the shared network is all global.
-    bad.reset();
-    ASSERT_NO_THROW(bad = network->subnetsAllHRGlobal());
-    EXPECT_FALSE(bad);
-}
-
 // This test verifies operations on the network's relay list
 TEST(SharedNetwork4Test, relayInfoList) {
     SharedNetwork4Ptr network(new SharedNetwork4("frog"));
@@ -645,7 +621,9 @@ TEST(SharedNetwork4Test, unparse) {
     network->addRelayAddress(IOAddress("192.168.2.1"));
     network->setAuthoritative(false);
     network->setMatchClientId(false);
-    network->setHostReservationMode(Network::HR_ALL);
+    network->setReservationsGlobal(false);
+    network->setReservationsInSubnet(true);
+    network->setReservationsOutOfPool(false);
 
     // Add several subnets.
     Subnet4Ptr subnet1(new Subnet4(IOAddress("10.0.0.0"), 8, 10, 20, 30,
@@ -670,7 +648,9 @@ TEST(SharedNetwork4Test, unparse) {
         "    },\n"
         "    \"renew-timer\": 100,\n"
         "    \"require-client-classes\": [ \"foo\" ],\n"
-        "    \"reservation-mode\": \"all\","
+        "    \"reservation-global\": false,\n"
+        "    \"reservation-in-subnet\": true,\n"
+        "    \"reservation-out-of-pool\": false,\n"
         "    \"subnet4\": [\n"
         "      {\n"
         "        \"4o6-interface\": \"\",\n"
@@ -784,8 +764,14 @@ TEST(SharedNetwork6Test, defaults) {
     EXPECT_TRUE(network->getT2().unspecified());
     EXPECT_EQ(0, network->getT2().get());
 
-    EXPECT_TRUE(network->getHostReservationMode().unspecified());
-    EXPECT_EQ(Network::HR_ALL, network->getHostReservationMode().get());
+    EXPECT_TRUE(network->getReservationsGlobal().unspecified());
+    EXPECT_FALSE(network->getReservationsGlobal().get());
+
+    EXPECT_TRUE(network->getReservationsInSubnet().unspecified());
+    EXPECT_TRUE(network->getReservationsInSubnet().get());
+
+    EXPECT_TRUE(network->getReservationsOutOfPool().unspecified());
+    EXPECT_FALSE(network->getReservationsOutOfPool().get());
 
     EXPECT_TRUE(network->getCalculateTeeTimes().unspecified());
     EXPECT_FALSE(network->getCalculateTeeTimes().get());
@@ -1298,36 +1284,6 @@ TEST(SharedNetwork6Test, getPreferredSubnetMultiThreading) {
     EXPECT_EQ(subnet3->getID(), preferred->getID());
 }
 
-// This test verifies that subnetsAllHRGlobal() works as expected.
-TEST(SharedNetwork6Test, subnetsAllHRGlobal) {
-    SharedNetwork6Ptr network(new SharedNetwork6("frog"));
-    Subnet6Ptr bad;
-
-    // Empty shared network is right.
-    ASSERT_NO_THROW(bad = network->subnetsAllHRGlobal());
-    EXPECT_FALSE(bad);
-
-    // Create a subnet and add it to the shared network.
-    Subnet6Ptr subnet(new Subnet6(IOAddress("2001:db8:1::"), 64, 10, 20, 30,
-                                  40, SubnetID(1)));
-    ASSERT_NO_THROW(network->add(subnet));
-
-    // Default host reservation mode is ALL.
-    bad.reset();
-    ASSERT_NO_THROW(bad = network->subnetsAllHRGlobal());
-    ASSERT_TRUE(bad);
-    EXPECT_EQ(1, bad->getID());
-    EXPECT_EQ("2001:db8:1::/64", bad->toText());
-
-    // Set the HR mode to global.
-    subnet->setHostReservationMode(Network::HR_GLOBAL);
-
-    // Now the shared network is all global.
-    bad.reset();
-    ASSERT_NO_THROW(bad = network->subnetsAllHRGlobal());
-    EXPECT_FALSE(bad);
-}
-
 // This test verifies operations on the network's relay list
 TEST(SharedNetwork6Test, relayInfoList) {
     SharedNetwork6Ptr network(new SharedNetwork6("frog"));
@@ -1367,7 +1323,9 @@ TEST(SharedNetwork6Test, unparse) {
     network->addRelayAddress(IOAddress("2001:db8:1::8"));
 
     network->setRapidCommit(true);
-    network->setHostReservationMode(Network::HR_ALL);
+    network->setReservationsGlobal(false);
+    network->setReservationsInSubnet(true);
+    network->setReservationsOutOfPool(false);
 
     // Add several subnets.
     Subnet6Ptr subnet1(new Subnet6(IOAddress("2001:db8:1::"), 64, 10, 20, 30,
@@ -1391,7 +1349,9 @@ TEST(SharedNetwork6Test, unparse) {
         "    },\n"
         "    \"renew-timer\": 100,\n"
         "    \"require-client-classes\": [ \"foo\" ],\n"
-        "    \"reservation-mode\": \"all\","
+        "    \"reservation-global\": false,\n"
+        "    \"reservation-in-subnet\": true,\n"
+        "    \"reservation-out-of-pool\": false,\n"
         "    \"subnet6\": [\n"
         "      {\n"
         "        \"id\": 1,\n"

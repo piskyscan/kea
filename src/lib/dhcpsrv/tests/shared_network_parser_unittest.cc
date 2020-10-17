@@ -128,7 +128,9 @@ public:
                 "    \"rebind-timer\": 199,"
                 "    \"relay\": { \"ip-addresses\": [ \"10.1.1.1\" ] },"
                 "    \"renew-timer\": 99,"
-                "    \"reservation-mode\": \"out-of-pool\","
+                "    \"reservations-global\": false,"
+                "    \"reservations-in-subnet\": true,"
+                "    \"reservations-out-of-pool\": true,"
                 "    \"server-hostname\": \"example.org\","
                 "    \"require-client-classes\": [ \"runner\" ],"
                 "    \"user-context\": { \"comment\": \"example\" },"
@@ -173,11 +175,12 @@ public:
                 "            \"boot-file-name\": \"\","
                 "            \"client-class\": \"\","
                 "            \"require-client-classes\": []\n,"
-                "            \"reservation-mode\": \"all\","
+                "            \"reservations-global\": false,"
+                "            \"reservations-in-subnet\": true,"
+                "            \"reservations-out-of-pool\": false,"
                 "            \"4o6-interface\": \"\","
                 "            \"4o6-interface-id\": \"\","
                 "            \"4o6-subnet\": \"\","
-                "            \"reservation-mode\": \"all\","
                 "            \"calculate-tee-times\": true,"
                 "            \"t1-percent\": .45,"
                 "            \"t2-percent\": .65,"
@@ -199,11 +202,12 @@ public:
                 "            \"boot-file-name\": \"\","
                 "            \"client-class\": \"\","
                 "            \"require-client-classes\": []\n,"
-                "            \"reservation-mode\": \"all\","
+                "            \"reservations-global\": false,"
+                "            \"reservations-in-subnet\": true,"
+                "            \"reservations-out-of-pool\": false,"
                 "            \"4o6-interface\": \"\","
                 "            \"4o6-interface-id\": \"\","
                 "            \"4o6-subnet\": \"\","
-                "            \"reservation-mode\": \"all\","
                 "            \"calculate-tee-times\": false,"
                 "            \"t1-percent\": .40,"
                 "            \"t2-percent\": .80,"
@@ -261,7 +265,9 @@ TEST_F(SharedNetwork4ParserTest, parse) {
     EXPECT_EQ("/dev/null", network->getFilename().get());
     EXPECT_EQ("10.0.0.1", network->getSiaddr().get().toText());
     EXPECT_EQ("example.org", network->getSname().get());
-    EXPECT_EQ(Network::HR_OUT_OF_POOL, network->getHostReservationMode());
+    EXPECT_FALSE(network->getReservationsGlobal());
+    EXPECT_TRUE(network->getReservationsInSubnet());
+    EXPECT_TRUE(network->getReservationsOutOfPool());
     EXPECT_TRUE(network->getDdnsSendUpdates().get());
     EXPECT_TRUE(network->getDdnsOverrideNoUpdate().get());
     EXPECT_TRUE(network->getDdnsOverrideClientUpdate().get());
@@ -549,7 +555,9 @@ public:
                 "    \"relay\": { \"ip-addresses\": [ \"2001:db8:1::1\" ] },"
                 "    \"renew-timer\": 99,"
                 "    \"require-client-classes\": [ \"runner\" ],"
-                "    \"reservation-mode\": \"out-of-pool\","
+                "    \"reservations-global\": false,"
+                "    \"reservations-in-subnet\": true,"
+                "    \"reservations-out-of-pool\": true,"
                 "    \"user-context\": { },"
                 "    \"valid-lifetime\": 399,"
                 "    \"min-valid-lifetime\": 299,"
@@ -591,7 +599,9 @@ public:
                 "            \"max-valid-lifetime\": 500,"
                 "            \"client-class\": \"\","
                 "            \"require-client-classes\": []\n,"
-                "            \"reservation-mode\": \"all\","
+                "            \"reservations-global\": false,"
+                "            \"reservations-in-subnet\": true,"
+                "            \"reservations-out-of-pool\": false,"
                 "            \"rapid-commit\": false,"
                 "            \"hostname-char-set\": \"\""
                 "        },"
@@ -606,7 +616,9 @@ public:
                 "            \"valid-lifetime\": 40,"
                 "            \"client-class\": \"\","
                 "            \"require-client-classes\": []\n,"
-                "            \"reservation-mode\": \"all\","
+                "            \"reservations-global\": false,"
+                "            \"reservations-in-subnet\": true,"
+                "            \"reservations-out-of-pool\": false,"
                 "            \"rapid-commit\": false"
                 "        }"
                 "    ]"

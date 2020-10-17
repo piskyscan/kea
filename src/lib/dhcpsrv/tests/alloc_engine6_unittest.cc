@@ -3408,7 +3408,7 @@ TEST_F(AllocEngine6Test, hostDynamicAddress) {
     CfgMgr::instance().getStagingCfg()->getCfgHosts()->add(host);
     CfgMgr::instance().commit();
 
-    subnet_->setHostReservationMode(Network::HR_ALL);
+    subnet_->setReservationsInSubnet(true);
 
     // Create context which will be used to try to allocate leases
     Pkt6Ptr query(new Pkt6(DHCPV6_REQUEST, 1234));
@@ -3499,7 +3499,8 @@ TEST_F(AllocEngine6Test, globalHostDynamicAddress) {
     CfgMgr::instance().getStagingCfg()->getCfgHosts()->add(host);
     CfgMgr::instance().commit();
 
-    subnet_->setHostReservationMode(Network::HR_GLOBAL);
+    subnet_->setReservationsGlobal(true);
+    subnet_->setReservationsInSubnet(false);
 
     // Create context which will be used to try to allocate leases
     Pkt6Ptr query(new Pkt6(DHCPV6_REQUEST, 1234));
@@ -3586,7 +3587,8 @@ TEST_F(AllocEngine6Test, globalHostReservedAddress) {
     CfgMgr::instance().getStagingCfg()->getCfgHosts()->add(host);
     CfgMgr::instance().commit();
 
-    subnet_->setHostReservationMode(Network::HR_GLOBAL);
+    subnet_->setReservationsGlobal(true);
+    subnet_->setReservationsInSubnet(false);
 
     // Create context which will be used to try to allocate leases
     Pkt6Ptr query(new Pkt6(DHCPV6_REQUEST, 1234));
@@ -3650,7 +3652,8 @@ TEST_F(AllocEngine6Test, globalHostReservedPrefix) {
     CfgMgr::instance().getStagingCfg()->getCfgHosts()->add(host);
     CfgMgr::instance().commit();
 
-    subnet_->setHostReservationMode(Network::HR_GLOBAL);
+    subnet_->setReservationsGlobal(true);
+    subnet_->setReservationsInSubnet(false);
 
     // Create context which will be used to try to allocate leases
     Pkt6Ptr query(new Pkt6(DHCPV6_REQUEST, 1234));

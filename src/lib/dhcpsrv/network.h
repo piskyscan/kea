@@ -975,10 +975,18 @@ protected:
     /// @brief a Triplet (min/default/max) holding allowed valid lifetime values
     Triplet<uint32_t> valid_;
 
-    /// @brief Specifies host reservation mode
+    /// @brief Enables global reservations.
+    util::Optional<bool> reservations_global_;
+
+    /// @brief Enables subnet reservations.
+    util::Optional<bool> reservations_in_subnet_;
+
+    /// @brief Enables out-of-pool reservations optimization.
     ///
-    /// See @ref HRMode type for details.
-    util::Optional<HRMode> host_reservation_mode_;
+    /// When true only out-of-pool reservations are allowed. This allows
+    /// AllocEngine to skip reservation checks when dealing with addresses
+    /// that are in pool.
+    util::Optional<bool> reservations_out_of_pool_;
 
     /// @brief Pointer to the option data configuration for this subnet.
     CfgOptionPtr cfg_option_;

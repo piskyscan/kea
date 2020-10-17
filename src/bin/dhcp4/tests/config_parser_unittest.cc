@@ -5298,17 +5298,22 @@ TEST_F(Dhcp4ParserTest, hostReservationPerSubnet) {
         "\"subnet4\": [ { "
         "    \"pools\": [ { \"pool\": \"192.0.2.0/24\" } ],"
         "    \"subnet\": \"192.0.2.0/24\", "
-        "    \"reservation-mode\": \"all\""
+        "    \"reservations-global\": false, "
+        "    \"reservations-in-subnet\": true, "
+        "    \"reservations-out-of-pool\": false"
         " },"
         " {"
         "    \"pools\": [ { \"pool\": \"192.0.3.0/24\" } ],"
         "    \"subnet\": \"192.0.3.0/24\", "
-        "    \"reservation-mode\": \"out-of-pool\""
+        "    \"reservations-global\": false, "
+        "    \"reservations-in-subnet\": true, "
+        "    \"reservations-out-of-pool\": true"
         " },"
         " {"
         "    \"pools\": [ { \"pool\": \"192.0.4.0/24\" } ],"
         "    \"subnet\": \"192.0.4.0/24\", "
-        "    \"reservation-mode\": \"disabled\""
+        "    \"reservations-global\": false, "
+        "    \"reservations-in-subnet\": false "
         " },"
         " {"
         "    \"pools\": [ { \"pool\": \"192.0.5.0/24\" } ],"
@@ -5337,22 +5342,30 @@ TEST_F(Dhcp4ParserTest, hostReservationPerSubnet) {
     Subnet4Ptr subnet;
     subnet = subnets->selectSubnet(IOAddress("192.0.2.1"));
     ASSERT_TRUE(subnet);
-    EXPECT_EQ(Network::HR_ALL, subnet->getHostReservationMode());
+    EXPECT_FALSE(subnet->getReservationsGlobal());
+    EXPECT_TRUE(subnet->getReservationsInSubnet());
+    EXPECT_FALSE(subnet->getReservationsOutOfPool());
 
     // Subnet 2
     subnet = subnets->selectSubnet(IOAddress("192.0.3.1"));
     ASSERT_TRUE(subnet);
-    EXPECT_EQ(Network::HR_OUT_OF_POOL, subnet->getHostReservationMode());
+    EXPECT_FALSE(subnet->getReservationsGlobal());
+    EXPECT_TRUE(subnet->getReservationsInSubnet());
+    EXPECT_TRUE(subnet->getReservationsOutOfPool());
 
     // Subnet 3
     subnet = subnets->selectSubnet(IOAddress("192.0.4.1"));
     ASSERT_TRUE(subnet);
-    EXPECT_EQ(Network::HR_DISABLED, subnet->getHostReservationMode());
+    EXPECT_FALSE(subnet->getReservationsGlobal());
+    EXPECT_FALSE(subnet->getReservationsInSubnet());
+    EXPECT_FALSE(subnet->getReservationsOutOfPool());
 
     // Subnet 4
     subnet = subnets->selectSubnet(IOAddress("192.0.5.1"));
     ASSERT_TRUE(subnet);
-    EXPECT_EQ(Network::HR_ALL, subnet->getHostReservationMode());
+    EXPECT_FALSE(subnet->getReservationsGlobal());
+    EXPECT_TRUE(subnet->getReservationsInSubnet());
+    EXPECT_FALSE(subnet->getReservationsOutOfPool());
 }
 
 /// The goal of this test is to verify that Host Reservation modes can be
@@ -5368,11 +5381,15 @@ TEST_F(Dhcp4ParserTest, hostReservationGlobal) {
         "{ "
         "\"rebind-timer\": 2000, "
         "\"renew-timer\": 1000, "
-        "\"reservation-mode\": \"out-of-pool\", "
+        "\"reservations-global\": false, "
+        "\"reservations-in-subnet\": true, "
+        "\"reservations-out-of-pool\": true, "
         "\"subnet4\": [ { "
         "    \"pools\": [ { \"pool\": \"192.0.2.0/24\" } ],"
         "    \"subnet\": \"192.0.2.0/24\", "
-        "    \"reservation-mode\": \"all\""
+        "    \"reservations-global\": false, "
+        "    \"reservations-in-subnet\": true, "
+        "    \"reservations-out-of-pool\": false"
         " },"
         " {"
         "    \"pools\": [ { \"pool\": \"192.0.3.0/24\" } ],"
@@ -5405,7 +5422,9 @@ TEST_F(Dhcp4ParserTest, hostReservationGlobal) {
     subnet->setFetchGlobalsFn([]() -> ConstElementPtr {
         return (CfgMgr::instance().getStagingCfg()->getConfiguredGlobals());
     });
-    EXPECT_EQ(Network::HR_ALL, subnet->getHostReservationMode());
+    EXPECT_FALSE(subnet->getReservationsGlobal());
+    EXPECT_TRUE(subnet->getReservationsInSubnet());
+    EXPECT_FALSE(subnet->getReservationsOutOfPool());
 
     // Subnet 2
     subnet = subnets->selectSubnet(IOAddress("192.0.3.1"));
@@ -5414,7 +5433,9 @@ TEST_F(Dhcp4ParserTest, hostReservationGlobal) {
     subnet->setFetchGlobalsFn([]() -> ConstElementPtr {
         return (CfgMgr::instance().getStagingCfg()->getConfiguredGlobals());
     });
-    EXPECT_EQ(Network::HR_OUT_OF_POOL, subnet->getHostReservationMode());
+    EXPECT_FALSE(subnet->getReservationsGlobal());
+    EXPECT_TRUE(subnet->getReservationsInSubnet());
+    EXPECT_TRUE(subnet->getReservationsOutOfPool());
 }
 
 /// Check that the decline-probation-period has a default value when not
@@ -6271,7 +6292,9 @@ TEST_F(Dhcp4ParserTest, sharedNetworksDerive) {
         "    \"relay\": {\n"
         "        \"ip-address\": \"5.6.7.8\"\n"
         "    },\n"
-        "    \"reservation-mode\": \"out-of-pool\",\n"
+        "    \"reservations-global\": false,\n"
+        "    \"reservations-in-subnet\": true,\n"
+        "    \"reservations-out-of-pool\": true,\n"
         "    \"renew-timer\": 10,\n"
         "    \"rebind-timer\": 20,\n"
         "    \"valid-lifetime\": 40,\n"
@@ -6297,7 +6320,9 @@ TEST_F(Dhcp4ParserTest, sharedNetworksDerive) {
         "        \"relay\": {\n"
         "            \"ip-address\": \"55.66.77.88\"\n"
         "        },\n"
-        "        \"reservation-mode\": \"disabled\"\n"
+        "        \"reservations-global\": false,\n"
+        "        \"reservations-in-subnet\": false,\n"
+        "        \"reservations-out-of-pool\": false\n"
         "    }\n"
         "    ]\n"
         " },\n"
@@ -6348,7 +6373,9 @@ TEST_F(Dhcp4ParserTest, sharedNetworksDerive) {
     EXPECT_EQ("foo", s->getSname().get());
     EXPECT_EQ("bar", s->getFilename().get());
     EXPECT_TRUE(s->hasRelayAddress(IOAddress("5.6.7.8")));
-    EXPECT_EQ(Network::HR_OUT_OF_POOL, s->getHostReservationMode());
+    EXPECT_FALSE(s->getReservationsGlobal());
+    EXPECT_TRUE(s->getReservationsInSubnet());
+    EXPECT_TRUE(s->getReservationsOutOfPool());
 
     // For the second subnet, the renew-timer should be 100, because it
     // was specified explicitly. Other parameters a derived
@@ -6365,7 +6392,9 @@ TEST_F(Dhcp4ParserTest, sharedNetworksDerive) {
     EXPECT_EQ("some-name.example.org", s->getSname().get());
     EXPECT_EQ("bootfile.efi", s->getFilename().get());
     EXPECT_TRUE(s->hasRelayAddress(IOAddress("55.66.77.88")));
-    EXPECT_EQ(Network::HR_DISABLED, s->getHostReservationMode());
+    EXPECT_FALSE(s->getReservationsGlobal());
+    EXPECT_FALSE(s->getReservationsInSubnet());
+    EXPECT_FALSE(s->getReservationsOutOfPool());
 
     // Ok, now check the second shared subnet.
     net = nets->at(1);
@@ -6386,7 +6415,9 @@ TEST_F(Dhcp4ParserTest, sharedNetworksDerive) {
     EXPECT_TRUE(s->getSname().empty());
     EXPECT_TRUE(s->getFilename().empty());
     EXPECT_FALSE(s->hasRelays());
-    EXPECT_EQ(Network::HR_ALL, s->getHostReservationMode());
+    EXPECT_FALSE(s->getReservationsGlobal());
+    EXPECT_TRUE(s->getReservationsInSubnet());
+    EXPECT_FALSE(s->getReservationsOutOfPool());
 }
 
 // This test checks if client-class is derived properly.

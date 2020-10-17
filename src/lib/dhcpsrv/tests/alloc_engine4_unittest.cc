@@ -2899,16 +2899,13 @@ TEST_F(AllocEngine4Test, findReservation) {
     EXPECT_TRUE(ctx.currentHost());
     EXPECT_EQ(ctx.currentHost()->getIPv4Reservation(), host->getIPv4Reservation());
 
-    // It shouldn't be returned when HR_DISABLED mode is enabled.
-    subnet_->setHostReservationMode(Network::HR_DISABLED);
+    // It shouldn't be returned when reservations-in-subnet is disabled.
+    subnet_->setReservationsInSubnet(false);
     ASSERT_NO_THROW(engine.findReservation(ctx));
     EXPECT_FALSE(ctx.currentHost());
 
-    // Check the out of the pool reservation mode.
-    subnet_->setHostReservationMode(Network::HR_OUT_OF_POOL);
-    ASSERT_NO_THROW(engine.findReservation(ctx));
-    EXPECT_TRUE(ctx.currentHost());
-    EXPECT_EQ(ctx.currentHost()->getIPv4Reservation(), host->getIPv4Reservation());
+    // Enable again reservations-in-subnet.
+    subnet_->setReservationsInSubnet(true);
 
     // This time use the client identifier to search for the host.
     host.reset(new Host(&clientid_->getClientId()[0],
@@ -3092,7 +3089,8 @@ TEST_F(AllocEngine4Test, globalReservationReservedAddressDiscover) {
 
     AllocEngine engine(AllocEngine::ALLOC_ITERATIVE, 0, false);
 
-    subnet_->setHostReservationMode(Network::HR_GLOBAL);
+    subnet_->setReservationsGlobal(true);
+    subnet_->setReservationsInSubnet(false);
 
     // Query allocation engine for the lease to be assigned to this
     // client without specifying the address to be assigned.
@@ -3109,7 +3107,7 @@ TEST_F(AllocEngine4Test, globalReservationReservedAddressDiscover) {
     EXPECT_EQ(ctx.currentHost()->getHostname(), host->getHostname());
     EXPECT_EQ(ctx.currentHost()->getIPv4Reservation(), host->getIPv4Reservation());
 
-    // We should allocate the reserverd address.
+    // We should allocate the reserved address.
     Lease4Ptr lease = engine.allocateLease4(ctx);
     ASSERT_TRUE(lease);
     EXPECT_EQ("192.0.77.123", lease->addr_.toText());
@@ -3140,7 +3138,8 @@ TEST_F(AllocEngine4Test, globalReservationReservedAddressRequest) {
 
     AllocEngine engine(AllocEngine::ALLOC_ITERATIVE, 0, false);
 
-    subnet_->setHostReservationMode(Network::HR_GLOBAL);
+    subnet_->setReservationsGlobal(true);
+    subnet_->setReservationsInSubnet(false);
 
     // Query allocation engine for the lease to be assigned to this
     // client without specifying the address to be assigned.
@@ -3157,7 +3156,7 @@ TEST_F(AllocEngine4Test, globalReservationReservedAddressRequest) {
     EXPECT_EQ(ctx.currentHost()->getHostname(), host->getHostname());
     EXPECT_EQ(ctx.currentHost()->getIPv4Reservation(), host->getIPv4Reservation());
 
-    // We should allocate the reserverd address.
+    // We should allocate the reserved address.
     Lease4Ptr lease = engine.allocateLease4(ctx);
     ASSERT_TRUE(lease);
     EXPECT_EQ("192.0.77.123", lease->addr_.toText());
@@ -3192,7 +3191,8 @@ TEST_F(AllocEngine4Test, globalReservationDynamicDiscover) {
 
     AllocEngine engine(AllocEngine::ALLOC_ITERATIVE, 0, false);
 
-    subnet_->setHostReservationMode(Network::HR_GLOBAL);
+    subnet_->setReservationsGlobal(true);
+    subnet_->setReservationsInSubnet(false);
 
     // Query allocation engine for the lease to be assigned to this
     // client without specifying the address to be assigned.
@@ -3241,7 +3241,8 @@ TEST_F(AllocEngine4Test, globalReservationDynamicRequest) {
 
     AllocEngine engine(AllocEngine::ALLOC_ITERATIVE, 0, false);
 
-    subnet_->setHostReservationMode(Network::HR_GLOBAL);
+    subnet_->setReservationsGlobal(true);
+    subnet_->setReservationsInSubnet(false);
 
     // Query allocation engine for the lease to be assigned to this
     // client without specifying the address to be assigned.

@@ -5669,22 +5669,28 @@ TEST_F(Dhcp6ParserTest, hostReservationPerSubnet) {
         "\"subnet6\": [ { "
         "    \"pools\": [ { \"pool\": \"2001:db8:1::/64\" } ],"
         "    \"subnet\": \"2001:db8:1::/48\", "
-        "    \"reservation-mode\": \"all\""
+        "    \"reservations-global\": false, "
+        "    \"reservations-in-subnet\": true, "
+        "    \"reservations-out-of-pool\": false"
         " },"
         " {"
         "    \"pools\": [ { \"pool\": \"2001:db8:2::/64\" } ],"
         "    \"subnet\": \"2001:db8:2::/48\", "
-        "    \"reservation-mode\": \"out-of-pool\""
+        "    \"reservations-global\": false, "
+        "    \"reservations-in-subnet\": true, "
+        "    \"reservations-out-of-pool\": true"
         " },"
         " {"
         "    \"pools\": [ { \"pool\": \"2001:db8:3::/64\" } ],"
         "    \"subnet\": \"2001:db8:3::/48\", "
-        "    \"reservation-mode\": \"disabled\""
+        "    \"reservations-global\": false, "
+        "    \"reservations-in-subnet\": false"
         " },"
         " {"
         "    \"pools\": [ { \"pool\": \"2001:db8:4::/64\" } ],"
         "    \"subnet\": \"2001:db8:4::/48\", "
-        "    \"reservation-mode\": \"global\""
+        "    \"reservations-global\": true, "
+        "    \"reservations-in-subnet\": false"
         " },"
         " {"
         "    \"pools\": [ { \"pool\": \"2001:db8:5::/64\" } ],"
@@ -5715,27 +5721,36 @@ TEST_F(Dhcp6ParserTest, hostReservationPerSubnet) {
     Subnet6Ptr subnet;
     subnet = subnets->selectSubnet(IOAddress("2001:db8:1::1"));
     ASSERT_TRUE(subnet);
-    EXPECT_EQ(Network::HR_ALL, subnet->getHostReservationMode());
+    EXPECT_FALSE(subnet->getReservationsGlobal());
+    EXPECT_TRUE(subnet->getReservationsInSubnet());
+    EXPECT_FALSE(subnet->getReservationsOutOfPool());
 
     // Subnet 2
     subnet = subnets->selectSubnet(IOAddress("2001:db8:2::1"));
     ASSERT_TRUE(subnet);
-    EXPECT_EQ(Network::HR_OUT_OF_POOL, subnet->getHostReservationMode());
+    EXPECT_FALSE(subnet->getReservationsGlobal());
+    EXPECT_TRUE(subnet->getReservationsInSubnet());
+    EXPECT_TRUE(subnet->getReservationsOutOfPool());
 
     // Subnet 3
     subnet = subnets->selectSubnet(IOAddress("2001:db8:3::1"));
     ASSERT_TRUE(subnet);
-    EXPECT_EQ(Network::HR_DISABLED, subnet->getHostReservationMode());
+    EXPECT_FALSE(subnet->getReservationsGlobal());
+    EXPECT_FALSE(subnet->getReservationsInSubnet());
+    EXPECT_FALSE(subnet->getReservationsOutOfPool());
 
     // Subnet 4
     subnet = subnets->selectSubnet(IOAddress("2001:db8:4::1"));
     ASSERT_TRUE(subnet);
-    EXPECT_EQ(Network::HR_GLOBAL, subnet->getHostReservationMode());
+    EXPECT_TRUE(subnet->getReservationsGlobal());
+    EXPECT_FALSE(subnet->getReservationsInSubnet());
 
     // Subnet 5
     subnet = subnets->selectSubnet(IOAddress("2001:db8:5::1"));
     ASSERT_TRUE(subnet);
-    EXPECT_EQ(Network::HR_ALL, subnet->getHostReservationMode());
+    EXPECT_FALSE(subnet->getReservationsGlobal());
+    EXPECT_TRUE(subnet->getReservationsInSubnet());
+    EXPECT_FALSE(subnet->getReservationsOutOfPool());
 }
 
 /// The goal of this test is to verify that Host Reservation modes can be
@@ -5752,11 +5767,15 @@ TEST_F(Dhcp6ParserTest, hostReservationGlobal) {
         "\"preferred-lifetime\": 3000,"
         "\"rebind-timer\": 2000, "
         "\"renew-timer\": 1000, "
-        "\"reservation-mode\": \"out-of-pool\", "
+        "\"reservations-global\": false, "
+        "\"reservations-in-subnet\": true, "
+        "\"reservations-out-of-pool\": true, "
         "\"subnet6\": [ { "
         "    \"pools\": [ { \"pool\": \"2001:db8:1::/64\" } ],"
         "    \"subnet\": \"2001:db8:1::/48\", "
-        "    \"reservation-mode\": \"all\""
+        "    \"reservations-global\": false, "
+        "    \"reservations-in-subnet\": true, "
+        "    \"reservations-out-of-pool\": false"
         " },"
         " {"
         "    \"pools\": [ { \"pool\": \"2001:db8:2::/64\" } ],"
@@ -5787,12 +5806,16 @@ TEST_F(Dhcp6ParserTest, hostReservationGlobal) {
     Subnet6Ptr subnet;
     subnet = subnets->selectSubnet(IOAddress("2001:db8:1::1"));
     ASSERT_TRUE(subnet);
-    EXPECT_EQ(Network::HR_ALL, subnet->getHostReservationMode());
+    EXPECT_FALSE(subnet->getReservationsGlobal());
+    EXPECT_TRUE(subnet->getReservationsInSubnet());
+    EXPECT_FALSE(subnet->getReservationsOutOfPool());
 
     // Subnet 2
     subnet = subnets->selectSubnet(IOAddress("2001:db8:2::1"));
     ASSERT_TRUE(subnet);
-    EXPECT_EQ(Network::HR_OUT_OF_POOL, subnet->getHostReservationMode());
+    EXPECT_FALSE(subnet->getReservationsGlobal());
+    EXPECT_TRUE(subnet->getReservationsInSubnet());
+    EXPECT_TRUE(subnet->getReservationsOutOfPool());
 }
 
 /// The goal of this test is to verify that configuration can include
@@ -6782,7 +6805,9 @@ TEST_F(Dhcp6ParserTest, sharedNetworksDerive) {
     EXPECT_TRUE(iface_id1.equals(s->getInterfaceId()));
     EXPECT_TRUE(s->hasRelayAddress(IOAddress("1111::1")));
     EXPECT_TRUE(s->getRapidCommit());
-    EXPECT_EQ(Network::HR_DISABLED, s->getHostReservationMode());
+    EXPECT_FALSE(s->getReservationsGlobal());
+    EXPECT_FALSE(s->getReservationsInSubnet());
+    EXPECT_FALSE(s->getReservationsOutOfPool());
     EXPECT_TRUE(s->getStoreExtendedInfo());
 
     // For the second subnet, the renew-timer should be 100, because it
@@ -6795,7 +6820,9 @@ TEST_F(Dhcp6ParserTest, sharedNetworksDerive) {
     EXPECT_TRUE(iface_id2.equals(s->getInterfaceId()));
     EXPECT_TRUE(s->hasRelayAddress(IOAddress("2222::2")));
     EXPECT_TRUE(s->getRapidCommit());
-    EXPECT_EQ(Network::HR_OUT_OF_POOL, s->getHostReservationMode());
+    EXPECT_FALSE(s->getReservationsGlobal());
+    EXPECT_TRUE(s->getReservationsInSubnet());
+    EXPECT_TRUE(s->getReservationsOutOfPool());
     EXPECT_TRUE(s->getStoreExtendedInfo());
 
     // Ok, now check the second shared subnet.
@@ -6811,7 +6838,9 @@ TEST_F(Dhcp6ParserTest, sharedNetworksDerive) {
     EXPECT_FALSE(s->getInterfaceId());
     EXPECT_FALSE(s->hasRelays());
     EXPECT_FALSE(s->getRapidCommit());
-    EXPECT_EQ(Network::HR_ALL, s->getHostReservationMode());
+    EXPECT_FALSE(s->getReservationsGlobal());
+    EXPECT_TRUE(s->getReservationsInSubnet());
+    EXPECT_FALSE(s->getReservationsOutOfPool());
     EXPECT_FALSE(s->getStoreExtendedInfo());
 }
 
