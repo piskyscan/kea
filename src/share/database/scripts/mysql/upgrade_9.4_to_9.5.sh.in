@@ -39,6 +39,9 @@ ALTER TABLE dhcp6_shared_network
     ADD COLUMN reservations_in_subnet BOOL DEFAULT NULL,
     ADD COLUMN reservations_out_of_pool BOOL DEFAULT NULL;
 
+# Disabling audit in this session
+SET @disable_audit = 1;
+
 # Translate reservation_mode to new flags.
 # 0 is DISABLED
 # 1 is OUT_OF_POOL

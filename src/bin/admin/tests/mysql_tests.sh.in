@@ -766,7 +766,51 @@ insert into hosts(dhcp_identifier, dhcp_identifier_type, dhcp4_subnet_id, ipv4_a
     ERRCODE=$?
     assert_eq 0 $ERRCODE "insert into hosts failed, expected exit code %d, actual %d"
 
-    # TODO: Schema upgrade from 9.4 to 9.5.
+    # Schema upgrade from 9.4 to 9.5.
+
+    # table: dhcp4_shared_network (reversion_mode replaced by reservations flags)
+    qry="select reservations_global, reservations_in_subnet, reservations_out_of_pool from dhcp4_shared_network"
+    run_statement "dhcp4_shared_network" "$qry"
+
+    qry="show columns from dhcp4_shared_network like 'reservation_mode'";
+    text=`mysql_execute "${qry}"`
+    ERRCODE=$?
+    assert_eq 0 $ERRCODE "show columns from dhcp4_shared_network like 'reservation_mode' failed. (expected status code %d, returned %d)"
+    count=`echo $text | grep -ic reservation`
+    assert_eq $count 0 "dhcp4_shared_network has still reservation_mode column. (returned count %d, expected %d)"
+
+    # table: dhcp4_subnet (reversion_mode replaced by reservations flags)
+    qry="select reservations_global, reservations_in_subnet, reservations_out_of_pool from dhcp4_subnet"
+    run_statement "dhcp4_subnet" "$qry"
+
+    qry="show columns from dhcp4_subnet like 'reservation_mode'";
+    text=`mysql_execute "${qry}"`
+    ERRCODE=$?
+    assert_eq 0 $ERRCODE "show columns from dhcp4_subnet like 'reservation_mode' failed. (expected status code %d, returned %d)"
+    count=`echo $text | grep -ic reservation`
+    assert_eq $count 0 "dhcp4_subnet has still reservation_mode column. (returned count %d, expected %d)"
+
+    # table: dhcp6_shared_network (reversion_mode replaced by reservations flags)
+    qry="select reservations_global, reservations_in_subnet, reservations_out_of_pool from dhcp6_shared_network"
+    run_statement "dhcp6_shared_network" "$qry"
+
+    qry="show columns from dhcp6_shared_network like 'reservation_mode'";
+    text=`mysql_execute "${qry}"`
+    ERRCODE=$?
+    assert_eq 0 $ERRCODE "show columns from dhcp6_shared_network like 'reservation_mode' failed. (expected status code %d, returned %d)"
+    count=`echo $text | grep -ic reservation`
+    assert_eq $count 0 "dhcp6_shared_network has still reservation_mode column. (returned count %d, expected %d)"
+
+    # table: dhcp6_subnet (reversion_mode replaced by reservations flags)
+    qry="select reservations_global, reservations_in_subnet, reservations_out_of_pool from dhcp6_subnet"
+    run_statement "dhcp6_subnet" "$qry"
+
+    qry="show columns from dhcp6_subnet like 'reservation_mode'";
+    text=`mysql_execute "${qry}"`
+    ERRCODE=$?
+    assert_eq 0 $ERRCODE "show columns from dhcp6_subnet like 'reservation_mode' failed. (expected status code %d, returned %d)"
+    count=`echo $text | grep -ic reservation`
+    assert_eq $count 0 "dhcp6_subnet has still reservation_mode column. (returned count %d, expected %d)"
 
     # Verify upgraded schema reports version 9.5
     version=$(${keaadmin} db-version mysql -u $db_user -p $db_password -n $db_name -d $db_scripts_dir)
@@ -1352,6 +1396,66 @@ mysql_unused_subnet_id_test() {
     test_finish 0
 }
 
+# Verifies that you can upgrade from an earlier version and
+# that reservation_mode values in subnet and shared network tables are
+# converted to new reservations flags.
+mysql_reservation_mode_upgrade_test() {
+    test_start "mysql_reservation_mode_upgrade_test"
+
+    # Let's wipe the whole database
+    mysql_wipe
+
+    # We need to create an older database with lease data so we can
+    # verify the upgrade mechanisms which convert subnet id values
+    #
+    # Initialize database to scheme 1.0.
+    mysql -u$db_user -p$db_password $db_name < @abs_top_srcdir@/src/bin/admin/tests/dhcpdb_create_1.0.mysql
+
+    # Now upgrade to schema 9.4, the last version with reservation_mode
+    mysql_upgrade_schema_to_version 9.4
+
+    # Now we need insert some subnets and shared networks.
+    sql=\
+"set @disable_audit = 1; \
+ insert into dhcp4_shared_network (name, modification_ts, reservation_mode)\
+    values ('foo', current_timestamp, 0);\
+ insert into dhcp4_subnet (subnet_id, subnet_prefix, modification_ts, reservation_mode)\
+    values (1234, '192.0.2.0/24', current_timestamp, 1);\
+ insert into dhcp6_shared_network (name, modification_ts, reservation_mode)\
+    values ('bar', current_timestamp, 2);\
+ insert into dhcp6_subnet (subnet_id, subnet_prefix, modification_ts, reservation_mode)\
+    values (1234, '2001:db8::/64', current_timestamp, 3);"
+
+    run_statement "insert reservation_mode" "$sql"
+
+    # Upgrade to schema 9.5.
+    mysql_upgrade_schema_to_version 9.5
+
+    # Test DISABLED (0) -> false, false, null
+    qry="select count(id) from dhcp4_shared_network where reservations_global = false and reservations_in_subnet = false and reservations_out_of_pool is null;"
+    run_statement "#disabled" "$qry" 1
+
+    # Test OUT_OF_POOL (1) -> false, true, true
+    qry="select count(subnet_id) from dhcp4_subnet where reservations_global = false and reservations_in_subnet = true and reservations_out_of_pool = true;"
+
+    run_statement "#out-of-pool" "$qry" 1
+
+    # Test GLOBAL (2) -> true, false, null
+    qry="select count(id) from dhcp6_shared_network where reservations_global = true and reservations_in_subnet = false and reservations_out_of_pool is null;"
+
+    run_statement "#global" "$qry" 1
+
+    # Test ALL (3) -> false, true, false
+    qry="select count(subnet_id) from dhcp6_subnet where reservations_global = false and reservations_in_subnet = true and reservations_out_of_pool = false;"
+
+    run_statement "#all" "$qry" 1
+
+    # Let's wipe the whole database
+    mysql_wipe
+
+    test_finish 0
+}
+
 mysql_db_init_test
 mysql_host_reservation_init_test
 mysql_db_version_test
@@ -1363,3 +1467,4 @@ mysql_lease6_stat_test
 mysql_lease_stat_upgrade_test
 mysql_lease_stat_recount_test
 mysql_unused_subnet_id_test
+mysql_reservation_mode_upgrade_test
