@@ -418,7 +418,7 @@ TEST_F(D2CfgMgrTest, invalidEntry) {
     // Unsupported protocol
     config = makeParamsConfigString ("127.0.0.1", 777, 333, "TCP", "JSON");
     LOGIC_ERROR(config, "ncr-protocol : TCP is not yet supported"
-                        "  (<string>:1:92)");
+                        " (<string>:1:92)");
 
     // Invalid format
     config = makeParamsConfigString ("127.0.0.1", 777, 333, "UDP", "BOGUS");
