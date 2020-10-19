@@ -1027,14 +1027,13 @@ private:
 
     /// @brief Creates new leases based on reservations.
     ///
-    /// This method allcoates new leases,  based on host reservations.
-    /// Existing leases are specified in the existing_leases parameter.
-    /// It first calls @c allocateGlobalReservedLeases6 to accomodate
-    /// subnets using global reservations.  If that method allocates
-    /// addresses, we return, otherwise we continue and check for non-global
-    /// reservations.  A new lease is not created, if there is a lease for
-    /// specified address on existing_leases list or there is a lease used by
-    /// someone else.
+    /// This method allocates new leases, based on host reservations.
+    /// Existing leases are specified in the existing_leases
+    /// parameter.  It first checks for non-global reservations.  A
+    /// new lease is not created, if there is a lease for specified
+    /// address on existing_leases list or there is a lease used by
+    /// someone else. It last calls @c allocateGlobalReservedLeases6
+    /// to accomodate subnets using global reservations.
     ///
     /// @param ctx client context that contains all details (subnet, client-id, etc.)
     /// @param existing_leases leases that are already associated with the client
@@ -1054,7 +1053,7 @@ private:
     ///
     /// @param ctx client context that contains all details (subnet, client-id, etc.)
     /// @param existing_leases leases that are already associated with the client
-    bool
+    void
     allocateGlobalReservedLeases6(ClientContext6& ctx, Lease6Collection& existing_leases);
 
     /// @brief Removes leases that are reserved for someone else.
