@@ -3606,6 +3606,15 @@ another.
    that must be given due consideration. Please see
    :ref:`reservation6-conflict` for more details.
 
+.. note::
+
+   Beginning with Kea 1.9.1 reservation mode was replaced by three
+   boolean flags ``"reservations-global"``, ``"reservations-in-subnet"``
+   and ``"reservations-out-of-pool"`` which allow to configure host
+   reservations both global and in a subnet. In such case a subnet
+   host reservation has the preference on a global reservation
+   when both exist for the same client.
+
 .. _reservation6-conflict:
 
 Conflicts in DHCPv6 Reservations
