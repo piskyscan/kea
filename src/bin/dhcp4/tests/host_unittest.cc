@@ -34,7 +34,7 @@ namespace {
 ///   - 1 subnet: 10.0.0.0/24
 const char* CONFIGS[] = {
     // Configuration 0
-    // 1 subnet, mode HR_GLOBAL,
+    // 1 subnet, reservations-global true, others false,
     // global reservations for different identifier types
     "{ \"interfaces-config\": {\n"
         "      \"interfaces\": [ \"*\" ]\n"
@@ -73,8 +73,9 @@ const char* CONFIGS[] = {
         "} ]\n"
     "}\n"
     ,
-    // Configuration 1 global vs in-pool
-    // 2 subnets, one mode default (aka HR_ALL), one mode HR_GLOBAL
+    // Configuration 1 global vs in-subnet
+    // 2 subnets, one reservations flags default (aka in-subnet),
+    // one reservations flags global
     // Host reservations for the same client, one global, one in each subnet
     "{ \"interfaces-config\": {\n"
         "      \"interfaces\": [ \"*\" ]\n"
@@ -114,7 +115,7 @@ const char* CONFIGS[] = {
         "]\n"
     "}\n"
     ,
-    // Configuration 2 global and out-of-pool
+    // Configuration 2 global and in-subnet with out-of-pool
     "{ \"interfaces-config\": {\n"
         "      \"interfaces\": [ \"*\" ]\n"
         "},\n"
@@ -144,7 +145,7 @@ const char* CONFIGS[] = {
         "]\n"
         "}\n"
     ,
-    // Configuration 3 global and all
+    // Configuration 3 global and in-subnet
     "{ \"interfaces-config\": {\n"
         "      \"interfaces\": [ \"*\" ]\n"
         "},\n"
@@ -345,7 +346,49 @@ const char* CONFIGS[] = {
         "        \"interface\": \"eth0\"\n"
         "    }\n"
         "]\n"
-    "}"
+    "}",
+
+    // Configuration 8 both global and in-subnet
+    // 2 subnets, one reservations flags default (aka in-subnet),
+    // one reservations flags global and in-subnet.
+    // Host reservations for the same client, one global, one in each subnet
+    "{ \"interfaces-config\": {\n"
+        "      \"interfaces\": [ \"*\" ]\n"
+        "},\n"
+        "\"valid-lifetime\": 600,\n"
+        "\"reservations\": [ \n"
+        "{\n"
+        "   \"hw-address\": \"aa:bb:cc:dd:ee:ff\",\n"
+        "   \"hostname\": \"global-host\"\n"
+        "}\n"
+        "],\n"
+        "\"subnet4\": [\n"
+        "    {\n"
+        "        \"subnet\": \"10.0.0.0/24\", \n"
+        "        \"id\": 10,"
+        "        \"pools\": [ { \"pool\": \"10.0.0.10-10.0.0.100\" } ],\n"
+        "        \"interface\": \"eth0\",\n"
+        "        \"reservations\": [ \n"
+        "        {\n"
+        "           \"hw-address\": \"aa:bb:cc:dd:ee:ff\",\n"
+        "           \"hostname\": \"subnet-10-host\"\n"
+        "        }]\n"
+        "    },\n"
+        "    {\n"
+        "        \"subnet\": \"192.0.2.0/26\", \n"
+        "        \"id\": 20,"
+        "        \"pools\": [ { \"pool\": \"192.0.2.10-192.0.2.63\" } ],\n"
+        "        \"interface\": \"eth1\",\n"
+        "        \"reservations-global\": true,\n"
+        "        \"reservations-in-subnet\": true,\n"
+        "        \"reservations\": [ \n"
+        "        {\n"
+        "           \"hw-address\": \"aa:bb:cc:dd:ee:ff\",\n"
+        "           \"hostname\": \"subnet-20-host\"\n"
+        "        }]\n"
+        "    }\n"
+        "]\n"
+    "}\n"
 };
 
 /// @brief Test fixture class for testing global v4 reservations.
@@ -522,7 +565,8 @@ public:
 };
 
 // Verifies that a client, which fails to match to a global
-// reservation, still gets a dynamic address when subnet mode is HR_GLOBAL
+// reservation, still gets a dynamic address when subnet reservations
+// flags are global only.
 TEST_F(HostTest, globalHardwareNoMatch) {
     Dhcp4Client client(Dhcp4Client::SELECTING);
 
@@ -532,7 +576,7 @@ TEST_F(HostTest, globalHardwareNoMatch) {
 
 // Verifies that a client, that matches to a global hostname
 // reservation, gets both the hostname and a dynamic address,
-// when the subnet mode is HR_GLOBAL
+// when the subnet reservations flags are global only.
 TEST_F(HostTest, globalHardwareDynamicAddress) {
     Dhcp4Client client(Dhcp4Client::SELECTING);
 
@@ -542,7 +586,7 @@ TEST_F(HostTest, globalHardwareDynamicAddress) {
 
 // Verifies that a client matched to a global address reservation
 // gets both the hostname and the reserved address
-// when the subnet mode is HR_GLOBAL
+// when the subnet reservations flags are global only.
 TEST_F(HostTest, globalHardwareFixedAddress) {
     Dhcp4Client client(Dhcp4Client::SELECTING);
 
@@ -605,7 +649,7 @@ TEST_F(HostTest, defaultOverGlobal) {
     // Hardware address matches all reservations
     client.setHWAddress("aa:bb:cc:dd:ee:ff");
 
-    // Subnet 10 usses default HR mode(i.e. "all"), so its
+    // Subnet 10 uses default reservations flags (i.e. in-subnet), so its
     // reservation should be used, rather than global.
     runDoraTest(CONFIGS[1], client, "subnet-10-host", "10.0.0.10");
 }
@@ -624,7 +668,7 @@ TEST_F(HostTest, globalOverSubnet) {
     client.setIfaceName("eth1");
     client.setIfaceIndex(ETH1_INDEX);
 
-    // Subnet 20 usses global HR mode, so the global
+    // Subnet 20 uses global only reservations flags, so the global
     // reservation should be used, rather than the subnet one.
     runDoraTest(CONFIGS[1], client, "global-host", "192.0.2.10");
 }
@@ -639,8 +683,8 @@ TEST_F(HostTest, outOfPoolOverGlobal) {
     // Hardware address matches all reservations
     client.setHWAddress("aa:bb:cc:dd:ee:ff");
 
-    // Subnet 10 uses "out-of-pool" HR mode, so its
-    // reservation should be used, rather than global.
+    // Subnet 10 uses in-subnet with out-of-pool reservations flags,
+    // so its reservation should be used, rather than global.
     runDoraTest(CONFIGS[2], client, "subnet-10-host", "10.0.0.105");
 }
 
@@ -654,9 +698,28 @@ TEST_F(HostTest, allOverGlobal) {
     // Hardware address matches all reservations
     client.setHWAddress("aa:bb:cc:dd:ee:ff");
 
-    // Subnet 10 uses default HR mode(i.e. "all"), so its
+    // Subnet 10 uses default reservations flags (i.e. in-subnet), so its
     // reservation should be used, rather than global.
     runDoraTest(CONFIGS[3], client, "subnet-10-host", "10.0.0.105");
+}
+
+// Verifies that when there are matching reservations at
+// both the global and subnet levels, client will be matched
+// to the subnet reservation, when subnet reservation true flags
+// are global and in-subnet, i.e. the subnet has the preference.
+TEST_F(HostTest, subnetOverGlobal) {
+    Dhcp4Client client(Dhcp4Client::SELECTING);
+
+    // Hardware address matches all reservations
+    client.setHWAddress("aa:bb:cc:dd:ee:ff");
+
+    // Change to subnet 20
+    client.setIfaceName("eth1");
+    client.setIfaceIndex(ETH1_INDEX);
+
+    // Subnet 20 uses both global and in-subnet reservations flags,
+    // so the subnet reservation has the preference.
+    runDoraTest(CONFIGS[8], client, "subnet-20-host", "192.0.2.10");
 }
 
 // Verifies that client class specified in the global reservation

@@ -57,6 +57,7 @@ namespace {
 ///   - Similar to Configuration 6, but one of the addresses reserved to client
 ///     with the DUID 04:03:02:01.
 ///
+/// Descriptions of next configurations are in the comment with the number.
 const char* CONFIGS[] = {
     // Configuration 0:
     "{ "
@@ -350,6 +351,7 @@ const char* CONFIGS[] = {
         "\"mac-sources\": [ \"ipv6-link-local\" ],  \n"
         "\"subnet6\": [  \n"
         " {  \n"
+        "    \"id\": 1, \n"
         "    \"subnet\": \"2001:db8:1::/48\",  \n"
         "    \"pools\": [ { \"pool\": \"2001:db8:1::/64\" } ], \n"
         "    \"interface\" : \"eth0\", \n"
@@ -357,6 +359,7 @@ const char* CONFIGS[] = {
         "    \"reservations-in-subnet\": false \n"
         " },"
         " {  \n"
+        "    \"id\": 2, \n"
         "    \"subnet\": \"2001:db8:2::/48\",  \n"
         "    \"pools\": [ { \"pool\": \"2001:db8:2::/64\" } ], \n"
         "    \"interface\" : \"eth1\", \n"
@@ -393,6 +396,7 @@ const char* CONFIGS[] = {
         "\"mac-sources\": [ \"ipv6-link-local\" ],  \n"
         "\"subnet6\": [  \n"
         " {  \n"
+        "    \"id\": 1, \n"
         "    \"subnet\": \"2001:db8:1::/48\",  \n"
         "    \"interface\" : \"eth0\", \n"
         "    \"reservations-global\": true, \n"
@@ -405,6 +409,7 @@ const char* CONFIGS[] = {
         "    }] \n"
         " },"
         " {  \n"
+        "    \"id\": 2, \n"
         "    \"subnet\": \"2001:db8:2::/48\",  \n"
         "    \"interface\" : \"eth1\", \n"
         "    \"pd-pools\": [ \n"
@@ -2387,7 +2392,7 @@ TEST_F(HostTest, globalReservationsNA) {
     }
 
     {
-        SCOPED_TRACE("Default subnet mode excludes Global HR");
+        SCOPED_TRACE("Default subnet reservations flags excludes Global HR");
         client.clearConfig();
         client.setInterface("eth1");
         client.setDUID("01:02:03:04");
@@ -2403,6 +2408,21 @@ TEST_F(HostTest, globalReservationsNA) {
         client.setDUID("01:02:03:05");
         client.requestAddress(1234, IOAddress("::"));
         // Should get dynamic address and host name
+        ASSERT_NO_FATAL_FAILURE(sarrTest(client, "2001:db8:2::1", "subnet-duid-host"));
+    }
+
+    {
+        SCOPED_TRACE("Subnet reservation preferred over global");
+        // Patch the second subnet to both global and in-subnet.
+        Subnet6Ptr subnet = CfgMgr::instance().getCurrentCfg()->
+            getCfgSubnets6()->getSubnet(2);
+        ASSERT_TRUE(subnet);
+        subnet->setReservationsGlobal(true);
+        client.clearConfig();
+        client.setInterface("eth1");
+        client.setDUID("01:02:03:05");
+        client.requestAddress(1234, IOAddress("::"));
+        // Should get dynamic address and host name because it has preference
         ASSERT_NO_FATAL_FAILURE(sarrTest(client, "2001:db8:2::1", "subnet-duid-host"));
     }
 }
@@ -2434,7 +2454,7 @@ TEST_F(HostTest, globalReservationsPD) {
     }
 
     {
-        SCOPED_TRACE("Default subnet mode excludes Global HR");
+        SCOPED_TRACE("Default subnet reservations flags excludes Global HR");
         client.clearConfig();
         client.setInterface("eth1");
         client.setDUID("01:02:03:04");
@@ -2450,6 +2470,22 @@ TEST_F(HostTest, globalReservationsPD) {
         client.setDUID("01:02:03:05");
         client.requestPrefix(1);
         // Should get dynamic prefix and subnet reserved host name
+        ASSERT_NO_FATAL_FAILURE(sarrTest(client, "3001::100", "subnet-duid-host"));
+    }
+
+    {
+        SCOPED_TRACE("Subnet reservation preferred over global");
+        // Patch the second subnet to both global and in-subnet.
+        Subnet6Ptr subnet = CfgMgr::instance().getCurrentCfg()->
+            getCfgSubnets6()->getSubnet(2);
+        ASSERT_TRUE(subnet);
+        subnet->setReservationsGlobal(true);
+        client.clearConfig();
+        client.setInterface("eth1");
+        client.setDUID("01:02:03:05");
+        client.requestPrefix(1);
+        // Should get dynamic prefix and subnet reserved host name
+        // because it has preference over the global reservation.
         ASSERT_NO_FATAL_FAILURE(sarrTest(client, "3001::100", "subnet-duid-host"));
     }
 }
