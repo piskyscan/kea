@@ -651,6 +651,9 @@ public:
 
         /// @brief Returns host from the most preferred subnet.
         ///
+        /// If there is no such host and global reservations are enabled
+        /// returns the global host.
+        ///
         /// @return Pointer to the host object.
         ConstHostPtr currentHost() const;
 
@@ -1406,6 +1409,9 @@ public:
         }
 
         /// @brief Returns host for currently selected subnet.
+        ///
+        /// If there is no such host and global reservations are enabled
+        /// returns the global host.
         ///
         /// @return Pointer to the host object.
         ConstHostPtr currentHost() const;

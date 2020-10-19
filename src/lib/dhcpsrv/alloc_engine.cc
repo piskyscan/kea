@@ -535,17 +535,13 @@ isAllocated(const asiolink::IOAddress& prefix, const uint8_t prefix_len) const {
 ConstHostPtr
 AllocEngine::ClientContext6::currentHost() const {
     Subnet6Ptr subnet = host_subnet_ ? host_subnet_ : subnet_;
-    if (subnet) {
-        SubnetID id = (subnet_->getReservationsGlobal() ?
-                       SUBNET_ID_GLOBAL : subnet->getID());
-
-        auto host = hosts_.find(id);
+    if (subnet && subnet->getReservationsInSubnet()) {
+        auto host = hosts_.find(subnet->getID());
         if (host != hosts_.cend()) {
             return (host->second);
         }
     }
-
-    return (ConstHostPtr());
+    return (globalHost());
 }
 
 ConstHostPtr
@@ -3208,16 +3204,13 @@ AllocEngine::ClientContext4::ClientContext4(const Subnet4Ptr& subnet,
 
 ConstHostPtr
 AllocEngine::ClientContext4::currentHost() const {
-    if (subnet_) {
-        SubnetID id = (subnet_->getReservationsGlobal() ?
-                       SUBNET_ID_GLOBAL : subnet_->getID());
-
-        auto host = hosts_.find(id);
+    if (subnet_ && subnet_->getReservationsInSubnet()) {
+        auto host = hosts_.find(subnet_->getID());
         if (host != hosts_.cend()) {
             return (host->second);
         }
     }
-    return (ConstHostPtr());
+    return (globalHost());
 }
 
 ConstHostPtr

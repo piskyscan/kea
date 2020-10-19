@@ -185,20 +185,20 @@ Network::toElement() const {
 
     // Set reservations-global
     if (!reservations_global_.unspecified()) {
-	map->set("reservations-global",
-		 Element::create(reservations_global_.get()));
+        map->set("reservations-global",
+                 Element::create(reservations_global_.get()));
     }
 
     // Set reservations-in-subnet
     if (!reservations_in_subnet_.unspecified()) {
-	map->set("reservations-in-subnet",
-		 Element::create(reservations_in_subnet_.get()));
+        map->set("reservations-in-subnet",
+                 Element::create(reservations_in_subnet_.get()));
     }
 
     // Set reservations-out-of-pool
     if (!reservations_out_of_pool_.unspecified()) {
-	map->set("reservations-out-of-pool",
-		 Element::create(reservations_out_of_pool_.get()));
+        map->set("reservations-out-of-pool",
+                 Element::create(reservations_out_of_pool_.get()));
     }
 
     // Set options
