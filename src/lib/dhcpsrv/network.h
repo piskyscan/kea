@@ -564,7 +564,7 @@ public:
                 } catch (...) {
                     // This should not really happen because the configuration
                     // parser should have already verified the globally configured
-                    // reservation mode. However, we want to be 100% sure that this
+                    // mode. However, we want to be 100% sure that this
                     // method doesn't throw. Let's just return unspecified.
                     return (mode);
                 }
@@ -753,8 +753,8 @@ protected:
     /// name. Typically, this method is invoked by @c getProperty when
     /// network specific value of the parameter is not found. In some cases
     /// it may be called by other methods. One such example is the
-    /// @c getHostReservationMode which needs to call @c getGlobalProperty
-    /// explicitly to convert the global host reservation mode value from
+    /// @c getDdnsReplaceClientNameMode which needs to call @c getGlobalProperty
+    /// explicitly to convert the global replace client name mode value from
     /// a string to an enum.
     ///
     /// @tparam ReturnType Type of the returned value, e.g.

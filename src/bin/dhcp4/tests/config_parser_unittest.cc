@@ -5280,7 +5280,7 @@ TEST_F(Dhcp4ParserTest, reservationBogus) {
     checkResult(x, 1);
 }
 
-/// The goal of this test is to verify that Host Reservation modes can be
+/// The goal of this test is to verify that Host Reservation flags can be
 /// specified on a per-subnet basis.
 TEST_F(Dhcp4ParserTest, hostReservationPerSubnet) {
 
@@ -5368,7 +5368,7 @@ TEST_F(Dhcp4ParserTest, hostReservationPerSubnet) {
     EXPECT_FALSE(subnet->getReservationsOutOfPool());
 }
 
-/// The goal of this test is to verify that Host Reservation modes can be
+/// The goal of this test is to verify that Host Reservation flags can be
 /// specified globally.
 TEST_F(Dhcp4ParserTest, hostReservationGlobal) {
 

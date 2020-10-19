@@ -914,7 +914,7 @@ AllocEngine::allocateUnreservedLeases6(ClientContext6& ctx) {
             continue;
         }
 
-        // Check which host reservation mode is supported in this subnet.
+        // Check which subnet host reservations are supported in this subnet.
         bool hr_enabled = subnet->getReservationsInSubnet();
 
         /// @todo: We support only one hint for now

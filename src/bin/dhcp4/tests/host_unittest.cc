@@ -598,22 +598,22 @@ TEST_F(HostTest, globalClientID) {
 
 // Verifies that even when a matching global reservation exists,
 // client will get a subnet scoped reservation, when subnet
-// reservation mode is default
+// reservation flags are default
 TEST_F(HostTest, defaultOverGlobal) {
     Dhcp4Client client(Dhcp4Client::SELECTING);
 
     // Hardware address matches all reservations
     client.setHWAddress("aa:bb:cc:dd:ee:ff");
 
-    // Subnet 10 usses default HR mode(i.e. "in-pool"), so its
+    // Subnet 10 usses default HR mode(i.e. "all"), so its
     // reservation should be used, rather than global.
     runDoraTest(CONFIGS[1], client, "subnet-10-host", "10.0.0.10");
 }
 
 // Verifies that when there are matching reservations at
 // both the global and subnet levels, client will be matched
-// to the global reservation, when subnet reservation mode
-// is HR_GLOBAL.
+// to the global reservation, when subnet reservation true flags
+// are global.
 TEST_F(HostTest, globalOverSubnet) {
     Dhcp4Client client(Dhcp4Client::SELECTING);
 
@@ -631,8 +631,8 @@ TEST_F(HostTest, globalOverSubnet) {
 
 // Verifies that when there are matching reservations at
 // both the global and subnet levels, client will be matched
-// to the subnet reservation, when subnet reservation mode
-// is HR_OUT_OF_POOL
+// to the subnet reservation, when subnet reservation true flags
+// are in-subnet and out-of-pool.
 TEST_F(HostTest, outOfPoolOverGlobal) {
     Dhcp4Client client(Dhcp4Client::SELECTING);
 
@@ -646,8 +646,8 @@ TEST_F(HostTest, outOfPoolOverGlobal) {
 
 // Verifies that when there are matching reservations at
 // both the global and subnet levels, client will be matched
-// to the subnet reservation, when subnet reservation mode
-// is HR_ALL
+// to the subnet reservation, when subnet reservation true flags
+// are in-subnet.
 TEST_F(HostTest, allOverGlobal) {
     Dhcp4Client client(Dhcp4Client::SELECTING);
 

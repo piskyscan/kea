@@ -659,7 +659,7 @@ public:
 
         /// @brief Returns global host reservation if there is one
         ///
-        /// If the current subnet's reservation mode is global and
+        /// If the current subnet's reservations-global is true and
         /// there is a global host (i.e. reservation belonging to
         /// the global subnet), return it.  Otherwise return an
         /// empty pointer.
@@ -669,8 +669,8 @@ public:
 
         /// @brief Determines if a global reservation exists
         ///
-        /// @return true if there current subnet's reservation mode is
-        /// global and there is global host containing the given
+        /// @return true if there current subnet's reservations-global
+        /// is true and there is global host containing the given
         /// lease reservation, false otherwise
         bool hasGlobalReservation(const IPv6Resrv& resv) const;
 
@@ -1418,7 +1418,7 @@ public:
 
         /// @brief Returns global host reservation if there is one
         ///
-        /// If the current subnet's reservation mode is global and
+        /// If the current subnet's reservations-global is true and
         /// there is a global host (i.e. reservation belonging to
         /// the global subnet), return it.  Otherwise return an
         /// empty pointer.
