@@ -1568,6 +1568,32 @@ AC_TRY_LINK(
 AM_CONDITIONAL(HAVE_OPTRESET, test "x$var_optreset_exists" != "xno")
 AM_COND_IF([HAVE_OPTRESET], [AC_DEFINE([HAVE_OPTRESET], [1], [Check for optreset?])])
 
+AC_ARG_WITH([nghttp2],
+  AC_HELP_STRING([--with-nghttp2=PATH],
+    [specify exact directory of nghttp2_asio library and headers]),
+  [nghttp2_path="$withval"])
+if test "${nghttp2_path}" = "yes" ; then
+  for d in $defaultdirs; do
+    if test -f $d/include/nghttp2/nghttp2.h ; then
+        NGHTTP2_INCLUDES="-I$d/include"
+	NGHTTP2_LIBS="-L$d/lib"
+	if test -d $d/lib64 ; then
+	    NGHTTP2_LIBS="$NGHTTP2_LIBS -L$d/lib64"
+	fi
+	break
+    fi
+  done
+elif test "${nghttp2_path}" != "no" ; then
+  NGHTTP2_INCLUDES="-I${nghttp2_path}/include"
+  NGHTTP2_LIBS="-L${nghttp2_path}/lib"
+fi
+if test "X$NGHTTP2_LIBS" != "X" ; then
+  NGHTTP2_LIBS="$NGHTTP2_LIBS -lnghttp2_asio"
+fi
+
+AC_SUBST(NGHTTP2_INCLUDES)
+AC_SUBST(NGHTTP2_LIBS)
+
 AC_DEFINE([CONFIG_H_WAS_INCLUDED], [1], [config.h inclusion marker])
 
 # Autoconf 2.70 has runstatedir but is not yet released.
@@ -1637,6 +1663,8 @@ AC_CONFIG_FILES([Makefile
                  src/bin/netconf/tests/shtests/netconf_tests.sh
                  src/bin/netconf/tests/test_data_files_config.h
                  src/bin/netconf/tests/test_libraries.h
+                 src/bin/ngrv/Makefile
+                 src/bin/ngrv/tests/Makefile
                  src/bin/perfdhcp/Makefile
                  src/bin/perfdhcp/tests/Makefile
                  src/bin/perfdhcp/tests/testdata/Makefile

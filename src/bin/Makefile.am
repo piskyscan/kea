@@ -10,7 +10,7 @@ SUBDIRS += shell
 endif
 
 if REVERSE_PROXY
-SUBDIRS += secure_shell reverse_proxy
+SUBDIRS += secure_shell reverse_proxy ngrv
 endif
 
 if HAVE_SYSREPO
