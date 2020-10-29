@@ -284,8 +284,7 @@ writeHeaderFile(const string& file, const vector<string>& ns_components,
     // after the last write.
 
     hfile <<
-        "// File created from " << message_file.fullName() << " on " <<
-            currentTime() << "\n" <<
+        "// File created from " << message_file.fullName() << "\n" <<
          "\n" <<
          "#ifndef " << sentinel_text << "\n" <<
          "#define "  << sentinel_text << "\n" <<
