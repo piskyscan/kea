@@ -6,12 +6,12 @@
 
 #ifndef PARSER_CONTEXT_H
 #define PARSER_CONTEXT_H
-#include <string>
-#include <map>
 #include <cc/data.h>
 #include <cc/parser.h>
 #include <cc/parser_context_decl.h>
 #include <exceptions/exceptions.h>
+#include <map>
+#include <string>
 
 // Tell Flex the lexer's prototype ...
 #define YY_DECL \
@@ -35,8 +35,8 @@ class ParserContext
 {
 public:
 
-    /// @brief destructor
-    virtual ~ParserContext();
+    /// @brief Destructor.
+    virtual ~ParserContext() {}
 
     /// @brief Method called before scanning starts on a string.
     ///
@@ -64,13 +64,6 @@ public:
     /// @return Element structure representing parsed text.
     ElementPtr parseFile(const std::string& filename);
 
-    /// @brief The name of the file being parsed.
-    /// Used later to pass the file name to the location tracker.
-    std::string file_;
-
-    /// @brief The string being parsed.
-    std::string string_;
-
     /// @brief Error handler.
     ///
     /// @param loc location within the parsed file when experienced a problem.
@@ -78,8 +71,8 @@ public:
     /// @param pos optional position for in string errors.
     /// @throw ParseError.
     static void error(const isc::data::location& loc,
-		      const std::string& what,
-		      size_t pos = 0);
+                      const std::string& what,
+                      size_t pos = 0);
 
     /// @brief Error handler.
     ///
@@ -97,6 +90,44 @@ public:
     /// @param what string explaining the nature of the error.
     /// @throw isc::Unexpected.
     static void fatal(const std::string& what);
+
+    /// @brief Converts bison's position to Element::Position.
+    ///
+    /// Convert a bison location into an element position.
+    /// (take the begin, the end is lost)
+    ///
+    /// @param loc location in bison format.
+    /// @return Position in format accepted by Element.
+    Element::Position loc2pos(location& loc);
+
+    /// @brief Check if a parameter is already present.
+    ///
+    /// Check if a parameter is already present in the map at the top
+    /// of the stack and raise an error when it is.
+    ///
+    /// @param name name of the parameter to check.
+    /// @param loc location of the current parameter.
+    /// @throw ParseError.
+    void unique(const std::string& name, Element::Position loc);
+
+    /// @brief The string being parsed.
+    std::string string_;
+
+    /// @brief The name of the file being parsed.
+    /// Used later to pass the file name to the location tracker.
+    std::string file_;
+
+    /// @brief sFile (aka FILE).
+    FILE* sfile_;
+
+    /// @brief JSON elements being parsed.
+    std::vector<ElementPtr> stack_;
+
+    /// @brief Location of the current token.
+    ///
+    /// The lexer will keep updating it. This variable will be useful
+    /// for logging errors.
+    location loc_;
 
 private:
     /// @brief Common part of parseXXX.

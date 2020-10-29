@@ -7,8 +7,6 @@
 #include <config.h>
 
 #include <cc/parser_context.h>
-#include <cc/parser.h>
-#include <exceptions/exceptions.h>
 #include <boost/lexical_cast.hpp>
 #include <fstream>
 #include <limits>
@@ -16,23 +14,17 @@
 namespace isc {
 namespace data {
 
-ParserContext::~ParserContext()
-{
-}
-
 ElementPtr
-ParserContext::parseString(const std::string& str)
-{
+ParserContext::parseString(const std::string& str) {
     scanStringBegin(str);
     return (parseCommon());
 }
 
 ElementPtr
-ParserContext::parseFile(const std::string& filename)
-{
+ParserContext::parseFile(const std::string& filename) {
     FILE* f = fopen(filename.c_str(), "r");
     if (!f) {
-	isc_throw(ParseError, "Unable to open file " << filename);
+        isc_throw(ParseError, "Unable to open file " << filename);
     }
     scanFileBegin(f, filename);
     return (parseCommon());
@@ -42,39 +34,62 @@ ElementPtr
 ParserContext::parseCommon() {
     Parser parser(*this);
     try {
-	ElementPtr res = parser.parse();
-	if (!res) {
-	    isc_throw(ParseError, "Parser abort");
-	}
-	scanEnd();
+        int res = parser.parse();
+        if (res != 0) {
+            isc_throw(ParseError, "Parser abort");
+        }
+        scanEnd();
     }
     catch (...) {
-	scanEnd();
-	throw;
+        scanEnd();
+        throw;
     }
-    return (res);
+    if (stack_.size() == 1) {
+        return (stack_[0]);
+    } else {
+        isc_throw(ParseError, "Expected exactly one terminal Element expected, found "
+                  < stack_.size());
+    }
 }
 
 void
 ParserContext::error(const location& loc,
-		     const std::string& what,
-		     size_t pos)
-{
+                     const std::string& what,
+                     size_t pos) {
     if (pos == 0) {
-	isc_throw(EvalParseError, loc << ": " << what);
+        isc_throw(ParseError, loc << ": " << what);
     } else {
-	isc_throw(EvalParseError, loc << " (near " << pos << "): " << what);
+        isc_throw(ParseError, loc << " (near " << pos << "): " << what);
     }
 }
 
 void
-ParserContext::error (const std::string& what)
-{
-    isc_throw(EvalParseError, what);
+ParserContext::error (const std::string& what) {
+    isc_throw(ParseError, what);
 }
 
 void
-ParserContext::fatal (const std::string& what)
-{
+ParserContext::fatal (const std::string& what) {
     isc_throw(Unexpected, what);
 }
+
+Element::Position
+ParserContext::loc2pos(location& loc) {
+    const std::string& file = *loc.begin.filename;
+    const uint32_t line = loc.begin.line;
+    const uint32_t pos = loc.begin.column;
+    return (Element::Position(file, line, pos));
+}
+
+void
+ParserContext::unique(const std::string& name, Element::Position loc) {
+    ConstElementPtr value = stack_.back()->get(name);
+    if (value) {
+        isc_throw(ParseError, loc << ": duplicate " << name
+                  << " entries in JSON"
+                  << " map (previous at " << value->getPosition() << ")");
+    }
+}
+
+} // namespace data
+} // namespace isc
