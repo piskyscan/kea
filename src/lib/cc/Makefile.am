@@ -43,3 +43,31 @@ libkea_cc_include_HEADERS = \
 EXTRA_DIST = cc.dox
 
 CLEANFILES = *.gcno *.gcda
+
+if GENERATE_PARSER
+
+parser: lexer.cc location.hh position.hh stack.hh parser.cc parser.h
+	@echo "Flex/bison files regenerated"
+
+# --- Flex/Bison stuff below --------------------------------------------------
+# When debugging grammar issues, it's useful to add -v to bison parameters.
+# bison will generate parser.output file that explains the whole grammar.
+# It can be used to manually follow what's going on in the parser.
+# This is especially useful if yydebug_ is set to 1 as that variable
+# will cause parser to print out its internal state.
+# Call flex with -s to check that the default rule can be suppressed
+# Call bison with -W to get warnings like unmarked empty rules
+# Note C++11 deprecated register still used by flex < 2.6.0
+location.hh position.hh stack.hh parser.cc parser.h: parser.yy
+	$(YACC) --defines=parser.h --report=all --report_file=parser.report -o parser.cc parser.yy
+
+lexer.cc: lexer.ll
+	$(LEX) --prefix parser -o lexer.cc lexer.ll
+
+else
+
+parser location.hh position.hh stack.hh parser.cc parser.h lexer.cc:
+	@echo Parser generation disabled. Configure with --enable-generate-parser to enable it.
+
+endif
+
