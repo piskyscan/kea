@@ -786,7 +786,7 @@ TEST_F(CtrlChannelD2Test, configTest) {
     sendUnixCommand(os.str(), response);
 
     // Should fail with a syntax error.
-    EXPECT_EQ("{ \"result\": 1, \"text\": \"missing parameter 'name' (<wire>:9:14)\" }",
+    EXPECT_EQ("{ \"result\": 1, \"text\": \"missing parameter 'name' (<string>:10:13)\" }",
               response);
 
     // Check that the config was not lost (fix: reacquire the context).
@@ -919,7 +919,7 @@ TEST_F(CtrlChannelD2Test, configSet) {
     sendUnixCommand(os.str(), response);
 
     // Should fail with a syntax error.
-    EXPECT_EQ("{ \"result\": 1, \"text\": \"missing parameter 'name' (<wire>:9:14)\" }",
+    EXPECT_EQ("{ \"result\": 1, \"text\": \"missing parameter 'name' (<string>:10:13)\" }",
               response);
 
     // Check that the config was not lost (fix: reacquire the context).

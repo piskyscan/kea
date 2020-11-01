@@ -1,4 +1,4 @@
-// Copyright (C) 2014-2018 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2014-2020 Internet Systems Consortium, Inc. ("ISC")
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -80,12 +80,9 @@ TEST_F(DataFileTest, readFileComments) {
     // Write sample content to disk
     writeFile(commented_content);
 
-    // Check that the read will fail (without comment elimination)
-    EXPECT_THROW(Element::fromJSONFile(TEMP_FILE), JSONError);
-
-    // Check that the read content is correct (with comment elimination)
-    EXPECT_NO_THROW(Element::fromJSONFile(TEMP_FILE, true));
-    EXPECT_TRUE(exp->equals(*Element::fromJSONFile(TEMP_FILE, true)));
+    // Check that the read content is correct
+    EXPECT_NO_THROW(Element::fromJSONFile(TEMP_FILE));
+    EXPECT_TRUE(exp->equals(*Element::fromJSONFile(TEMP_FILE)));
 }
 
 // This test checks that missing file will generate an exception.

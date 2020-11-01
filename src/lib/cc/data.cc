@@ -7,6 +7,7 @@
 #include <config.h>
 
 #include <cc/data.h>
+#include <cc/parser_context.h>
 
 #include <cstring>
 #include <cassert>
@@ -191,16 +192,6 @@ Element::find(const std::string&, ConstElementPtr&) const {
     return (false);
 }
 
-namespace {
-inline void
-throwJSONError(const std::string& error, const std::string& file, int line,
-               int pos) {
-    std::stringstream ss;
-    ss << error << " in " + file + ":" << line << ":" << pos;
-    isc_throw(JSONError, ss.str());
-}
-} // end anonymous namespace
-
 std::ostream&
 operator<<(std::ostream& out, const Element& e) {
     return (out << e.str());
@@ -268,331 +259,6 @@ Element::createMap(const Position& pos) {
     return (ElementPtr(new MapElement(pos)));
 }
 
-
-//
-// helper functions for fromJSON factory
-//
-namespace {
-bool
-charIn(const int c, const char* chars) {
-    const size_t chars_len = std::strlen(chars);
-    for (size_t i = 0; i < chars_len; ++i) {
-        if (chars[i] == c) {
-            return (true);
-        }
-    }
-    return (false);
-}
-
-void
-skipChars(std::istream& in, const char* chars, int& line, int& pos) {
-    int c = in.peek();
-    while (charIn(c, chars) && c != EOF) {
-        if (c == '\n') {
-            ++line;
-            pos = 1;
-        } else {
-            ++pos;
-        }
-        in.ignore();
-        c = in.peek();
-    }
-}
-
-// skip on the input stream to one of the characters in chars
-// if another character is found this function throws JSONError
-// unless that character is specified in the optional may_skip
-//
-// It returns the found character (as an int value).
-int
-skipTo(std::istream& in, const std::string& file, int& line, int& pos,
-       const char* chars, const char* may_skip="") {
-    int c = in.get();
-    ++pos;
-    while (c != EOF) {
-        if (c == '\n') {
-            pos = 1;
-            ++line;
-        }
-        if (charIn(c, may_skip)) {
-            c = in.get();
-            ++pos;
-        } else if (charIn(c, chars)) {
-            while (charIn(in.peek(), may_skip)) {
-                if (in.peek() == '\n') {
-                    pos = 1;
-                    ++line;
-                } else {
-                    ++pos;
-                }
-                in.ignore();
-            }
-            return (c);
-        } else {
-            throwJSONError(std::string("'") + std::string(1, c) + "' read, one of \"" + chars + "\" expected", file, line, pos);
-        }
-    }
-    throwJSONError(std::string("EOF read, one of \"") + chars + "\" expected", file, line, pos);
-    return (c); // shouldn't reach here, but some compilers require it
-}
-
-// TODO: Should we check for all other official escapes here (and
-// error on the rest)?
-std::string
-strFromStringstream(std::istream& in, const std::string& file,
-                    const int line, int& pos) {
-    std::stringstream ss;
-    int c = in.get();
-    ++pos;
-    if (c == '"') {
-        c = in.get();
-        ++pos;
-    } else {
-        throwJSONError("String expected", file, line, pos);
-    }
-
-    while (c != EOF && c != '"') {
-        if (c == '\\') {
-            // see the spec for allowed escape characters
-            int d;
-            switch (in.peek()) {
-            case '"':
-                c = '"';
-                break;
-            case '/':
-                c = '/';
-                break;
-            case '\\':
-                c = '\\';
-                break;
-            case 'b':
-                c = '\b';
-                break;
-            case 'f':
-                c = '\f';
-                break;
-            case 'n':
-                c = '\n';
-                break;
-            case 'r':
-                c = '\r';
-                break;
-            case 't':
-                c = '\t';
-                break;
-            case 'u':
-                // skip first 0
-                in.ignore();
-                ++pos;
-                c = in.peek();
-                if (c != '0') {
-                    throwJSONError("Unsupported unicode escape", file, line, pos);
-                }
-                // skip second 0
-                in.ignore();
-                ++pos;
-                c = in.peek();
-                if (c != '0') {
-                    throwJSONError("Unsupported unicode escape", file, line, pos - 2);
-                }
-                // get first digit
-                in.ignore();
-                ++pos;
-                d = in.peek();
-                if ((d >= '0') && (d <= '9')) {
-                    c = (d - '0') << 4;
-                } else if ((d >= 'A') && (d <= 'F')) {
-                    c = (d - 'A' + 10) << 4;
-                } else if ((d >= 'a') && (d <= 'f')) {
-                    c = (d - 'a' + 10) << 4;
-                } else {
-                    throwJSONError("Not hexadecimal in unicode escape", file, line, pos - 3);
-                }
-                // get second digit
-                in.ignore();
-                ++pos;
-                d = in.peek();
-                if ((d >= '0') && (d <= '9')) {
-                    c |= d - '0';
-                } else if ((d >= 'A') && (d <= 'F')) {
-                    c |= d - 'A' + 10;
-                } else if ((d >= 'a') && (d <= 'f')) {
-                    c |= d - 'a' + 10;
-                } else {
-                    throwJSONError("Not hexadecimal in unicode escape", file, line, pos - 4);
-                }
-                break;
-            default:
-                throwJSONError("Bad escape", file, line, pos);
-            }
-            // drop the escaped char
-            in.ignore();
-            ++pos;
-        }
-        ss.put(c);
-        c = in.get();
-        ++pos;
-    }
-    if (c == EOF) {
-        throwJSONError("Unterminated string", file, line, pos);
-    }
-    return (ss.str());
-}
-
-std::string
-wordFromStringstream(std::istream& in, int& pos) {
-    std::stringstream ss;
-    while (isalpha(in.peek())) {
-        ss << (char) in.get();
-    }
-    pos += ss.str().size();
-    return (ss.str());
-}
-
-std::string
-numberFromStringstream(std::istream& in, int& pos) {
-    std::stringstream ss;
-    while (isdigit(in.peek()) || in.peek() == '+' || in.peek() == '-' ||
-           in.peek() == '.' || in.peek() == 'e' || in.peek() == 'E') {
-        ss << (char) in.get();
-    }
-    pos += ss.str().size();
-    return (ss.str());
-}
-
-// Should we change from IntElement and DoubleElement to NumberElement
-// that can also hold an e value? (and have specific getters if the
-// value is larger than an int can handle)
-//
-ElementPtr
-fromStringstreamNumber(std::istream& in, const std::string& file,
-                       const int line, int& pos) {
-    // Remember position where the value starts. It will be set in the
-    // Position structure of the Element to be created.
-    const uint32_t start_pos = pos;
-    // This will move the pos to the end of the value.
-    const std::string number = numberFromStringstream(in, pos);
-
-    if (number.find_first_of(".eE") < number.size()) {
-        try {
-            return (Element::create(boost::lexical_cast<double>(number),
-                                    Element::Position(file, line, start_pos)));
-        } catch (const boost::bad_lexical_cast&) {
-            throwJSONError(std::string("Number overflow: ") + number,
-                           file, line, start_pos);
-        }
-    } else {
-        try {
-            return (Element::create(boost::lexical_cast<int64_t>(number),
-                                    Element::Position(file, line, start_pos)));
-        } catch (const boost::bad_lexical_cast&) {
-            throwJSONError(std::string("Number overflow: ") + number, file,
-                           line, start_pos);
-        }
-    }
-    return (ElementPtr());
-}
-
-ElementPtr
-fromStringstreamBool(std::istream& in, const std::string& file,
-                     const int line, int& pos) {
-    // Remember position where the value starts. It will be set in the
-    // Position structure of the Element to be created.
-    const uint32_t start_pos = pos;
-    // This will move the pos to the end of the value.
-    const std::string word = wordFromStringstream(in, pos);
-
-    if (word == "true") {
-        return (Element::create(true, Element::Position(file, line,
-                                                        start_pos)));
-    } else if (word == "false") {
-        return (Element::create(false, Element::Position(file, line,
-                                                         start_pos)));
-    } else {
-        throwJSONError(std::string("Bad boolean value: ") + word, file,
-                       line, start_pos);
-    }
-    return (ElementPtr());
-}
-
-ElementPtr
-fromStringstreamNull(std::istream& in, const std::string& file,
-                     const int line, int& pos) {
-    // Remember position where the value starts. It will be set in the
-    // Position structure of the Element to be created.
-    const uint32_t start_pos = pos;
-    // This will move the pos to the end of the value.
-    const std::string word = wordFromStringstream(in, pos);
-    if (word == "null") {
-        return (Element::create(Element::Position(file, line, start_pos)));
-    } else {
-        throwJSONError(std::string("Bad null value: ") + word, file,
-                       line, start_pos);
-        return (ElementPtr());
-    }
-}
-
-ElementPtr
-fromStringstreamString(std::istream& in, const std::string& file, int& line,
-                       int& pos) {
-    // Remember position where the value starts. It will be set in the
-    // Position structure of the Element to be created.
-    const uint32_t start_pos = pos;
-    // This will move the pos to the end of the value.
-    const std::string string_value = strFromStringstream(in, file, line, pos);
-    return (Element::create(string_value, Element::Position(file, line,
-                                                            start_pos)));
-}
-
-ElementPtr
-fromStringstreamList(std::istream& in, const std::string& file, int& line,
-                     int& pos) {
-    int c = 0;
-    ElementPtr list = Element::createList(Element::Position(file, line, pos));
-    ElementPtr cur_list_element;
-
-    skipChars(in, WHITESPACE, line, pos);
-    while (c != EOF && c != ']') {
-        if (in.peek() != ']') {
-            cur_list_element = Element::fromJSON(in, file, line, pos);
-            list->add(cur_list_element);
-            c = skipTo(in, file, line, pos, ",]", WHITESPACE);
-        } else {
-            c = in.get();
-            ++pos;
-        }
-    }
-    return (list);
-}
-
-ElementPtr
-fromStringstreamMap(std::istream& in, const std::string& file, int& line,
-                    int& pos) {
-    ElementPtr map = Element::createMap(Element::Position(file, line, pos));
-    skipChars(in, WHITESPACE, line, pos);
-    int c = in.peek();
-    if (c == EOF) {
-        throwJSONError(std::string("Unterminated map, <string> or } expected"), file, line, pos);
-    } else if (c == '}') {
-        // empty map, skip closing curly
-        in.ignore();
-    } else {
-        while (c != EOF && c != '}') {
-            std::string key = strFromStringstream(in, file, line, pos);
-
-            skipTo(in, file, line, pos, ":", WHITESPACE);
-            // skip the :
-
-            ConstElementPtr value = Element::fromJSON(in, file, line, pos);
-            map->set(key, value);
-
-            c = skipTo(in, file, line, pos, ",}", WHITESPACE);
-        }
-    }
-    return (map);
-}
-} // end anonymous namespace
-
 std::string
 Element::typeToName(Element::types type) {
     switch (type) {
@@ -643,131 +309,32 @@ Element::nameToType(const std::string& type_name) {
 }
 
 ElementPtr
-Element::fromJSON(std::istream& in, bool preproc) {
-
-    int line = 1, pos = 1;
-    stringstream filtered;
-    if (preproc) {
-        preprocess(in, filtered);
-    }
-
-    ElementPtr value = fromJSON(preproc ? filtered : in, "<istream>", line, pos);
-
-    return (value);
+Element::fromJSON(std::istream& in, bool) {
+    std::ostringstream ss;
+    ss << in.rdbuf();
+    return (fromJSON(ss.str()));
 }
 
 ElementPtr
-Element::fromJSON(std::istream& in, const std::string& file_name, bool preproc) {
-    int line = 1, pos = 1;
-    stringstream filtered;
-    if (preproc) {
-        preprocess(in, filtered);
+Element::fromJSON(const std::string& in, bool) {
+    ParserContext ctx;
+    try {
+        return (ctx.parseString(in));
+    } catch (const JSONError& ex) {
+        isc_throw(JSONError, ex.what());
     }
-    return (fromJSON(preproc ? filtered : in, file_name, line, pos));
+    return (ElementPtr());
 }
 
 ElementPtr
-Element::fromJSON(std::istream& in, const std::string& file, int& line,
-                  int& pos) {
-    int c = 0;
-    ElementPtr element;
-    bool el_read = false;
-    skipChars(in, WHITESPACE, line, pos);
-    while (c != EOF && !el_read) {
-        c = in.get();
-        pos++;
-        switch(c) {
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-            case '0':
-            case '-':
-            case '+':
-            case '.':
-                in.putback(c);
-                --pos;
-                element = fromStringstreamNumber(in, file, line, pos);
-                el_read = true;
-                break;
-            case 't':
-            case 'f':
-                in.putback(c);
-                --pos;
-                element = fromStringstreamBool(in, file, line, pos);
-                el_read = true;
-                break;
-            case 'n':
-                in.putback(c);
-                --pos;
-                element = fromStringstreamNull(in, file, line, pos);
-                el_read = true;
-                break;
-            case '"':
-                in.putback('"');
-                --pos;
-                element = fromStringstreamString(in, file, line, pos);
-                el_read = true;
-                break;
-            case '[':
-                element = fromStringstreamList(in, file, line, pos);
-                el_read = true;
-                break;
-            case '{':
-                element = fromStringstreamMap(in, file, line, pos);
-                el_read = true;
-                break;
-            case EOF:
-                break;
-            default:
-                throwJSONError(std::string("error: unexpected character ") + std::string(1, c), file, line, pos);
-                break;
-        }
+Element::fromJSONFile(const std::string& file_name, bool) {
+    ParserContext ctx;
+    try {
+        return (ctx.parseFile(file_name));
+    } catch (const JSONError& ex) {
+        isc_throw(JSONError, ex.what());
     }
-    if (el_read) {
-        return (element);
-    } else {
-        isc_throw(JSONError, "nothing read");
-    }
-}
-
-ElementPtr
-Element::fromJSON(const std::string& in, bool preproc) {
-    std::stringstream ss;
-    ss << in;
-
-    int line = 1, pos = 1;
-    stringstream filtered;
-    if (preproc) {
-        preprocess(ss, filtered);
-    }
-    ElementPtr result(fromJSON(preproc ? filtered : ss, "<string>", line, pos));
-    skipChars(ss, WHITESPACE, line, pos);
-    // ss must now be at end
-    if (ss.peek() != EOF) {
-        throwJSONError("Extra data", "<string>", line, pos);
-    }
-    return result;
-}
-
-ElementPtr
-Element::fromJSONFile(const std::string& file_name, bool preproc) {
-    // zero out the errno to be safe
-    errno = 0;
-
-    std::ifstream infile(file_name.c_str(), std::ios::in | std::ios::binary);
-    if (!infile.is_open()) {
-        const char* error = strerror(errno);
-        isc_throw(InvalidOperation, "failed to read file '" << file_name
-                  << "': " << error);
-    }
-
-    return (fromJSON(infile, file_name, preproc));
+    return (ElementPtr());
 }
 
 // to JSON format
@@ -910,30 +477,6 @@ MapElement::find(const std::string& id) const {
             return (ElementPtr());
         }
     }
-}
-
-ElementPtr
-Element::fromWire(const std::string& s) {
-    std::stringstream ss;
-    ss << s;
-    int line = 0, pos = 0;
-    return (fromJSON(ss, "<wire>", line, pos));
-}
-
-ElementPtr
-Element::fromWire(std::stringstream& in, int) {
-    //
-    // Check protocol version
-    //
-    //for (int i = 0 ; i < 4 ; ++i) {
-    //    const unsigned char version_byte = get_byte(in);
-    //    if (PROTOCOL_VERSION[i] != version_byte) {
-    //        throw DecodeError("Protocol version incorrect");
-    //    }
-    //}
-    //length -= 4;
-    int line = 0, pos = 0;
-    return (fromJSON(in, "<wire>", line, pos));
 }
 
 void
@@ -1310,25 +853,6 @@ prettyPrint(ConstElementPtr element, unsigned indent, unsigned step) {
     std::stringstream ss;
     prettyPrint(element, ss, indent, step);
     return (ss.str());
-}
-
-void Element::preprocess(std::istream& in, std::stringstream& out) {
-
-    std::string line;
-
-    while (std::getline(in, line)) {
-        // If this is a comments line, replace it with empty line
-        // (so the line numbers will still match
-        if (!line.empty() && line[0] == '#') {
-            line = "";
-        }
-
-        // getline() removes end line characters. Unfortunately, we need
-        // it for getting the line numbers right (in case we report an
-        // error.
-        out << line;
-        out << "\n";
-    }
 }
 
 } // end of isc::data namespace

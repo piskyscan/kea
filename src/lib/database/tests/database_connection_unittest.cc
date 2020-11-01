@@ -266,7 +266,6 @@ TEST(DatabaseConnection, toElementDbAccessStringValid) {
         "\"host\": \"host_str\", \n"
         "\"keyspace\": \"keyspace_str\", \n"
         "\"lfc-interval\" : 100, \n"
-        "\"host\": \"whatevah\", \n"
         "\"max-reconnect-tries\": 5, \n"
         "\"name\": \"name_str\", \n"
         "\"password\": \"password_str\", \n"

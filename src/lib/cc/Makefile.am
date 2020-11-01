@@ -11,6 +11,9 @@ libkea_cc_la_SOURCES += element_value.h
 libkea_cc_la_SOURCES += cfg_to_element.h dhcp_config_error.h
 libkea_cc_la_SOURCES += command_interpreter.cc command_interpreter.h
 libkea_cc_la_SOURCES += json_feed.cc json_feed.h
+libkea_cc_la_SOURCES += lexer.cc location.hh position.hh stack.hh
+libkea_cc_la_SOURCES +=	parser.cc parser.h parser_context_decl.h
+libkea_cc_la_SOURCES +=	parser_context.cc parser_context.h
 libkea_cc_la_SOURCES += server_tag.cc server_tag.h
 libkea_cc_la_SOURCES += simple_parser.cc simple_parser.h
 libkea_cc_la_SOURCES += stamped_element.cc stamped_element.h
@@ -46,6 +49,9 @@ CLEANFILES = *.gcno *.gcda
 
 if GENERATE_PARSER
 
+# Generate parser first.
+all-recursive: lexer.cc location.hh position.hh stack.hh parser.cc parser.h
+
 parser: lexer.cc location.hh position.hh stack.hh parser.cc parser.h
 	@echo "Flex/bison files regenerated"
 
@@ -59,7 +65,7 @@ parser: lexer.cc location.hh position.hh stack.hh parser.cc parser.h
 # Call bison with -W to get warnings like unmarked empty rules
 # Note C++11 deprecated register still used by flex < 2.6.0
 location.hh position.hh stack.hh parser.cc parser.h: parser.yy
-	$(YACC) --defines=parser.h --report=all --report_file=parser.report -o parser.cc parser.yy
+	$(YACC) --defines=parser.h --report=all --report-file=parser.report -o parser.cc parser.yy
 
 lexer.cc: lexer.ll
 	$(LEX) --prefix parser -o lexer.cc lexer.ll

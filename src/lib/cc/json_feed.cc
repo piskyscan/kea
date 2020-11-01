@@ -83,7 +83,7 @@ JSONFeed::toElement() const {
                   " JSON feed while parsing hasn't finished");
     }
     try {
-        return (Element::fromWire(output_));
+        return (Element::fromJSON(output_));
 
     } catch (const std::exception& ex) {
         isc_throw(JSONFeedError, ex.what());

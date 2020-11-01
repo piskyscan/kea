@@ -22,9 +22,13 @@ ParserContext::parseString(const std::string& str) {
 
 ElementPtr
 ParserContext::parseFile(const std::string& filename) {
+    // zero out the errno to be safe.
+    errno = 0;
+
     FILE* f = fopen(filename.c_str(), "r");
     if (!f) {
-        isc_throw(ParseError, "Unable to open file " << filename);
+        isc_throw(InvalidOperation, "failed to read file '" << filename
+                  << ": " << strerror(errno));
     }
     scanFileBegin(f, filename);
     return (parseCommon());
@@ -36,7 +40,7 @@ ParserContext::parseCommon() {
     try {
         int res = parser.parse();
         if (res != 0) {
-            isc_throw(ParseError, "Parser abort");
+            isc_throw(JSONError, "Parser abort");
         }
         scanEnd();
     }
@@ -47,8 +51,8 @@ ParserContext::parseCommon() {
     if (stack_.size() == 1) {
         return (stack_[0]);
     } else {
-        isc_throw(ParseError, "Expected exactly one terminal Element expected, found "
-                  < stack_.size());
+        isc_throw(JSONError, "Expected exactly one terminal Element expected, found "
+                  << stack_.size());
     }
 }
 
@@ -56,16 +60,21 @@ void
 ParserContext::error(const location& loc,
                      const std::string& what,
                      size_t pos) {
+    const std::string& file = *loc.begin.filename;
+    const uint32_t line = loc.begin.line;
+    const uint32_t column = loc.begin.column;
     if (pos == 0) {
-        isc_throw(ParseError, loc << ": " << what);
+        isc_throw(JSONError, what << " in " << file << ":" << line
+                  << ":" << column);
     } else {
-        isc_throw(ParseError, loc << " (near " << pos << "): " << what);
+        isc_throw(JSONError, what << " in " << file << ":" << line
+                  << ":" << column << " (near " << pos << ")");
     }
 }
 
 void
 ParserContext::error (const std::string& what) {
-    isc_throw(ParseError, what);
+    isc_throw(JSONError, what);
 }
 
 void
@@ -85,7 +94,7 @@ void
 ParserContext::unique(const std::string& name, Element::Position loc) {
     ConstElementPtr value = stack_.back()->get(name);
     if (value) {
-        isc_throw(ParseError, loc << ": duplicate " << name
+        isc_throw(JSONError, loc << ": duplicate " << name
                   << " entries in JSON"
                   << " map (previous at " << value->getPosition() << ")");
     }

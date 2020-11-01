@@ -758,7 +758,7 @@ TEST_F(LeaseCmdsTest, Lease4AddMissingParams) {
         "    \"arguments\": {"
         "    }\n"
         "}";
-    string exp_rsp = "missing parameter 'ip-address' (<string>:3:19)";
+    string exp_rsp = "missing parameter 'ip-address' (<string>:3:18)";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
 
     // Just ip is not enough (subnet-id and hwaddr missing, although
@@ -770,7 +770,7 @@ TEST_F(LeaseCmdsTest, Lease4AddMissingParams) {
         "            \"ip-address\": \"192.0.2.123\"\n"
         "    }\n"
         "}";
-    exp_rsp = "missing parameter 'hw-address' (<string>:3:19)";
+    exp_rsp = "missing parameter 'hw-address' (<string>:3:18)";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
 
     // Better, but still no luck. (hwaddr missing).
@@ -782,7 +782,7 @@ TEST_F(LeaseCmdsTest, Lease4AddMissingParams) {
         "            \"ip-address\": \"192.0.2.202\"\n"
         "    }\n"
         "}";
-    exp_rsp = "missing parameter 'hw-address' (<string>:3:19)";
+    exp_rsp = "missing parameter 'hw-address' (<string>:3:18)";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
 
     // Close, but no cigars. (ip-address missing).
@@ -794,7 +794,7 @@ TEST_F(LeaseCmdsTest, Lease4AddMissingParams) {
         "            \"hw-address\": \"1a:1b:1c:1d:1e:1f\"\n"
         "    }\n"
         "}";
-    exp_rsp = "missing parameter 'ip-address' (<string>:3:19)";
+    exp_rsp = "missing parameter 'ip-address' (<string>:3:18)";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
 }
 
@@ -1287,7 +1287,7 @@ TEST_F(LeaseCmdsTest, Lease6AddMissingParams) {
         "    \"arguments\": {"
         "    }\n"
         "}";
-    string exp_rsp = "missing parameter 'ip-address' (<string>:3:19)";
+    string exp_rsp = "missing parameter 'ip-address' (<string>:3:18)";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
 
     // Just ip is not enough (subnet-id and duid missing, but subnet-id
@@ -1299,7 +1299,7 @@ TEST_F(LeaseCmdsTest, Lease6AddMissingParams) {
         "        \"ip-address\": \"2001:db8:1::3\"\n"
         "    }\n"
         "}";
-    exp_rsp = "missing parameter 'duid' (<string>:3:19)";
+    exp_rsp = "missing parameter 'duid' (<string>:3:18)";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
 
     // Just subnet-id and ip is not enough (duid missing).
@@ -1311,7 +1311,7 @@ TEST_F(LeaseCmdsTest, Lease6AddMissingParams) {
         "        \"ip-address\": \"2001:db8:1::3\"\n"
         "    }\n"
         "}";
-    exp_rsp = "missing parameter 'duid' (<string>:3:19)";
+    exp_rsp = "missing parameter 'duid' (<string>:3:18)";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
 
     // Just subnet-id and duid is not enough (ip, iaid missing).
@@ -1323,7 +1323,7 @@ TEST_F(LeaseCmdsTest, Lease6AddMissingParams) {
         "        \"duid\": \"1a:1b:1c:1d:1e:1f\"\n"
         "    }\n"
         "}";
-    exp_rsp = "missing parameter 'ip-address' (<string>:3:19)";
+    exp_rsp = "missing parameter 'ip-address' (<string>:3:18)";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
 
     // Just subnet-id, duid and iaid is not enough (ip missing).
@@ -1336,7 +1336,7 @@ TEST_F(LeaseCmdsTest, Lease6AddMissingParams) {
         "        \"iaid\": 1234\n"
         "    }\n"
         "}";
-    exp_rsp = "missing parameter 'ip-address' (<string>:3:19)";
+    exp_rsp = "missing parameter 'ip-address' (<string>:3:18)";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
 
     // Close, but no cigars. Still missing iaid.
@@ -1349,7 +1349,7 @@ TEST_F(LeaseCmdsTest, Lease6AddMissingParams) {
         "        \"ip-address\": \"2001:db8:1::3\"\n"
         "    }\n"
         "}";
-    exp_rsp = "missing parameter 'iaid' (<string>:3:19)";
+    exp_rsp = "missing parameter 'iaid' (<string>:3:18)";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
 }
 
@@ -3512,7 +3512,7 @@ TEST_F(LeaseCmdsTest, Lease4UpdateMissingParams) {
         "    \"arguments\": {"
         "    }\n"
         "}";
-    string exp_rsp = "missing parameter 'ip-address' (<string>:3:19)";
+    string exp_rsp = "missing parameter 'ip-address' (<string>:3:18)";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
 
     // Just ip is not enough (subnet-id and hwaddr missing, although
@@ -3524,7 +3524,7 @@ TEST_F(LeaseCmdsTest, Lease4UpdateMissingParams) {
         "            \"ip-address\": \"192.0.2.123\"\n"
         "    }\n"
         "}";
-    exp_rsp = "missing parameter 'hw-address' (<string>:3:19)";
+    exp_rsp = "missing parameter 'hw-address' (<string>:3:18)";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
 
     // Better, but still no luck. (hwaddr missing).
@@ -3536,7 +3536,7 @@ TEST_F(LeaseCmdsTest, Lease4UpdateMissingParams) {
         "            \"ip-address\": \"192.0.2.202\"\n"
         "    }\n"
         "}";
-    exp_rsp = "missing parameter 'hw-address' (<string>:3:19)";
+    exp_rsp = "missing parameter 'hw-address' (<string>:3:18)";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
 
     // Close, but no cigars. (ip-address missing).
@@ -3548,7 +3548,7 @@ TEST_F(LeaseCmdsTest, Lease4UpdateMissingParams) {
         "            \"hw-address\": \"1a:1b:1c:1d:1e:1f\"\n"
         "    }\n"
         "}";
-    exp_rsp = "missing parameter 'ip-address' (<string>:3:19)";
+    exp_rsp = "missing parameter 'ip-address' (<string>:3:18)";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
 }
 
@@ -3993,7 +3993,7 @@ TEST_F(LeaseCmdsTest, Lease6UpdateMissingParams) {
         "    \"arguments\": {"
         "    }\n"
         "}";
-    string exp_rsp = "missing parameter 'ip-address' (<string>:3:19)";
+    string exp_rsp = "missing parameter 'ip-address' (<string>:3:18)";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
 
     // Just ip is not enough (subnet-id and duid missing, although
@@ -4005,7 +4005,7 @@ TEST_F(LeaseCmdsTest, Lease6UpdateMissingParams) {
         "            \"ip-address\": \"2001:db8:1::1\"\n"
         "    }\n"
         "}";
-    exp_rsp = "missing parameter 'duid' (<string>:3:19)";
+    exp_rsp = "missing parameter 'duid' (<string>:3:18)";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
 
     // Better, but still no luck. (duid missing).
@@ -4017,7 +4017,7 @@ TEST_F(LeaseCmdsTest, Lease6UpdateMissingParams) {
         "            \"ip-address\": \"2001:db8:1::1\"\n"
         "    }\n"
         "}";
-    exp_rsp = "missing parameter 'duid' (<string>:3:19)";
+    exp_rsp = "missing parameter 'duid' (<string>:3:18)";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
 
     // ip-address and identifier-type missing.
@@ -4029,7 +4029,7 @@ TEST_F(LeaseCmdsTest, Lease6UpdateMissingParams) {
         "            \"duid\": \"1a:1b:1c:1d:1e:1f\"\n"
         "    }\n"
         "}";
-    exp_rsp = "missing parameter 'ip-address' (<string>:3:19)";
+    exp_rsp = "missing parameter 'ip-address' (<string>:3:18)";
     testCommand(txt, CONTROL_RESULT_ERROR, exp_rsp);
 }
 

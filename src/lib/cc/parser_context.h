@@ -15,20 +15,13 @@
 
 // Tell Flex the lexer's prototype ...
 #define YY_DECL \
-    isc::data::Parser::symbol_type parserlex (ParserContext& driver)
+    isc::data::Parser::symbol_type parserlex(ParserContext& driver)
 
 // ... and declare it for the parser's sake.
 YY_DECL;
 
 namespace isc {
 namespace data {
-
-/// @brief Evaluation error exception raised when trying to parse.
-class ParseError : public isc::Exception {
-public:
-    ParseError(const char* file, size_t line, const char* what) :
-        isc::Exception(file, line, what) { };
-};
 
 /// @brief Evaluation context, an interface to the data parser.
 class ParserContext
@@ -69,7 +62,7 @@ public:
     /// @param loc location within the parsed file when experienced a problem.
     /// @param what string explaining the nature of the error.
     /// @param pos optional position for in string errors.
-    /// @throw ParseError.
+    /// @throw JSONError.
     static void error(const isc::data::location& loc,
                       const std::string& what,
                       size_t pos = 0);
@@ -80,7 +73,7 @@ public:
     /// cases when the Parser is not able to handle the packet.
     ///
     /// @param what string explaining the nature of the error.
-    /// @throw ParseError
+    /// @throw JSONError
     static void error(const std::string& what);
 
     /// @brief Fatal error handler.
@@ -107,7 +100,7 @@ public:
     ///
     /// @param name name of the parameter to check.
     /// @param loc location of the current parameter.
-    /// @throw ParseError.
+    /// @throw JSONError.
     void unique(const std::string& name, Element::Position loc);
 
     /// @brief The string being parsed.

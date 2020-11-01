@@ -826,7 +826,7 @@ TEST_F(CtrlChannelDhcpv4SrvTest, configSet) {
     // Should fail with a syntax error
     EXPECT_EQ("{ \"result\": 1, "
               "\"text\": \"subnet configuration failed: mandatory 'subnet' "
-              "parameter is missing for a subnet being configured (<wire>:19:17)\" }",
+              "parameter is missing for a subnet being configured (<string>:20:16)\" }",
               response);
 
     // Check that the config was not lost
@@ -995,7 +995,7 @@ TEST_F(CtrlChannelDhcpv4SrvTest, configTest) {
     // Should fail with a syntax error
     EXPECT_EQ("{ \"result\": 1, "
               "\"text\": \"subnet configuration failed: mandatory 'subnet' parameter "
-              "is missing for a subnet being configured (<wire>:19:17)\" }",
+              "is missing for a subnet being configured (<string>:20:16)\" }",
               response);
 
     // Check that the config was not lost

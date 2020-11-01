@@ -27,7 +27,13 @@
 # undef yywrap
 # define yywrap() 1
 
+namespace {
+
+unsigned int comment_start_line = 0;
+
 using namespace isc::data;
+
+}
 
 /* To avoid the call to exit... oops! */
 #define YY_FATAL_ERROR(msg) ParserContext::fatal(msg)
@@ -111,7 +117,7 @@ ControlCharacterFill            [^"\\]|\\["\\/bfnrtu]
 <COMMENT>"*/" BEGIN(INITIAL);
 <COMMENT>. ;
 <COMMENT><<EOF>> {
-    isc_throw(Dhcp4ParseError, "Comment not closed. (/* in line " << comment_start_line);
+    isc_throw(JSONError, "Comment not closed. (/* in line " << comment_start_line);
 }
 
 <*>{blank}+   {
@@ -409,7 +415,7 @@ ParserContext::scanEnd() {
         fclose(sfile_);
     }
     sfile_ = 0;
-    static_cast<void>(parser_lex_destroy());
+    static_cast<void>(parserlex_destroy());
 }
 
 namespace {

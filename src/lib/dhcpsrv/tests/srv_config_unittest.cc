@@ -528,7 +528,6 @@ TEST_F(SrvConfigTest, unparse) {
     std::string header6 = "{\n\"Dhcp6\": {\n";
 
     std::string defaults = "\"decline-probation-period\": 0,\n";
-    defaults += "\"dhcp4o6-port\": 0,\n";
     defaults += "\"interfaces-config\": { \"interfaces\": [ ],\n";
     defaults += " \"re-detect\": false },\n";
     defaults += "\"option-def\": [ ],\n";
@@ -544,8 +543,7 @@ TEST_F(SrvConfigTest, unparse) {
 
     defaults += conf.getD2ClientConfig()->toElement()->str() + ",\n";
 
-    std::string defaults4 = "\"echo-client-id\": true,\n";
-    defaults4 += "\"shared-networks\": [ ],\n";
+    std::string defaults4 = "\"shared-networks\": [ ],\n";
     defaults4 += "\"subnet4\": [ ],\n";
     defaults4 += "\"host-reservation-identifiers\": ";
     defaults4 += "[ \"hw-address\", \"duid\", \"circuit-id\", \"client-id\" ],\n";
@@ -557,22 +555,22 @@ TEST_F(SrvConfigTest, unparse) {
     defaults6 += conf.getCfgDUID()->toElement()->str() + ",\n";
     defaults6 += "\"host-reservation-identifiers\": ";
     defaults6 += "[ \"hw-address\", \"duid\" ],\n";
-    defaults6 += "\"dhcp4o6-port\": 0,\n";
-    defaults6 += "\"mac-sources\": [ \"any\" ]\n";
+    defaults6 += "\"mac-sources\": [ \"any\" ],\n";
 
-    std::string params = "\"echo-client-id\": true,\n";
-    params += "\"dhcp4o6-port\": 0\n";
+    std::string params4 = "\"echo-client-id\": true,\n";
+    params4 += "\"dhcp4o6-port\": 0\n";
+    std::string params6 = "\"dhcp4o6-port\": 0\n";
     std::string trailer = "}\n}\n";
 
     // Verify DHCPv4
     CfgMgr::instance().setFamily(AF_INET);
     isc::test::runToElementTest<SrvConfig>
-        (header4 + defaults + defaults4 + params + trailer, conf);
+        (header4 + defaults + defaults4 + params4 + trailer, conf);
 
     // Verify DHCPv6
     CfgMgr::instance().setFamily(AF_INET6);
     isc::test::runToElementTest<SrvConfig>
-        (header6 + defaults + defaults6 + trailer, conf);
+        (header6 + defaults + defaults6 + params6 + trailer, conf);
 
     // Verify direct non-default parameters and configured globals
     CfgMgr::instance().setFamily(AF_INET);
@@ -581,20 +579,20 @@ TEST_F(SrvConfigTest, unparse) {
     // Add "configured globals"
     conf.addConfiguredGlobal("renew-timer", Element::create(777));
     conf.addConfiguredGlobal("foo", Element::create("bar"));
-    params = "\"echo-client-id\": false,\n";
-    params += "\"dhcp4o6-port\": 6767,\n";
-    params += "\"renew-timer\": 777,\n";
-    params += "\"foo\": \"bar\"\n";
+    params4 = "\"echo-client-id\": false,\n";
+    params4 += "\"dhcp4o6-port\": 6767,\n";
+    params4 += "\"renew-timer\": 777,\n";
+    params4 += "\"foo\": \"bar\"\n";
     isc::test::runToElementTest<SrvConfig>
-        (header4 + defaults + defaults4 + params + trailer, conf);
+        (header4 + defaults + defaults4 + params4 + trailer, conf);
 
     // Verify direct non-default parameters and configured globals
     CfgMgr::instance().setFamily(AF_INET6);
-    params = ",\"dhcp4o6-port\": 6767,\n";
-    params += "\"renew-timer\": 777,\n";
-    params += "\"foo\": \"bar\"\n";
+    params6 = "\"dhcp4o6-port\": 6767,\n";
+    params6 += "\"renew-timer\": 777,\n";
+    params6 += "\"foo\": \"bar\"\n";
     isc::test::runToElementTest<SrvConfig>
-        (header6 + defaults + defaults6 + params + trailer, conf);
+        (header6 + defaults + defaults6 + params6 + trailer, conf);
 }
 
 // Verifies that the toElement method does not miss host reservations
