@@ -567,6 +567,12 @@ configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
             IfacesConfigParser parser(AF_INET6, check_only);
             CfgIfacePtr cfg_iface = srv_config->getCfgIface();
             parser.parse(cfg_iface, ifaces_config);
+
+            // TODO: transform into parser entry "allow-non-ready".
+            constexpr bool allow_non_ready(true);
+            if (allow_non_ready) {
+                IfaceMgr::instance().startEventMonitor(cfg_iface->interfaces());
+            }
         }
 
         ConstElementPtr sanity_checks = mutable_cfg->get("sanity-checks");
