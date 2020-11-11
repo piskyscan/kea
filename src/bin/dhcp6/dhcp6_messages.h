@@ -1,4 +1,4 @@
-// File created from ../../../src/bin/dhcp6/dhcp6_messages.mes on Fri Oct 23 2020 14:07
+// File created from ../../../src/bin/dhcp6/dhcp6_messages.mes on Wed Nov 11 2020 17:09
 
 #ifndef DHCP6_MESSAGES_H
 #define DHCP6_MESSAGES_H
@@ -87,6 +87,7 @@ extern const isc::log::MessageID DHCP6_LEASE_DATA;
 extern const isc::log::MessageID DHCP6_LEASE_NA_WITHOUT_DUID;
 extern const isc::log::MessageID DHCP6_LEASE_PD_WITHOUT_DUID;
 extern const isc::log::MessageID DHCP6_LEASE_RENEW;
+extern const isc::log::MessageID DHCP6_LEASE_REUSE;
 extern const isc::log::MessageID DHCP6_MULTI_THREADING_INFO;
 extern const isc::log::MessageID DHCP6_NOT_RUNNING;
 extern const isc::log::MessageID DHCP6_NO_INTERFACES;
@@ -118,6 +119,7 @@ extern const isc::log::MessageID DHCP6_PD_LEASE_ADVERT_FAIL;
 extern const isc::log::MessageID DHCP6_PD_LEASE_ALLOC;
 extern const isc::log::MessageID DHCP6_PD_LEASE_ALLOC_FAIL;
 extern const isc::log::MessageID DHCP6_PD_LEASE_RENEW;
+extern const isc::log::MessageID DHCP6_PD_LEASE_REUSE;
 extern const isc::log::MessageID DHCP6_PROCESS_IA_NA_EXTEND;
 extern const isc::log::MessageID DHCP6_PROCESS_IA_NA_RELEASE;
 extern const isc::log::MessageID DHCP6_PROCESS_IA_NA_REQUEST;
