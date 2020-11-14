@@ -1,4 +1,4 @@
-// File created from ../../../src/lib/dhcpsrv/dhcpsrv_messages.mes on Fri Oct 23 2020 14:07
+// File created from ../../../src/lib/dhcpsrv/dhcpsrv_messages.mes on Sat Nov 14 2020 18:48
 
 #ifndef DHCPSRV_MESSAGES_H
 #define DHCPSRV_MESSAGES_H
@@ -122,7 +122,6 @@ extern const isc::log::MessageID DHCPSRV_MEMFILE_GET6_DUID;
 extern const isc::log::MessageID DHCPSRV_MEMFILE_GET_ADDR4;
 extern const isc::log::MessageID DHCPSRV_MEMFILE_GET_ADDR6;
 extern const isc::log::MessageID DHCPSRV_MEMFILE_GET_CLIENTID;
-extern const isc::log::MessageID DHCPSRV_MEMFILE_GET_CLIENTID_HWADDR_SUBID;
 extern const isc::log::MessageID DHCPSRV_MEMFILE_GET_EXPIRED4;
 extern const isc::log::MessageID DHCPSRV_MEMFILE_GET_EXPIRED6;
 extern const isc::log::MessageID DHCPSRV_MEMFILE_GET_HOSTNAME4;

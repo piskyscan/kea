@@ -1,4 +1,4 @@
-// File created from ../../../src/lib/dhcpsrv/dhcpsrv_messages.mes on Fri Oct 23 2020 14:07
+// File created from ../../../src/lib/dhcpsrv/dhcpsrv_messages.mes on Sat Nov 14 2020 18:48
 
 #include <cstddef>
 #include <log/message_types.h>
@@ -121,7 +121,6 @@ extern const isc::log::MessageID DHCPSRV_MEMFILE_GET6_DUID = "DHCPSRV_MEMFILE_GE
 extern const isc::log::MessageID DHCPSRV_MEMFILE_GET_ADDR4 = "DHCPSRV_MEMFILE_GET_ADDR4";
 extern const isc::log::MessageID DHCPSRV_MEMFILE_GET_ADDR6 = "DHCPSRV_MEMFILE_GET_ADDR6";
 extern const isc::log::MessageID DHCPSRV_MEMFILE_GET_CLIENTID = "DHCPSRV_MEMFILE_GET_CLIENTID";
-extern const isc::log::MessageID DHCPSRV_MEMFILE_GET_CLIENTID_HWADDR_SUBID = "DHCPSRV_MEMFILE_GET_CLIENTID_HWADDR_SUBID";
 extern const isc::log::MessageID DHCPSRV_MEMFILE_GET_EXPIRED4 = "DHCPSRV_MEMFILE_GET_EXPIRED4";
 extern const isc::log::MessageID DHCPSRV_MEMFILE_GET_EXPIRED6 = "DHCPSRV_MEMFILE_GET_EXPIRED6";
 extern const isc::log::MessageID DHCPSRV_MEMFILE_GET_HOSTNAME4 = "DHCPSRV_MEMFILE_GET_HOSTNAME4";
@@ -370,7 +369,6 @@ const char* values[] = {
     "DHCPSRV_MEMFILE_GET_ADDR4", "obtaining IPv4 lease for address %1",
     "DHCPSRV_MEMFILE_GET_ADDR6", "obtaining IPv6 lease for address %1 and lease type %2",
     "DHCPSRV_MEMFILE_GET_CLIENTID", "obtaining IPv4 leases for client ID %1",
-    "DHCPSRV_MEMFILE_GET_CLIENTID_HWADDR_SUBID", "obtaining IPv4 lease for client ID %1, hardware address %2 and subnet ID %3",
     "DHCPSRV_MEMFILE_GET_EXPIRED4", "obtaining maximum %1 of expired IPv4 leases",
     "DHCPSRV_MEMFILE_GET_EXPIRED6", "obtaining maximum %1 of expired IPv6 leases",
     "DHCPSRV_MEMFILE_GET_HOSTNAME4", "obtaining IPv4 leases for hostname %1",
