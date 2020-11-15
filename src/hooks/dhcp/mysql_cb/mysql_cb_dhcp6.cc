@@ -261,7 +261,9 @@ public:
                      const MySqlBindingCollection& in_bindings,
                      Subnet6Collection& subnets) {
         // Create output bindings. The order must match that in the prepared
-        // statement.
+        // statement. Please put comments only at the end of line so
+        // line counting and indexing match.
+        // The server tag must be the last field.
         MySqlBindingCollection out_bindings = {
             MySqlBinding::createInteger<uint32_t>(), // subnet_id
             MySqlBinding::createString(SUBNET6_PREFIX_BUF_LENGTH), // subnet_prefix
@@ -394,6 +396,8 @@ public:
                 last_pd_pool.reset();
                 last_tag.clear();
 
+                // Get subnet parameters required by the constructor first.
+
                 // subnet_id (0)
                 SubnetID subnet_id(out_bindings[0]->getInteger<uint32_t>());
 
@@ -401,7 +405,9 @@ public:
                 std::string subnet_prefix = out_bindings[1]->getString();
                 auto prefix_pair = Subnet6::parsePrefix(subnet_prefix);
 
-                // preferred_lifetime (and {min,max)_preferred_lifetime)
+                // preferred_lifetime (5)
+                // min_preferred_lifetime (69)
+                // max_preferred_lifetime (70)
                 auto preferred_lifetime = createTriplet(out_bindings[5],
                                                         out_bindings[69],
                                                         out_bindings[70]);
@@ -412,7 +418,9 @@ public:
                 // rebind_timer (7)
                 auto rebind_timer = createTriplet(out_bindings[7]);
 
-                // valid_lifetime  (and {min,max)_valid_lifetime)
+                // valid_lifetime (14)
+                // min_valid_lifetime (71)
+                // max_valid_lifetime (72)
                 auto valid_lifetime = createTriplet(out_bindings[14],
                                                     out_bindings[71],
                                                     out_bindings[72]);
@@ -422,6 +430,8 @@ public:
                                               renew_timer, rebind_timer,
                                               preferred_lifetime,
                                               valid_lifetime, subnet_id);
+
+                // 0 and 1 are subnet_id and subnet_prefix
 
                 // client_class (2)
                 if (!out_bindings[2]->amNull()) {
@@ -497,6 +507,12 @@ public:
 
                 // 14 is valid_lifetime
 
+                // 15 to 19 are pool
+                // 20 to 25 are pd pool
+                // 26 to 38 are pool option
+                // 39 to 51 are pd pool option
+                // 52 to 64 are option
+
                 // calculate_tee_times (65)
                 if (!out_bindings[65]->amNull()) {
                     last_subnet->setCalculateTeeTimes(out_bindings[65]->getBool());
@@ -566,12 +582,12 @@ public:
                     last_subnet->setDdnsQualifyingSuffix(out_bindings[86]->getString());
                 }
 
-                // reservations_in_subnet at 87
+                // reservations_in_subnet (87)
                 if (!out_bindings[87]->amNull()) {
                     last_subnet->setReservationsInSubnet(out_bindings[87]->getBool());
                 }
 
-                // reservations_out_of_pool at 88
+                // reservations_out_of_pool (88)
                 if (!out_bindings[88]->amNull()) {
                     last_subnet->setReservationsOutOfPool(out_bindings[88]->getBool());
                 }
@@ -604,6 +620,9 @@ public:
             // appears to be new pool entry (checked by comparing pool
             // id), let's create the new pool and add it to the
             // subnet.
+            // pool id (15)
+            // pool start_address (16)
+            // pool end_address (17)
             if (!out_bindings[15]->amNull() &&
                 !out_bindings[16]->getString().empty() &&
                 !out_bindings[17]->getString().empty() &&
@@ -612,6 +631,10 @@ public:
                 last_pool = Pool6::create(Lease::TYPE_NA,
                                           IOAddress(out_bindings[16]->getString()),
                                           IOAddress(out_bindings[17]->getString()));
+
+                // 18 is pool subnet_id (ignored)
+                // 19 is pool modification_ts (ignored)
+
                 // pool client_class (73)
                 if (!out_bindings[73]->amNull()) {
                     last_pool->allowClientClass(out_bindings[73]->getString());
@@ -649,12 +672,19 @@ public:
             // it appears to be new pd pool entry (checked by
             // comparing pd pool id), let's create the new pd pool and
             // add it to the subnet.
+            // pd pool id (20)
+            // pd pool prefix (21)
+            // pd pool prefix_length (22)
+            // pd pool delegated_prefix_length (23)
             if (!out_bindings[20]->amNull() &&
                 !out_bindings[21]->getString().empty() &&
                 (out_bindings[22]->getInteger<uint8_t>() != 0) &&
                 (out_bindings[23]->getInteger<uint8_t>() != 0) &&
                 (out_bindings[20]->getInteger<uint64_t>() > last_pd_pool_id)) {
                 last_pd_pool_id = out_bindings[20]->getInteger<uint64_t>();
+
+                // 24 is pd pool subnet_id (ignored)
+                // 25 is pd pool modification_ts (ignored)
 
                 // excluded_prefix (76) and excluded_prefix_length (77)
                 IOAddress excluded_prefix = IOAddress::IPV6_ZERO_ADDRESS();
@@ -666,6 +696,7 @@ public:
                                              out_bindings[23]->getInteger<uint8_t>(),
                                              excluded_prefix,
                                              out_bindings[77]->getInteger<uint8_t>());
+
                 // pd pool client_class (78)
                 if (!out_bindings[78]->amNull()) {
                     last_pd_pool->allowClientClass(out_bindings[78]->getString());
@@ -910,8 +941,11 @@ public:
                           (MySqlBindingCollection& out_bindings) {
             if (out_bindings[0]->getInteger<uint64_t>() > last_pool_id) {
 
+                // pool id (0)
                 last_pool_id = out_bindings[0]->getInteger<uint64_t>();
 
+                // pool start_address (1)
+                // pool end_address (2)
                 last_pool = Pool6::create(Lease::TYPE_NA,
                                           IOAddress(out_bindings[1]->getString()),
                                           IOAddress(out_bindings[2]->getString()));
@@ -1016,7 +1050,14 @@ public:
                           (MySqlBindingCollection& out_bindings) {
             if (out_bindings[0]->getInteger<uint64_t>() > last_pd_pool_id) {
 
+                // pd pool id (0)
                 last_pd_pool_id = out_bindings[0]->getInteger<uint64_t>();
+
+                // pd pool prefix (1)
+                // pd pool prefix_length (2)
+                // pd pool delegated_prefix_length (3)
+
+                // pd pool subnet_id (4 / ignored)
 
                 // excluded_prefix (5) and excluded_prefix_length (6)
                 IOAddress excluded_prefix = IOAddress::IPV6_ZERO_ADDRESS();
@@ -1546,7 +1587,9 @@ public:
                             const MySqlBindingCollection& in_bindings,
                             SharedNetwork6Collection& shared_networks) {
         // Create output bindings. The order must match that in the prepared
-        // statement.
+        // statement. Please put comments only at the end of line so
+        // line counting and indexing match.
+        // The server tag must be the last field.
         MySqlBindingCollection out_bindings = {
             MySqlBinding::createInteger<uint64_t>(), // id
             MySqlBinding::createString(SHARED_NETWORK_NAME_BUF_LENGTH), // name
@@ -1617,41 +1660,46 @@ public:
                 last_option_id = 0;
                 last_tag.clear();
 
+                // id at 0.
                 last_network_id = out_bindings[0]->getInteger<uint64_t>();
+
+                // name at 1.
                 last_network = SharedNetwork6::create(out_bindings[1]->getString());
                 last_network->setId(last_network_id);
 
-                // client_class
+                // client_class at 2.
                 if (!out_bindings[2]->amNull()) {
                     last_network->allowClientClass(out_bindings[2]->getString());
                 }
 
-                // interface
+                // interface at 3.
                 if (!out_bindings[3]->amNull()) {
                     last_network->setIface(out_bindings[3]->getString());
                 }
 
-                // modification_ts
+                // modification_ts at 4.
                 last_network->setModificationTime(out_bindings[4]->getTimestamp());
 
-                // preferred_lifetime (and {min,max)_preferred_lifetime)
+                // preferred_lifetime at 5.
+                // min_preferred_lifetime at 31.
+                // max_preferred_lifetime at 32.
                 if (!out_bindings[5]->amNull()) {
                     last_network->setPreferred(createTriplet(out_bindings[5],
                                                          out_bindings[31],
                                                          out_bindings[32]));
                 }
 
-                // rapid_commit
+                // rapid_commit at 6.
                 if (!out_bindings[6]->amNull()) {
                     last_network->setRapidCommit(out_bindings[6]->getBool());
                 }
 
-                // rebind_timer
+                // rebind_timer at 7.
                 if (!out_bindings[7]->amNull()) {
                     last_network->setT2(createTriplet(out_bindings[7]));
                 }
 
-                // relay
+                // relay at 8.
                 ElementPtr relay_element = out_bindings[8]->getJSON();
                 if (relay_element) {
                     if (relay_element->getType() != Element::list) {
@@ -1667,12 +1715,12 @@ public:
                     }
                 }
 
-                // renew_timer
+                // renew_timer at 9.
                 if (!out_bindings[9]->amNull()) {
                     last_network->setT1(createTriplet(out_bindings[9]));
                 }
 
-                // require_client_classes
+                // require_client_classes at 10.
                 ElementPtr require_element = out_bindings[10]->getJSON();
                 if (require_element) {
                     if (require_element->getType() != Element::list) {
@@ -1689,40 +1737,44 @@ public:
                     }
                 }
 
-                // reservations_global
+                // reservations_global at 11.
                 if (!out_bindings[11]->amNull()) {
                     last_network->setReservationsGlobal(out_bindings[11]->getBool());
                 }
 
-                // user_context
+                // user_context at 12.
                 ElementPtr user_context = out_bindings[12]->getJSON();
                 if (user_context) {
                     last_network->setContext(user_context);
                 }
 
-                // valid_lifetime (and {min,max)_valid_lifetime)
+                // valid_lifetime at 13.
+                // min_valid_lifetime at 33.
+                // max_valid_lifetime at 34.
                 if (!out_bindings[13]->amNull()) {
                     last_network->setValid(createTriplet(out_bindings[13],
                                                          out_bindings[33],
                                                          out_bindings[34]));
                 }
 
-                // calculate_tee_times
+                // 14 to 26 are option.
+
+                // calculate_tee_times at 27.
                 if (!out_bindings[27]->amNull()) {
                     last_network->setCalculateTeeTimes(out_bindings[27]->getBool());
                 }
 
-                // t1_percent
+                // t1_percent at 28.
                 if (!out_bindings[28]->amNull()) {
                     last_network->setT1Percent(out_bindings[28]->getFloat());
                 }
 
-                // t2_percent
+                // t2_percent at 29.
                 if (!out_bindings[29]->amNull()) {
                     last_network->setT2Percent(out_bindings[29]->getFloat());
                 }
 
-                // interface_id
+                // interface_id at 30.
                 if (!out_bindings[30]->amNull()) {
                     auto iface_id_data = out_bindings[30]->getBlob();
                     if (!iface_id_data.empty()) {
@@ -1732,52 +1784,53 @@ public:
                     }
                 }
 
-                // {min,max)_preferred_lifetime
+                // min_preferred_lifetime at 31.
+                // max_preferred_lifetime at 32.
+                // min_valid_lifetime at 33.
+                // max_valid_lifetime at 34.
 
-                // {min,max)_valid_lifetime
-
-                // ddns_send_updates at 35
+                // ddns_send_updates at 35.
                 if (!out_bindings[35]->amNull()) {
                     last_network->setDdnsSendUpdates(out_bindings[35]->getBool());
                 }
 
-                // ddns_override_no_update at 36
+                // ddns_override_no_update at 36.
                 if (!out_bindings[36]->amNull()) {
                     last_network->setDdnsOverrideNoUpdate(out_bindings[36]->getBool());
                 }
 
-                // ddns_override_client_update at 37
+                // ddns_override_client_update at 37.
                 if (!out_bindings[37]->amNull()) {
                     last_network->setDdnsOverrideClientUpdate(out_bindings[37]->getBool());
                 }
 
-                // ddns_replace_client_name at 38
+                // ddns_replace_client_name at 38.
                 if (!out_bindings[38]->amNull()) {
                     last_network->setDdnsReplaceClientNameMode(static_cast<D2ClientConfig::ReplaceClientNameMode>
                         (out_bindings[38]->getInteger<uint8_t>()));
                 }
 
-                // ddns_generated_prefix at 39
+                // ddns_generated_prefix at 39.
                 if (!out_bindings[39]->amNull()) {
                     last_network->setDdnsGeneratedPrefix(out_bindings[39]->getString());
                 }
 
-                // ddns_qualifying_suffix at 40
+                // ddns_qualifying_suffix at 40.
                 if (!out_bindings[40]->amNull()) {
                     last_network->setDdnsQualifyingSuffix(out_bindings[40]->getString());
                 }
 
-                // reservations_in_subnet at 41
+                // reservations_in_subnet at 41.
                 if (!out_bindings[41]->amNull()) {
                     last_network->setReservationsInSubnet(out_bindings[41]->getBool());
                 }
 
-                // reservations_in_subnet at 42
+                // reservations_in_subnet at 42.
                 if (!out_bindings[42]->amNull()) {
                     last_network->setReservationsOutOfPool(out_bindings[42]->getBool());
                 }
 
-                // server_tag at 43
+                // server_tag at 43.
 
                 // Add the shared network.
                 auto ret = shared_networks.push_back(last_network);
