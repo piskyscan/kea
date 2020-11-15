@@ -768,7 +768,7 @@ insert into hosts(dhcp_identifier, dhcp_identifier_type, dhcp4_subnet_id, ipv4_a
 
     # Schema upgrade from 9.4 to 9.5.
 
-    # table: dhcp4_shared_network (reversion_mode replaced by reservations flags)
+    # table: dhcp4_shared_network (reservation_mode replaced by reservations flags)
     qry="select reservations_global, reservations_in_subnet, reservations_out_of_pool from dhcp4_shared_network"
     run_statement "dhcp4_shared_network" "$qry"
 
@@ -779,7 +779,7 @@ insert into hosts(dhcp_identifier, dhcp_identifier_type, dhcp4_subnet_id, ipv4_a
     count=`echo $text | grep -ic reservation`
     assert_eq $count 0 "dhcp4_shared_network has still reservation_mode column. (returned count %d, expected %d)"
 
-    # table: dhcp4_subnet (reversion_mode replaced by reservations flags)
+    # table: dhcp4_subnet (reservation_mode replaced by reservations flags)
     qry="select reservations_global, reservations_in_subnet, reservations_out_of_pool from dhcp4_subnet"
     run_statement "dhcp4_subnet" "$qry"
 
@@ -790,7 +790,7 @@ insert into hosts(dhcp_identifier, dhcp_identifier_type, dhcp4_subnet_id, ipv4_a
     count=`echo $text | grep -ic reservation`
     assert_eq $count 0 "dhcp4_subnet has still reservation_mode column. (returned count %d, expected %d)"
 
-    # table: dhcp6_shared_network (reversion_mode replaced by reservations flags)
+    # table: dhcp6_shared_network (reservation_mode replaced by reservations flags)
     qry="select reservations_global, reservations_in_subnet, reservations_out_of_pool from dhcp6_shared_network"
     run_statement "dhcp6_shared_network" "$qry"
 
@@ -801,7 +801,7 @@ insert into hosts(dhcp_identifier, dhcp_identifier_type, dhcp4_subnet_id, ipv4_a
     count=`echo $text | grep -ic reservation`
     assert_eq $count 0 "dhcp6_shared_network has still reservation_mode column. (returned count %d, expected %d)"
 
-    # table: dhcp6_subnet (reversion_mode replaced by reservations flags)
+    # table: dhcp6_subnet (reservation_mode replaced by reservations flags)
     qry="select reservations_global, reservations_in_subnet, reservations_out_of_pool from dhcp6_subnet"
     run_statement "dhcp6_subnet" "$qry"
 
