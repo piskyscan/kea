@@ -541,6 +541,7 @@ AllocEngine::ClientContext6::currentHost() const {
             return (host->second);
         }
     }
+
     return (globalHost());
 }
 
@@ -581,7 +582,8 @@ AllocEngine::ClientContext6::getDdnsParams() {
     return (DdnsParamsPtr(new DdnsParams()));
 }
 
-void AllocEngine::findReservation(ClientContext6& ctx) {
+void
+AllocEngine::findReservation(ClientContext6& ctx) {
     ctx.hosts_.clear();
 
     // If there is no subnet, there is nothing to do.
@@ -914,8 +916,7 @@ AllocEngine::allocateUnreservedLeases6(ClientContext6& ctx) {
             continue;
         }
 
-        // Check which subnet host reservations are supported in this subnet.
-        bool hr_enabled = subnet->getReservationsInSubnet();
+        bool in_subnet = subnet->getReservationsInSubnet();
 
         /// @todo: We support only one hint for now
         Lease6Ptr lease =
@@ -927,7 +928,7 @@ AllocEngine::allocateUnreservedLeases6(ClientContext6& ctx) {
             // it has been reserved for us we would have already allocated a lease.
 
             ConstHostCollection hosts;
-            if (hr_enabled) {
+            if (in_subnet) {
                 hosts = getIPv6Resrv(subnet->getID(), hint);
             }
 
@@ -961,7 +962,7 @@ AllocEngine::allocateUnreservedLeases6(ClientContext6& ctx) {
 
             // If the lease is expired, we may likely reuse it, but...
             ConstHostCollection hosts;
-            if (hr_enabled) {
+            if (in_subnet) {
                 hosts = getIPv6Resrv(subnet->getID(), hint);
             }
 
@@ -1039,8 +1040,8 @@ AllocEngine::allocateUnreservedLeases6(ClientContext6& ctx) {
             continue;
         }
         uint64_t max_attempts = (attempts_ > 0 ? attempts_  : possible_attempts);
-        bool hr_enabled = subnet->getReservationsInSubnet();
-        bool hr_in_pool = !subnet->getReservationsOutOfPool();
+        bool in_subnet = subnet->getReservationsInSubnet();
+        bool out_of_pool = subnet->getReservationsOutOfPool();
 
         // Set the default status code in case the lease6_select callouts
         // do not exist and the callout handle has a status returned by
@@ -1071,7 +1072,7 @@ AllocEngine::allocateUnreservedLeases6(ClientContext6& ctx) {
             }
 
             // First check for reservation when it is the choice.
-            if (check_reservation_first && hr_enabled && hr_in_pool) {
+            if (check_reservation_first && in_subnet && !out_of_pool) {
                 auto hosts = getIPv6Resrv(subnet->getID(), candidate);
                 if (!hosts.empty()) {
                     // Don't allocate.
@@ -1096,7 +1097,7 @@ AllocEngine::allocateUnreservedLeases6(ClientContext6& ctx) {
                 /// In-pool reservations: Check if this address is reserved for someone
                 /// else. There is no need to check for whom it is reserved, because if
                 /// it has been reserved for us we would have already allocated a lease.
-                if (!check_reservation_first && hr_enabled && hr_in_pool) {
+                if (!check_reservation_first && in_subnet && !out_of_pool) {
                     auto hosts = getIPv6Resrv(subnet->getID(), candidate);
                     if (!hosts.empty()) {
                         // Don't allocate.
@@ -1128,7 +1129,7 @@ AllocEngine::allocateUnreservedLeases6(ClientContext6& ctx) {
                 // allocation attempts.
             } else if (existing->expired()) {
                 // Make sure it's not reserved.
-                if (!check_reservation_first && hr_enabled && hr_in_pool) {
+                if (!check_reservation_first && in_subnet && !out_of_pool) {
                     auto hosts = getIPv6Resrv(subnet->getID(), candidate);
                     if (!hosts.empty()) {
                         // Don't allocate.
@@ -3206,6 +3207,7 @@ AllocEngine::ClientContext4::currentHost() const {
             return (host->second);
         }
     }
+
     return (globalHost());
 }
 
