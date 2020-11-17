@@ -1,4 +1,4 @@
-// A Bison parser, made by GNU Bison 3.7.2.
+// A Bison parser, made by GNU Bison 3.7.3.
 
 // Skeleton implementation for Bison LALR(1) parsers in C++
 
@@ -2053,7 +2053,7 @@ namespace isc { namespace dhcp {
 
   case 272: // duid_id: "duid"
 #line 1096 "dhcp4_parser.yy"
-               {
+              {
     ElementPtr duid(new StringElement("duid", ctx.loc2pos(yystack_[0].location)));
     ctx.stack_.back()->add(duid);
 }
@@ -2062,7 +2062,7 @@ namespace isc { namespace dhcp {
 
   case 273: // hw_address_id: "hw-address"
 #line 1101 "dhcp4_parser.yy"
-                           {
+                          {
     ElementPtr hwaddr(new StringElement("hw-address", ctx.loc2pos(yystack_[0].location)));
     ctx.stack_.back()->add(hwaddr);
 }
@@ -2071,7 +2071,7 @@ namespace isc { namespace dhcp {
 
   case 274: // circuit_id: "circuit-id"
 #line 1106 "dhcp4_parser.yy"
-                        {
+                       {
     ElementPtr circuit(new StringElement("circuit-id", ctx.loc2pos(yystack_[0].location)));
     ctx.stack_.back()->add(circuit);
 }
@@ -2080,7 +2080,7 @@ namespace isc { namespace dhcp {
 
   case 275: // client_id: "client-id"
 #line 1111 "dhcp4_parser.yy"
-                      {
+                     {
     ElementPtr client(new StringElement("client-id", ctx.loc2pos(yystack_[0].location)));
     ctx.stack_.back()->add(client);
 }
