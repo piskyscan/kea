@@ -3402,7 +3402,6 @@ TEST_F(AllocEngine6Test, hostDynamicAddress) {
     HostPtr host(new Host(&duid_->getDuid()[0], duid_->getDuid().size(),
                  Host::IDENT_DUID, SUBNET_ID_UNUSED, subnet_->getID(),
                  asiolink::IOAddress("0.0.0.0")));
-
     host->setHostname("host1");
 
     CfgMgr::instance().getStagingCfg()->getCfgHosts()->add(host);
@@ -3744,6 +3743,7 @@ TEST_F(AllocEngine6Test, mixedHostReservedAddress) {
     // We verify the "time" change in case the lease returned to us
     // by expectOneLease ever becomes a copy and not what is in the lease mgr.
     --lease->cltt_;
+    lease->updateCurrentExpirationTime();
     Lease6Ptr from_mgr = LeaseMgrFactory::instance().getLease6(lease->type_,
                                                                lease->addr_);
     ASSERT_TRUE(from_mgr);
@@ -3767,7 +3767,7 @@ TEST_F(AllocEngine6Test, mixedHostReservedAddress) {
 }
 
 // Verifies that client with a subnet prefix reservation can get and
-// renew a lease for an prefix in the subnet.
+// renew a lease for a prefix in the subnet.
 TEST_F(AllocEngine6Test, mixedHostReservedPrefix) {
     boost::scoped_ptr<AllocEngine> engine;
     ASSERT_NO_THROW(engine.reset(new AllocEngine(AllocEngine::ALLOC_ITERATIVE, 100)));
@@ -3809,6 +3809,7 @@ TEST_F(AllocEngine6Test, mixedHostReservedPrefix) {
     // We verify the "time" change in case the lease returned to us
     // by expectOneLease ever becomes a copy and not what is in the lease mgr.
     --lease->cltt_;
+    lease->updateCurrentExpirationTime();
     Lease6Ptr from_mgr = LeaseMgrFactory::instance().getLease6(lease->type_,
                                                                lease->addr_);
     ASSERT_TRUE(from_mgr);
@@ -3886,6 +3887,7 @@ TEST_F(AllocEngine6Test, bothHostReservedAddress) {
     // We verify the "time" change in case the lease returned to us
     // by expectOneLease ever becomes a copy and not what is in the lease mgr.
     --lease->cltt_;
+    lease->updateCurrentExpirationTime();
     Lease6Ptr from_mgr = LeaseMgrFactory::instance().getLease6(lease->type_,
                                                                lease->addr_);
     ASSERT_TRUE(from_mgr);
@@ -3909,7 +3911,7 @@ TEST_F(AllocEngine6Test, bothHostReservedAddress) {
 }
 
 // Verifies that client with a subnet and a global prefix reservation
-// can get and renew a lease for an prefix in the subnet.
+// can get and renew a lease for a prefix in the subnet.
 TEST_F(AllocEngine6Test, bothHostReservedPrefix) {
     boost::scoped_ptr<AllocEngine> engine;
     ASSERT_NO_THROW(engine.reset(new AllocEngine(AllocEngine::ALLOC_ITERATIVE, 100)));
@@ -3960,6 +3962,7 @@ TEST_F(AllocEngine6Test, bothHostReservedPrefix) {
     // We verify the "time" change in case the lease returned to us
     // by expectOneLease ever becomes a copy and not what is in the lease mgr.
     --lease->cltt_;
+    lease->updateCurrentExpirationTime();
     Lease6Ptr from_mgr = LeaseMgrFactory::instance().getLease6(lease->type_,
                                                                lease->addr_);
     ASSERT_TRUE(from_mgr);

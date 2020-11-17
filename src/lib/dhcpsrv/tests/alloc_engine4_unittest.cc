@@ -2904,8 +2904,12 @@ TEST_F(AllocEngine4Test, findReservation) {
     ASSERT_NO_THROW(engine.findReservation(ctx));
     EXPECT_FALSE(ctx.currentHost());
 
-    // Enable again reservations-in-subnet.
+    // Check the reservations-in-subnet and reservations-out-of-pool flags.
     subnet_->setReservationsInSubnet(true);
+    subnet_->setReservationsOutOfPool(true);
+    ASSERT_NO_THROW(engine.findReservation(ctx));
+    EXPECT_TRUE(ctx.currentHost());
+    EXPECT_EQ(ctx.currentHost()->getIPv4Reservation(), host->getIPv4Reservation());
 
     // This time use the client identifier to search for the host.
     host.reset(new Host(&clientid_->getClientId()[0],

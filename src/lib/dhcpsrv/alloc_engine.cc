@@ -622,7 +622,7 @@ AllocEngine::findReservation(ClientContext6& ctx) {
         (network->getAllSubnets()->size() > ctx.host_identifiers_.size());
 
     if (use_single_query) {
-        for (auto id_pair : ctx.host_identifiers_) {
+        for (const IdentifierPair& id_pair : ctx.host_identifiers_) {
             ConstHostCollection hosts = HostMgr::instance().getAll(id_pair.first,
                                                                    &id_pair.second[0],
                                                                    id_pair.second.size());
@@ -646,7 +646,7 @@ AllocEngine::findReservation(ClientContext6& ctx) {
             subnet->getReservationsInSubnet()) {
             // Iterate over configured identifiers in the order of preference
             // and try to use each of them to search for the reservations.
-            for (auto id_pair : ctx.host_identifiers_) {
+            for (const IdentifierPair& id_pair : ctx.host_identifiers_) {
                 if (use_single_query) {
                     if (host_map.count(subnet->getID()) > 0) {
                         ctx.hosts_[subnet->getID()] = host_map[subnet->getID()];
@@ -678,7 +678,7 @@ AllocEngine::findReservation(ClientContext6& ctx) {
 ConstHostPtr
 AllocEngine::findGlobalReservation(ClientContext6& ctx) {
     ConstHostPtr host;
-    BOOST_FOREACH(const IdentifierPair& id_pair, ctx.host_identifiers_) {
+    for (const IdentifierPair& id_pair : ctx.host_identifiers_) {
         // Attempt to find a host using a specified identifier.
         host = HostMgr::instance().get6(SUBNET_ID_GLOBAL, id_pair.first,
                                         &id_pair.second[0], id_pair.second.size());
@@ -2946,8 +2946,7 @@ namespace {
 /// @return true if the address is reserved for another client.
 bool
 addressReserved(const IOAddress& address, const AllocEngine::ClientContext4& ctx) {
-    if (ctx.subnet_ &&
-        ctx.subnet_->getReservationsInSubnet() &&
+    if (ctx.subnet_ && ctx.subnet_->getReservationsInSubnet() &&
         (!ctx.subnet_->getReservationsOutOfPool() ||
          !ctx.subnet_->inPool(Lease::TYPE_V4, address))) {
         // The global parameter ip-reservations-unique controls whether it is allowed
@@ -2971,12 +2970,11 @@ addressReserved(const IOAddress& address, const AllocEngine::ClientContext4& ctx
         }
 
         for (auto host : hosts) {
-            for (auto id = ctx.host_identifiers_.cbegin(); id != ctx.host_identifiers_.cend();
-                 ++id) {
+            for (const AllocEngine::IdentifierPair& id_pair : ctx.host_identifiers_) {
                 // If we find the matching host we know that this address is reserved
-                // for us and we can return immediatelly.
-                if (id->first == host->getIdentifierType() &&
-                    id->second == host->getIdentifier()) {
+                // for us and we can return immediately.
+                if (id_pair.first == host->getIdentifierType() &&
+                    id_pair.second == host->getIdentifier()) {
                     return (false);
                 }
             }
@@ -3014,20 +3012,25 @@ hasAddressReservation(AllocEngine::ClientContext4& ctx) {
     while (subnet) {
         if (subnet->getReservationsGlobal()) {
             auto host = ctx.hosts_.find(SUBNET_ID_GLOBAL);
+            // if we want global + other modes we would need to
+            // return only if true, else continue
             if (host != ctx.hosts_.end() &&
                 !host->second->getIPv4Reservation().isV4Zero()) {
                 return (true);
             }
         }
 
-        auto host = ctx.hosts_.find(subnet->getID());
-        if ((host != ctx.hosts_.end()) &&
-            !host->second->getIPv4Reservation().isV4Zero() &&
-            subnet->getReservationsInSubnet() &&
-            (!subnet->getReservationsOutOfPool() ||
-             !subnet->inPool(Lease::TYPE_V4, host->second->getIPv4Reservation()))) {
-            ctx.subnet_ = subnet;
-            return (true);
+        if (subnet->getReservationsInSubnet()) {
+            auto host = ctx.hosts_.find(subnet->getID());
+            if (host != ctx.hosts_.end()) {
+                auto reservation = host->second->getIPv4Reservation();
+                if (!reservation.isV4Zero() &&
+                    (!subnet->getReservationsOutOfPool() ||
+                     !subnet->inPool(Lease::TYPE_V4, reservation))) {
+                    ctx.subnet_ = subnet;
+                    return (true);
+                }
+            }
         }
 
         // No address reservation found here, so let's try another subnet
@@ -3325,12 +3328,10 @@ AllocEngine::findReservation(ClientContext4& ctx) {
         (network->getAllSubnets()->size() > ctx.host_identifiers_.size());
 
     if (use_single_query) {
-        for (auto id_pair = ctx.host_identifiers_.begin();
-             id_pair != ctx.host_identifiers_.end();
-             ++id_pair) {
-            ConstHostCollection hosts = HostMgr::instance().getAll(id_pair->first,
-                                                                   &id_pair->second[0],
-                                                                   id_pair->second.size());
+        for (const IdentifierPair& id_pair : ctx.host_identifiers_) {
+            ConstHostCollection hosts = HostMgr::instance().getAll(id_pair.first,
+                                                                   &id_pair.second[0],
+                                                                   id_pair.second.size());
             // Store the hosts in the temporary map, because some hosts may
             // belong to subnets outside of the shared network. We'll need
             // to eliminate them.
@@ -3351,7 +3352,7 @@ AllocEngine::findReservation(ClientContext4& ctx) {
             subnet->getReservationsInSubnet()) {
             // Iterate over configured identifiers in the order of preference
             // and try to use each of them to search for the reservations.
-            BOOST_FOREACH(const IdentifierPair& id_pair, ctx.host_identifiers_) {
+            for (const IdentifierPair& id_pair : ctx.host_identifiers_) {
                 if (use_single_query) {
                     if (host_map.count(subnet->getID()) > 0) {
                         ctx.hosts_[subnet->getID()] = host_map[subnet->getID()];
@@ -3383,7 +3384,7 @@ AllocEngine::findReservation(ClientContext4& ctx) {
 ConstHostPtr
 AllocEngine::findGlobalReservation(ClientContext4& ctx) {
     ConstHostPtr host;
-    BOOST_FOREACH(const IdentifierPair& id_pair, ctx.host_identifiers_) {
+    for (const IdentifierPair& id_pair : ctx.host_identifiers_) {
         // Attempt to find a host using a specified identifier.
         host = HostMgr::instance().get4(SUBNET_ID_GLOBAL, id_pair.first,
                                         &id_pair.second[0], id_pair.second.size());

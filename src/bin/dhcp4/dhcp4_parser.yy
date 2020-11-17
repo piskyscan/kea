@@ -1093,22 +1093,22 @@ host_reservation_identifier: duid_id
                            | flex_id
                            ;
 
-duid_id : DUID {
+duid_id: DUID {
     ElementPtr duid(new StringElement("duid", ctx.loc2pos(@1)));
     ctx.stack_.back()->add(duid);
 };
 
-hw_address_id : HW_ADDRESS {
+hw_address_id: HW_ADDRESS {
     ElementPtr hwaddr(new StringElement("hw-address", ctx.loc2pos(@1)));
     ctx.stack_.back()->add(hwaddr);
 };
 
-circuit_id : CIRCUIT_ID {
+circuit_id: CIRCUIT_ID {
     ElementPtr circuit(new StringElement("circuit-id", ctx.loc2pos(@1)));
     ctx.stack_.back()->add(circuit);
 };
 
-client_id : CLIENT_ID {
+client_id: CLIENT_ID {
     ElementPtr client(new StringElement("client-id", ctx.loc2pos(@1)));
     ctx.stack_.back()->add(client);
 };
