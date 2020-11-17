@@ -898,7 +898,7 @@
                         // Cache threshold = valid lifetime * .25.
                         "cache-threshold": .25,
 
-                        // Subnet level cache maximum.
+                        // Subnet-level cache maximum.
                         "cache-max-age": 1000,
 
                         // List of static IPv4 reservations assigned to the clients belonging
@@ -980,8 +980,7 @@
 
         // Configuration control (currently not used, i.e. this syntax
         // is already defined but corresponding feature is not implemented).
-        "config-control":
-        {
+        "config-control": {
             // Only configuration databases entry is defined.
             "config-databases": [
                 {
@@ -1001,8 +1000,7 @@
         "server-tag": "my DHCPv4 server",
 
         // DHCP queue control parameters.
-        "dhcp-queue-control":
-        {
+        "dhcp-queue-control": {
             // Enable queue is mandatory.
             "enable-queue": true,
 

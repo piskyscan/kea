@@ -2655,10 +2655,17 @@ An example response could look as follows:
                    "ip-address": "0.0.0.0"
                },
                "renew-timer": 60,
-               # "reservation-mode": "all", (replaced by reservations-* flags.
+               # "reservation-mode": "all",
+               # It is replaced by the "reservations-global"
+               # "reservations-in-subnet" and
+               # "reservations-out-of-pool" parameters.
+               # Specify if server should lookup global reservations.
                "reservations-global": false,
+               # Specify if server should lookup in-subnet reservations.
                "reservations-in-subnet": true,
-               "reservations-out-of-pool": true,
+               # Specify if server can assume that all reserved addresses
+               # are out-of-pool.
+               "reservations-out-of-pool": false,
                "subnet4": [
                    {
                        "subnet": "192.0.2.0/24",

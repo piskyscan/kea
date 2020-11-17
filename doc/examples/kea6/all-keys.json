@@ -958,8 +958,7 @@
 
         // Configuration control (currently not used, i.e. this syntax
         // is already defined but corresponding feature is not implemented).
-        "config-control":
-        {
+        "config-control": {
             // Only configuration databases entry is defined.
             "config-databases": [
                 {
@@ -979,8 +978,7 @@
         "server-tag": "my DHCPv6 server",
 
         // DHCP queue control parameters.
-        "dhcp-queue-control":
-        {
+        "dhcp-queue-control": {
             // Enable queue is mandatory.
             "enable-queue": true,
 

@@ -4034,17 +4034,17 @@ following decision diagram:
             |                |                  |     V
             +----------------+                  +--> "all"
 
-An example configuration that disables reservation looks as follows:
+An example configuration that disables reservations looks as follows:
 
 ::
 
    "Dhcp6": {
        "subnet6": [
-           {
+       {
            "subnet": "2001:db8:1::/64",
            "reservation-mode": "disabled",
            ...
-           }
+       }
        ]
    }
 
@@ -4091,9 +4091,9 @@ The meaning of these flags are:
 
 - ``reservations-out-of-pool``: the makes sense only when the
   ``reservations-in-subnet`` flag is true. When ``reservations-out-of-pool``
-  is true the may assume that all host reservations of the subnet are
-  are for addresses or prefixes that do not belong to the dynamic pool
-  as described in the ``out-of-pool`` reservation mode.
+  is true the server may assume that all host reservations of the subnet are
+  for addresses or prefixes that do not belong to the dynamic pool as described
+  in the ``out-of-pool`` reservation mode.
 
 The ``reservation-mode`` will be deprecated in a future Kea version.
 
@@ -4158,10 +4158,23 @@ To activate both ``global`` and ``all``, the following combination can be used:
        ...
    }
 
+To activate both ``global`` and ``out-of-pool``, the following combination can
+be used:
+
+::
+
+   "Dhcp6": {
+
+       "reservations-global": true,
+       "reservations-in-subnet": true,
+       "reservations-out-of-pool": true,
+       ...
+   }
+
 The parameter can be specified at global, subnet, and shared-network
 levels.
 
-An example configuration that disables reservation looks as follows:
+An example configuration that disables reservations looks as follows:
 
 ::
 
@@ -4177,7 +4190,7 @@ An example configuration that disables reservation looks as follows:
    }
 
 
-An example configuration using only global reservations is shown below:
+An example configuration using global reservations is shown below:
 
 ::
 
@@ -4185,7 +4198,6 @@ An example configuration using only global reservations is shown below:
 
        "reservations-global": true,
        "reservations-in-subnet": false,
-       "reservations-out-of-pool": false,
        "reservations": [
           {
            "duid": "00:03:00:01:11:22:33:44:55:66",
