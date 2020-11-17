@@ -34,7 +34,7 @@ namespace {
 ///   - 1 subnet: 10.0.0.0/24
 const char* CONFIGS[] = {
     // Configuration 0
-    // 1 subnet, reservations-global true, others false,
+    // 1 subnet, global only,
     // global reservations for different identifier types
     "{ \"interfaces-config\": {\n"
         "      \"interfaces\": [ \"*\" ]\n"
@@ -74,8 +74,8 @@ const char* CONFIGS[] = {
     "}\n"
     ,
     // Configuration 1 global vs in-subnet
-    // 2 subnets, one reservations flags default (aka in-subnet),
-    // one reservations flags global
+    // 2 subnets, one default reservations flags (aka in-subnet),
+    // one reservations flags global only
     // Host reservations for the same client, one global, one in each subnet
     "{ \"interfaces-config\": {\n"
         "      \"interfaces\": [ \"*\" ]\n"
@@ -349,7 +349,7 @@ const char* CONFIGS[] = {
     "}",
 
     // Configuration 8 both global and in-subnet
-    // 2 subnets, one reservations flags default (aka in-subnet),
+    // 2 subnets, one default reservations flags (aka in-subnet),
     // one reservations flags global and in-subnet.
     // Host reservations for the same client, one global, one in each subnet
     "{ \"interfaces-config\": {\n"
@@ -381,6 +381,7 @@ const char* CONFIGS[] = {
         "        \"interface\": \"eth1\",\n"
         "        \"reservations-global\": true,\n"
         "        \"reservations-in-subnet\": true,\n"
+        "        \"reservations-out-of-pool\": false,\n"
         "        \"reservations\": [ \n"
         "        {\n"
         "           \"hw-address\": \"aa:bb:cc:dd:ee:ff\",\n"
@@ -642,7 +643,7 @@ TEST_F(HostTest, globalClientID) {
 
 // Verifies that even when a matching global reservation exists,
 // client will get a subnet scoped reservation, when subnet
-// reservation flags are default
+// reservations flags are default
 TEST_F(HostTest, defaultOverGlobal) {
     Dhcp4Client client(Dhcp4Client::SELECTING);
 
@@ -656,8 +657,8 @@ TEST_F(HostTest, defaultOverGlobal) {
 
 // Verifies that when there are matching reservations at
 // both the global and subnet levels, client will be matched
-// to the global reservation, when subnet reservation true flags
-// are global.
+// to the global reservation, when subnet reservations flags
+// are global only.
 TEST_F(HostTest, globalOverSubnet) {
     Dhcp4Client client(Dhcp4Client::SELECTING);
 
@@ -675,7 +676,7 @@ TEST_F(HostTest, globalOverSubnet) {
 
 // Verifies that when there are matching reservations at
 // both the global and subnet levels, client will be matched
-// to the subnet reservation, when subnet reservation true flags
+// to the subnet reservation, when subnet reservations flags
 // are in-subnet and out-of-pool.
 TEST_F(HostTest, outOfPoolOverGlobal) {
     Dhcp4Client client(Dhcp4Client::SELECTING);
@@ -683,15 +684,15 @@ TEST_F(HostTest, outOfPoolOverGlobal) {
     // Hardware address matches all reservations
     client.setHWAddress("aa:bb:cc:dd:ee:ff");
 
-    // Subnet 10 uses in-subnet with out-of-pool reservations flags,
+    // Subnet 10 uses in-subnet and out-of-pool reservations flags,
     // so its reservation should be used, rather than global.
     runDoraTest(CONFIGS[2], client, "subnet-10-host", "10.0.0.105");
 }
 
 // Verifies that when there are matching reservations at
 // both the global and subnet levels, client will be matched
-// to the subnet reservation, when subnet reservation true flags
-// are in-subnet.
+// to the subnet reservation, when subnet reservations flags
+// are in-subnet only.
 TEST_F(HostTest, allOverGlobal) {
     Dhcp4Client client(Dhcp4Client::SELECTING);
 
@@ -705,7 +706,7 @@ TEST_F(HostTest, allOverGlobal) {
 
 // Verifies that when there are matching reservations at
 // both the global and subnet levels, client will be matched
-// to the subnet reservation, when subnet reservation true flags
+// to the subnet reservation, when subnet reservations flags
 // are global and in-subnet, i.e. the subnet has the preference.
 TEST_F(HostTest, subnetOverGlobal) {
     Dhcp4Client client(Dhcp4Client::SELECTING);

@@ -5655,13 +5655,15 @@ TEST_F(Dhcp6ParserTest, hostReservationPerSubnet) {
 
     /// - Configuration:
     ///   - only addresses (no prefixes)
-    ///   - 5 subnets with:
+    ///   - 7 subnets with:
     ///       - 2001:db8:1::/64 (all reservations enabled)
     ///       - 2001:db8:2::/64 (out-of-pool reservations)
     ///       - 2001:db8:3::/64 (reservations disabled)
     ///       - 2001:db8:4::/64 (global reservations)
     ///       - 2001:db8:5::/64 (reservations not specified)
-    const char* HR_CONFIG =
+    ///       - 2001:db8:6::/64 (global + all enabled)
+    ///       - 2001:db8:7::/64 (global + out-of-pool enabled)
+    const char* hr_config =
         "{"
         "\"preferred-lifetime\": 3000,"
         "\"rebind-timer\": 2000, "
@@ -5669,38 +5671,52 @@ TEST_F(Dhcp6ParserTest, hostReservationPerSubnet) {
         "\"subnet6\": [ { "
         "    \"pools\": [ { \"pool\": \"2001:db8:1::/64\" } ],"
         "    \"subnet\": \"2001:db8:1::/48\", "
-        "    \"reservations-global\": false, "
-        "    \"reservations-in-subnet\": true, "
+        "    \"reservations-global\": false,"
+        "    \"reservations-in-subnet\": true,"
         "    \"reservations-out-of-pool\": false"
         " },"
         " {"
         "    \"pools\": [ { \"pool\": \"2001:db8:2::/64\" } ],"
         "    \"subnet\": \"2001:db8:2::/48\", "
-        "    \"reservations-global\": false, "
-        "    \"reservations-in-subnet\": true, "
+        "    \"reservations-global\": false,"
+        "    \"reservations-in-subnet\": true,"
         "    \"reservations-out-of-pool\": true"
         " },"
         " {"
         "    \"pools\": [ { \"pool\": \"2001:db8:3::/64\" } ],"
         "    \"subnet\": \"2001:db8:3::/48\", "
-        "    \"reservations-global\": false, "
+        "    \"reservations-global\": false,"
         "    \"reservations-in-subnet\": false"
         " },"
         " {"
         "    \"pools\": [ { \"pool\": \"2001:db8:4::/64\" } ],"
         "    \"subnet\": \"2001:db8:4::/48\", "
-        "    \"reservations-global\": true, "
+        "    \"reservations-global\": true,"
         "    \"reservations-in-subnet\": false"
         " },"
         " {"
         "    \"pools\": [ { \"pool\": \"2001:db8:5::/64\" } ],"
         "    \"subnet\": \"2001:db8:5::/48\" "
+        " },"
+        " {"
+        "    \"pools\": [ { \"pool\": \"2001:db8:6::/64\" } ],"
+        "    \"subnet\": \"2001:db8:6::/48\", "
+        "    \"reservations-global\": true,"
+        "    \"reservations-in-subnet\": true,"
+        "    \"reservations-out-of-pool\": false"
+        " },"
+        " {"
+        "    \"pools\": [ { \"pool\": \"2001:db8:7::/64\" } ],"
+        "    \"subnet\": \"2001:db8:7::/48\", "
+        "    \"reservations-global\": true,"
+        "    \"reservations-in-subnet\": true,"
+        "    \"reservations-out-of-pool\": true"
         " } ],"
         "\"valid-lifetime\": 4000 }";
 
     ConstElementPtr json;
-    ASSERT_NO_THROW(json = parseDHCP6(HR_CONFIG));
-    extractConfig(HR_CONFIG);
+    ASSERT_NO_THROW(json = parseDHCP6(hr_config));
+    extractConfig(hr_config);
 
     ConstElementPtr status;
     EXPECT_NO_THROW(status = configureDhcp6Server(srv_, json));
@@ -5709,11 +5725,11 @@ TEST_F(Dhcp6ParserTest, hostReservationPerSubnet) {
     checkResult(status, 0);
     CfgMgr::instance().commit();
 
-    // Let's get all subnets and check that there are 5 of them.
+    // Let's get all subnets and check that there are 7 of them.
     ConstCfgSubnets6Ptr subnets = CfgMgr::instance().getCurrentCfg()->getCfgSubnets6();
     ASSERT_TRUE(subnets);
     const Subnet6Collection* subnet_col = subnets->getAll();
-    ASSERT_EQ(5, subnet_col->size()); // We expect 5 subnets
+    ASSERT_EQ(7, subnet_col->size()); // We expect 7 subnets
 
     // Let's check if the parsed subnets have correct HR modes.
 
@@ -5744,6 +5760,7 @@ TEST_F(Dhcp6ParserTest, hostReservationPerSubnet) {
     ASSERT_TRUE(subnet);
     EXPECT_TRUE(subnet->getReservationsGlobal());
     EXPECT_FALSE(subnet->getReservationsInSubnet());
+    EXPECT_FALSE(subnet->getReservationsOutOfPool());
 
     // Subnet 5
     subnet = subnets->selectSubnet(IOAddress("2001:db8:5::1"));
@@ -5751,6 +5768,21 @@ TEST_F(Dhcp6ParserTest, hostReservationPerSubnet) {
     EXPECT_FALSE(subnet->getReservationsGlobal());
     EXPECT_TRUE(subnet->getReservationsInSubnet());
     EXPECT_FALSE(subnet->getReservationsOutOfPool());
+
+    // Subnet 6
+    subnet = subnets->selectSubnet(IOAddress("2001:db8:6::1"));
+    ASSERT_TRUE(subnet);
+    EXPECT_TRUE(subnet->getReservationsGlobal());
+    EXPECT_TRUE(subnet->getReservationsInSubnet());
+    EXPECT_FALSE(subnet->getReservationsOutOfPool());
+
+    // Subnet 7
+    subnet = subnets->selectSubnet(IOAddress("2001:db8:7::1"));
+    ASSERT_TRUE(subnet);
+    EXPECT_TRUE(subnet->getReservationsGlobal());
+    EXPECT_TRUE(subnet->getReservationsInSubnet());
+    EXPECT_TRUE(subnet->getReservationsOutOfPool());
+
 }
 
 /// The goal of this test is to verify that Host Reservation flags can be
@@ -5762,19 +5794,19 @@ TEST_F(Dhcp6ParserTest, hostReservationGlobal) {
     ///   - 2 subnets with:
     ///       - 2001:db8:1::/64 (all reservations enabled)
     ///       - 2001:db8:2::/64 (reservations not specified)
-    const char* HR_CONFIG =
+    const char* hr_config =
         "{"
         "\"preferred-lifetime\": 3000,"
         "\"rebind-timer\": 2000, "
         "\"renew-timer\": 1000, "
-        "\"reservations-global\": false, "
-        "\"reservations-in-subnet\": true, "
-        "\"reservations-out-of-pool\": true, "
+        "\"reservations-global\": false,"
+        "\"reservations-in-subnet\": true,"
+        "\"reservations-out-of-pool\": true,"
         "\"subnet6\": [ { "
         "    \"pools\": [ { \"pool\": \"2001:db8:1::/64\" } ],"
         "    \"subnet\": \"2001:db8:1::/48\", "
-        "    \"reservations-global\": false, "
-        "    \"reservations-in-subnet\": true, "
+        "    \"reservations-global\": false,"
+        "    \"reservations-in-subnet\": true,"
         "    \"reservations-out-of-pool\": false"
         " },"
         " {"
@@ -5784,8 +5816,8 @@ TEST_F(Dhcp6ParserTest, hostReservationGlobal) {
         "\"valid-lifetime\": 4000 }";
 
     ConstElementPtr json;
-    ASSERT_NO_THROW(json = parseDHCP6(HR_CONFIG));
-    extractConfig(HR_CONFIG);
+    ASSERT_NO_THROW(json = parseDHCP6(hr_config));
+    extractConfig(hr_config);
 
     ConstElementPtr status;
     EXPECT_NO_THROW(status = configureDhcp6Server(srv_, json));

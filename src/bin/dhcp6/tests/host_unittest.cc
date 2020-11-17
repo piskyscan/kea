@@ -2392,7 +2392,7 @@ TEST_F(HostTest, globalReservationsNA) {
     }
 
     {
-        SCOPED_TRACE("Default subnet reservations flags excludes Global HR");
+        SCOPED_TRACE("Default subnet reservations flags excludes global reservations");
         client.clearConfig();
         client.setInterface("eth1");
         client.setDUID("01:02:03:04");
@@ -2418,6 +2418,7 @@ TEST_F(HostTest, globalReservationsNA) {
             getCfgSubnets6()->getSubnet(2);
         ASSERT_TRUE(subnet);
         subnet->setReservationsGlobal(true);
+        subnet->setReservationsInSubnet(true);
         client.clearConfig();
         client.setInterface("eth1");
         client.setDUID("01:02:03:05");
@@ -2454,7 +2455,7 @@ TEST_F(HostTest, globalReservationsPD) {
     }
 
     {
-        SCOPED_TRACE("Default subnet reservations flags excludes Global HR");
+        SCOPED_TRACE("Default subnet reservations flags excludes global reservations");
         client.clearConfig();
         client.setInterface("eth1");
         client.setDUID("01:02:03:04");
@@ -2480,6 +2481,7 @@ TEST_F(HostTest, globalReservationsPD) {
             getCfgSubnets6()->getSubnet(2);
         ASSERT_TRUE(subnet);
         subnet->setReservationsGlobal(true);
+        subnet->setReservationsInSubnet(true);
         client.clearConfig();
         client.setInterface("eth1");
         client.setDUID("01:02:03:05");
