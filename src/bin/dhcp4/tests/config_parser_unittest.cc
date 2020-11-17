@@ -5286,38 +5286,61 @@ TEST_F(Dhcp4ParserTest, hostReservationPerSubnet) {
 
     /// - Configuration:
     ///   - only addresses (no prefixes)
-    ///   - 4 subnets with:
-    ///       - 192.0.2.0/24 (all reservations enabled)
-    ///       - 192.0.3.0/24 (out-of-pool reservations)
-    ///       - 192.0.4.0/24 (reservations disabled)
+    ///   - 7 subnets with:
+    ///       - 192.0.1.0/24 (all reservations enabled)
+    ///       - 192.0.2.0/24 (out-of-pool reservations)
+    ///       - 192.0.3.0/24 (reservations disabled)
+    ///       - 192.0.4.0/24 (global reservations)
     ///       - 192.0.5.0/24 (reservations not specified)
+    ///       - 192.0.6.0/24 (global + all enabled)
+    ///       - 192.0.7.0/24 (global + out-of-pool enabled)
     const char* hr_config =
         "{ "
         "\"rebind-timer\": 2000, "
         "\"renew-timer\": 1000, "
         "\"subnet4\": [ { "
+        "    \"pools\": [ { \"pool\": \"192.0.1.0/24\" } ],"
+        "    \"subnet\": \"192.0.1.0/24\", "
+        "    \"reservations-global\": false,"
+        "    \"reservations-in-subnet\": true,"
+        "    \"reservations-out-of-pool\": false"
+        " },"
+        " {"
         "    \"pools\": [ { \"pool\": \"192.0.2.0/24\" } ],"
         "    \"subnet\": \"192.0.2.0/24\", "
-        "    \"reservations-global\": false, "
-        "    \"reservations-in-subnet\": true, "
-        "    \"reservations-out-of-pool\": false"
+        "    \"reservations-global\": false,"
+        "    \"reservations-in-subnet\": true,"
+        "    \"reservations-out-of-pool\": true"
         " },"
         " {"
         "    \"pools\": [ { \"pool\": \"192.0.3.0/24\" } ],"
         "    \"subnet\": \"192.0.3.0/24\", "
-        "    \"reservations-global\": false, "
-        "    \"reservations-in-subnet\": true, "
-        "    \"reservations-out-of-pool\": true"
+        "    \"reservations-global\": false,"
+        "    \"reservations-in-subnet\": false"
         " },"
         " {"
         "    \"pools\": [ { \"pool\": \"192.0.4.0/24\" } ],"
         "    \"subnet\": \"192.0.4.0/24\", "
-        "    \"reservations-global\": false, "
-        "    \"reservations-in-subnet\": false "
+        "    \"reservations-global\": true,"
+        "    \"reservations-in-subnet\": false"
         " },"
         " {"
         "    \"pools\": [ { \"pool\": \"192.0.5.0/24\" } ],"
         "    \"subnet\": \"192.0.5.0/24\""
+        " },"
+        " {"
+        "    \"pools\": [ { \"pool\": \"192.0.6.0/24\" } ],"
+        "    \"subnet\": \"192.0.6.0/24\", "
+        "    \"reservations-global\": true,"
+        "    \"reservations-in-subnet\": true,"
+        "    \"reservations-out-of-pool\": false"
+        " },"
+        " {"
+        "    \"pools\": [ { \"pool\": \"192.0.7.0/24\" } ],"
+        "    \"subnet\": \"192.0.7.0/24\", "
+        "    \"reservations-global\": true,"
+        "    \"reservations-in-subnet\": true,"
+        "    \"reservations-out-of-pool\": true"
         " } ],"
         "\"valid-lifetime\": 4000 }";
 
@@ -5330,42 +5353,63 @@ TEST_F(Dhcp4ParserTest, hostReservationPerSubnet) {
     // returned value should be 0 (success)
     checkResult(result, 0);
 
-    // Let's get all subnets and check that there are 4 of them.
+    // Let's get all subnets and check that there are 7 of them.
     ConstCfgSubnets4Ptr subnets = CfgMgr::instance().getStagingCfg()->getCfgSubnets4();
     ASSERT_TRUE(subnets);
     const Subnet4Collection* subnet_col = subnets->getAll();
-    ASSERT_EQ(4, subnet_col->size()); // We expect 4 subnets
+    ASSERT_EQ(7, subnet_col->size()); // We expect 7 subnets
 
     // Let's check if the parsed subnets have correct HR modes.
 
     // Subnet 1
     Subnet4Ptr subnet;
-    subnet = subnets->selectSubnet(IOAddress("192.0.2.1"));
+    subnet = subnets->selectSubnet(IOAddress("192.0.1.1"));
     ASSERT_TRUE(subnet);
     EXPECT_FALSE(subnet->getReservationsGlobal());
     EXPECT_TRUE(subnet->getReservationsInSubnet());
     EXPECT_FALSE(subnet->getReservationsOutOfPool());
 
     // Subnet 2
-    subnet = subnets->selectSubnet(IOAddress("192.0.3.1"));
+    subnet = subnets->selectSubnet(IOAddress("192.0.2.1"));
     ASSERT_TRUE(subnet);
     EXPECT_FALSE(subnet->getReservationsGlobal());
     EXPECT_TRUE(subnet->getReservationsInSubnet());
     EXPECT_TRUE(subnet->getReservationsOutOfPool());
 
     // Subnet 3
-    subnet = subnets->selectSubnet(IOAddress("192.0.4.1"));
+    subnet = subnets->selectSubnet(IOAddress("192.0.3.1"));
     ASSERT_TRUE(subnet);
     EXPECT_FALSE(subnet->getReservationsGlobal());
     EXPECT_FALSE(subnet->getReservationsInSubnet());
     EXPECT_FALSE(subnet->getReservationsOutOfPool());
 
     // Subnet 4
+    subnet = subnets->selectSubnet(IOAddress("192.0.4.1"));
+    ASSERT_TRUE(subnet);
+    EXPECT_TRUE(subnet->getReservationsGlobal());
+    EXPECT_FALSE(subnet->getReservationsInSubnet());
+    EXPECT_FALSE(subnet->getReservationsOutOfPool());
+
+    // Subnet 5
     subnet = subnets->selectSubnet(IOAddress("192.0.5.1"));
     ASSERT_TRUE(subnet);
     EXPECT_FALSE(subnet->getReservationsGlobal());
     EXPECT_TRUE(subnet->getReservationsInSubnet());
     EXPECT_FALSE(subnet->getReservationsOutOfPool());
+
+    // Subnet 6
+    subnet = subnets->selectSubnet(IOAddress("192.0.6.1"));
+    ASSERT_TRUE(subnet);
+    EXPECT_TRUE(subnet->getReservationsGlobal());
+    EXPECT_TRUE(subnet->getReservationsInSubnet());
+    EXPECT_FALSE(subnet->getReservationsOutOfPool());
+
+    // Subnet 7
+    subnet = subnets->selectSubnet(IOAddress("192.0.7.1"));
+    ASSERT_TRUE(subnet);
+    EXPECT_TRUE(subnet->getReservationsGlobal());
+    EXPECT_TRUE(subnet->getReservationsInSubnet());
+    EXPECT_TRUE(subnet->getReservationsOutOfPool());
 }
 
 /// The goal of this test is to verify that Host Reservation flags can be
@@ -5381,14 +5425,14 @@ TEST_F(Dhcp4ParserTest, hostReservationGlobal) {
         "{ "
         "\"rebind-timer\": 2000, "
         "\"renew-timer\": 1000, "
-        "\"reservations-global\": false, "
-        "\"reservations-in-subnet\": true, "
-        "\"reservations-out-of-pool\": true, "
+        "\"reservations-global\": false,"
+        "\"reservations-in-subnet\": true,"
+        "\"reservations-out-of-pool\": true,"
         "\"subnet4\": [ { "
         "    \"pools\": [ { \"pool\": \"192.0.2.0/24\" } ],"
         "    \"subnet\": \"192.0.2.0/24\", "
-        "    \"reservations-global\": false, "
-        "    \"reservations-in-subnet\": true, "
+        "    \"reservations-global\": false,"
+        "    \"reservations-in-subnet\": true,"
         "    \"reservations-out-of-pool\": false"
         " },"
         " {"

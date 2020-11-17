@@ -821,7 +821,6 @@ configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
         }
         d2_client_cfg->validateContents();
         srv_config->setD2ClientConfig(d2_client_cfg);
-
     } catch (const isc::Exception& ex) {
         LOG_ERROR(dhcp6_logger, DHCP6_PARSER_FAIL)
                   .arg(parameter_name).arg(ex.what());
@@ -905,6 +904,7 @@ configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
             err << "during update from config backend database: " << ex.what();
             LOG_ERROR(dhcp6_logger, DHCP6_PARSER_COMMIT_FAIL).arg(err.str());
             answer = isc::config::createAnswer(2, err.str());
+
             // An error occurred, so make sure to restore the original data.
             rollback = true;
         } catch (...) {
@@ -914,6 +914,7 @@ configureDhcp6Server(Dhcpv6Srv& server, isc::data::ConstElementPtr config_set,
                 << "undefined configuration parsing error";
             LOG_ERROR(dhcp6_logger, DHCP6_PARSER_COMMIT_FAIL).arg(err.str());
             answer = isc::config::createAnswer(2, err.str());
+
             // An error occurred, so make sure to restore the original data.
             rollback = true;
         }
