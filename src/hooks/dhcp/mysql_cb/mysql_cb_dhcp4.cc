@@ -320,6 +320,8 @@ public:
             MySqlBinding::createString(DNS_NAME_BUF_LENGTH), // ddns_qualifying_suffix
             MySqlBinding::createInteger<uint8_t>(), // reservations_in_subnet
             MySqlBinding::createInteger<uint8_t>(), // reservations_out_of_pool
+            MySqlBinding::createInteger<float>(), // cache_threshold
+            MySqlBinding::createInteger<uint32_t>(), // cache_max_age
             MySqlBinding::createString(SERVER_TAG_BUF_LENGTH) // server_tag
         };
 
@@ -568,7 +570,17 @@ public:
                     last_subnet->setReservationsOutOfPool(out_bindings[65]->getBool());
                 }
 
-                // server_tag at 66.
+                // cache_threshold at 66.
+                if (!out_bindings[66]->amNull()) {
+                    last_subnet->setCacheThreshold(out_bindings[66]->getFloat());
+                }
+
+                // cache_max_age at 67.
+                if (!out_bindings[67]->amNull()) {
+                    last_subnet->setCacheMaxAge(out_bindings[67]->getInteger<uint32_t>());
+                }
+
+                // server_tag at 68.
 
                 // Subnet ready. Add it to the list.
                 auto ret = subnets.insert(last_subnet);
@@ -581,10 +593,10 @@ public:
                 }
             }
 
-            // Check for new server tags at 66.
-            if (!out_bindings[66]->amNull() &&
-                (last_tag != out_bindings[66]->getString())) {
-                last_tag = out_bindings[66]->getString();
+            // Check for new server tags at 68.
+            if (!out_bindings[68]->amNull() &&
+                (last_tag != out_bindings[68]->getString())) {
+                last_tag = out_bindings[68]->getString();
                 if (!last_tag.empty() && !last_subnet->hasServerTag(ServerTag(last_tag))) {
                     last_subnet->setServerTag(last_tag);
                 }
@@ -1061,7 +1073,9 @@ public:
             MySqlBinding::condCreateString(subnet->getDdnsGeneratedPrefix(Network::Inheritance::NONE)),
             MySqlBinding::condCreateString(subnet->getDdnsQualifyingSuffix(Network::Inheritance::NONE)),
             MySqlBinding::condCreateBool(subnet->getReservationsInSubnet(Network::Inheritance::NONE)),
-            MySqlBinding::condCreateBool(subnet->getReservationsOutOfPool(Network::Inheritance::NONE))
+            MySqlBinding::condCreateBool(subnet->getReservationsOutOfPool(Network::Inheritance::NONE)),
+            MySqlBinding::condCreateFloat(subnet->getCacheThreshold(Network::Inheritance::NONE)),
+            condCreateInteger<uint32_t>(subnet->getCacheMaxAge(Network::Inheritance::NONE))
         };
 
         MySqlTransaction transaction(conn_);
@@ -1309,6 +1323,8 @@ public:
             MySqlBinding::createString(DNS_NAME_BUF_LENGTH), // ddns_qualifying_suffix
             MySqlBinding::createInteger<uint8_t>(), // reservations_in_subnet
             MySqlBinding::createInteger<uint8_t>(), // reservations_out_of_pool
+            MySqlBinding::createInteger<float>(), // cache_threshold
+            MySqlBinding::createInteger<uint32_t>(), // cache_max_age
             MySqlBinding::createString(SERVER_TAG_BUF_LENGTH) // server_tag
         };
 
@@ -1505,7 +1521,17 @@ public:
                     last_network->setReservationsOutOfPool(out_bindings[41]->getBool());
                 }
 
-                // server_tag at 42.
+                // cache_threshold at 42.
+                if (!out_bindings[42]->amNull()) {
+                    last_network->setCacheThreshold(out_bindings[42]->getFloat());
+                }
+
+                // cache_max_age at 43.
+                if (!out_bindings[43]->amNull()) {
+                    last_network->setCacheMaxAge(out_bindings[43]->getInteger<uint32_t>());
+                }
+
+                // server_tag at 44.
 
                 // Add the shared network.
                 auto ret = shared_networks.push_back(last_network);
@@ -1519,9 +1545,9 @@ public:
             }
 
             // Check for new server tags.
-            if (!out_bindings[42]->amNull() &&
-                (last_tag != out_bindings[42]->getString())) {
-                last_tag = out_bindings[42]->getString();
+            if (!out_bindings[44]->amNull() &&
+                (last_tag != out_bindings[44]->getString())) {
+                last_tag = out_bindings[44]->getString();
                 if (!last_tag.empty() && !last_network->hasServerTag(ServerTag(last_tag))) {
                     last_network->setServerTag(last_tag);
                 }
@@ -1676,7 +1702,9 @@ public:
             MySqlBinding::condCreateString(shared_network->getDdnsGeneratedPrefix(Network::Inheritance::NONE)),
             MySqlBinding::condCreateString(shared_network->getDdnsQualifyingSuffix(Network::Inheritance::NONE)),
             MySqlBinding::condCreateBool(shared_network->getReservationsInSubnet(Network::Inheritance::NONE)),
-            MySqlBinding::condCreateBool(shared_network->getReservationsOutOfPool(Network::Inheritance::NONE))
+            MySqlBinding::condCreateBool(shared_network->getReservationsOutOfPool(Network::Inheritance::NONE)),
+            MySqlBinding::condCreateFloat(shared_network->getCacheThreshold(Network::Inheritance::NONE)),
+            condCreateInteger<uint32_t>(shared_network->getCacheMaxAge(Network::Inheritance::NONE))
         };
 
         MySqlTransaction transaction(conn_);
@@ -2526,9 +2554,11 @@ TaggedStatementArray tagged_statements = { {
       "  ddns_generated_prefix,"
       "  ddns_qualifying_suffix,"
       "  reservations_in_subnet,"
-      "  reservations_out_of_pool"
-      ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,"
-      "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)" },
+      "  reservations_out_of_pool,"
+      "  cache_threshold,"
+      "  cache_max_age"
+      ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,"
+      " ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)" },
 
     // Insert association of the subnet with a server.
     { MySqlConfigBackendDHCPv4Impl::INSERT_SUBNET4_SERVER,
@@ -2571,8 +2601,10 @@ TaggedStatementArray tagged_statements = { {
       "  ddns_generated_prefix,"
       "  ddns_qualifying_suffix,"
       "  reservations_in_subnet,"
-      "  reservations_out_of_pool"
-      ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,"
+      "  reservations_out_of_pool,"
+      "  cache_threshold,"
+      "  cache_max_age"
+      ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,"
       " ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)" },
 
     // Insert association of the shared network with a server.
@@ -2646,7 +2678,9 @@ TaggedStatementArray tagged_statements = { {
       "  ddns_generated_prefix = ?,"
       "  ddns_qualifying_suffix = ?,"
       "  reservations_in_subnet = ?,"
-      "  reservations_out_of_pool = ? "
+      "  reservations_out_of_pool = ?,"
+      "  cache_threshold = ?,"
+      "  cache_max_age = ? "
       "WHERE subnet_id = ? OR subnet_prefix = ?" },
 
     // Update existing shared network.
@@ -2680,7 +2714,9 @@ TaggedStatementArray tagged_statements = { {
       "  ddns_generated_prefix = ?,"
       "  ddns_qualifying_suffix = ?,"
       "  reservations_in_subnet = ?,"
-      "  reservations_out_of_pool = ? "
+      "  reservations_out_of_pool = ?,"
+      "  cache_threshold = ?,"
+      "  cache_max_age = ? "
       "WHERE name = ?" },
 
     // Update existing option definition.

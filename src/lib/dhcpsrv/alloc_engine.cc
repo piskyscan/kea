@@ -1406,7 +1406,7 @@ AllocEngine::allocateGlobalReservedLeases6(ClientContext6& ctx,
             }
 
             // Got a lease for a reservation in this IA.
-            return(true);
+            return;
         }
     }
 
