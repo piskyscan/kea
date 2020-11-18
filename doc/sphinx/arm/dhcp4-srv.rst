@@ -4538,7 +4538,6 @@ following decision diagram:
 
 ::
 
-
                                   O
                                   |
                                   v
@@ -4725,6 +4724,11 @@ be used:
        "reservations-out-of-pool": true,
        ...
    }
+
+Note that enabling ``out-of-pool`` and disabling ``in-subnet`` at the
+same time is not recommended because ``out-of-pool`` is about host
+reservations in a subnet which are fetched only when the ``in-subnet``
+flag is true.
 
 The parameter can be specified at global, subnet, and shared-network
 levels.
