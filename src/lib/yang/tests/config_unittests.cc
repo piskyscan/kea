@@ -171,7 +171,7 @@ public:
     /// @param expected The expected JSON tree in textual format.
     bool verify(const string& config) {
         ConstElementPtr expected;
-        expected= Element::fromJSON(config);
+        expected = Element::fromJSON(config);
         return (verify(expected));
     }
 
