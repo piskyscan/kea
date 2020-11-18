@@ -757,8 +757,8 @@ TEST(ParserTest, mapEntries) {
     sample_dir += "/";
     ElementPtr sample_json = Element::createList();
     loadFile(sample_dir + "all-keys.json", sample_json);
-    loadFile(sample_dir + "all-keys-netconf.json", sample_json);
     loadFile(sample_dir + "reservations.json", sample_json);
+    loadFile(sample_dir + "all-keys-netconf.json", sample_json);
     KeywordSet sample_keys = {
         "hosts-database"
     };
