@@ -342,7 +342,7 @@ TEST_F(ConfigTest, examples4) {
         "comments.json",
         "config-backend.json",
         "dhcpv4-over-dhcpv6.json",
-        "global-reservations.json",
+        // "global-reservations.json" removed for #1405
         "ha-load-balancing-primary.json",
         "hooks.json",
         "hooks-radius.json",
@@ -350,9 +350,9 @@ TEST_F(ConfigTest, examples4) {
         "multiple-options.json",
         "mysql-reservations.json",
         "pgsql-reservations.json",
-        "reservations.json",
+        // "reservations.json" removed for #1405
         "several-subnets.json",
-        "shared-network.json",
+        // "shared-network.json" removed for #1405
         "single-subnet.json",
         // "with-ddns.json" removed for #35
     };
@@ -384,7 +384,7 @@ TEST_F(ConfigTest, examples6) {
         "config-backend.json",
         "dhcpv4-over-dhcpv6.json",
         "duid.json",
-        "global-reservations.json",
+        // "global-reservations.json" removed for #1405
         "ha-hot-standby.json",
         "hooks.json",
         "iPXE.json",
@@ -392,9 +392,9 @@ TEST_F(ConfigTest, examples6) {
         "multiple-options.json",
         "mysql-reservations.json",
         "pgsql-reservations.json",
-        "reservations.json",
+        // "reservations.json" removed for #1405
         "several-subnets.json",
-        "shared-network.json",
+        // "shared-network.json" removed for #1405
         "simple.json",
         "softwire46.json",
         "stateless.json",
