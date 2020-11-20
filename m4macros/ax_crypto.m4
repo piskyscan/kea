@@ -339,6 +339,7 @@ EOF
                           const EVP_MD* h256 = EVP_sha256();
                           const EVP_MD* h384 = EVP_sha384();
                           const EVP_MD* h512 = EVP_sha512();
+                          EVP_MD_CTX* mc = EVP_MD_CTX_new();
                           ])],
         [AC_MSG_RESULT([yes])],
         [AC_MSG_ERROR([missing EVP entry for SHA-2])])
@@ -347,12 +348,14 @@ EOF
     AC_LINK_IFELSE(
          [AC_LANG_PROGRAM([#include <openssl/opensslv.h>
                            #include <openssl/hmac.h>],
-                          [#if OPENSSL_VERSION_NUMBER < 0x10100000L
+                          [#if defined(LIBRESSL_VERSION_NUMBER) || \
+                               (OPENSSL_VERSION_NUMBER < 0x10100000L)
                            HMAC_CTX ctx, tmp;
                            int n = HMAC_Init(&ctx, NULL, 0, NULL);
                            n += HMAC_Update(&ctx, NULL, 0);
                            n += HMAC_CTX_copy(&tmp, &ctx);
                            n += HMAC_Final(&tmp, NULL, NULL);
+                           EVP_MD_CTX* mc = EVP_MD_CTX_create();
                            #endif
                            ])],
          [AC_MSG_RESULT([yes])],
