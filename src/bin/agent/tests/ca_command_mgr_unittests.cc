@@ -15,18 +15,22 @@
 #include <asiolink/testutils/test_server_unix_socket.h>
 #include <cc/command_interpreter.h>
 #include <cc/data.h>
+#include <hooks/hooks_manager.h>
+#include <hooks/callout_handle.h>
+#include <hooks/library_handle.h>
 #include <process/testutils/d_test_stubs.h>
+#include <testutils/sandbox.h>
 #include <boost/pointer_cast.hpp>
 #include <gtest/gtest.h>
-#include <testutils/sandbox.h>
 #include <cstdlib>
 #include <functional>
-#include <vector>
 #include <thread>
+#include <vector>
 
 using namespace isc::agent;
 using namespace isc::asiolink;
 using namespace isc::data;
+using namespace isc::hooks;
 using namespace isc::process;
 
 namespace {
@@ -52,6 +56,7 @@ public:
         mgr_.deregisterAll();
         removeUnixSocketFile();
         initProcess();
+        resetExtensionIndicators();
     }
 
     /// @brief Destructor.
@@ -60,6 +65,7 @@ public:
     virtual ~CtrlAgentCommandMgrTest() {
         mgr_.deregisterAll();
         removeUnixSocketFile();
+        resetExtensionIndicators();
     }
 
     /// @brief Verifies received answer
@@ -256,12 +262,104 @@ public:
         checkAnswer(answer, expected_result0, expected_result1, expected_result2);
     }
 
+    /// @brief Resets indicators related to handler and callout invocation.
+    ///
+    /// It also removes any registered callouts.
+    static void resetExtensionIndicators() {
+        handler_name_ = "";
+        handler_log_ = "";
+        callout_name_ = "";
+        processed_log_ = "";
+
+        // Iterate over existing hook points and for each of them remove
+        // callouts registered.
+        for (auto const& h : ServerHooks::getServerHooksPtr()->getHookNames()) {
+            HooksManager::preCalloutsLibraryHandle().deregisterAllCallouts(h);
+        }
+    }
+
+    /// @brief A simple command handler that always returns an error.
+    ///
+    /// @param name Command name
+    /// @param params Command parameters
+    static ConstElementPtr my_handler(const std::string& name,
+                                      const ConstElementPtr& params) {
+        handler_name_ = name;
+        std::ostringstream os;
+        os << name << ":" << params->str();
+        handler_log_ = os.str();
+
+        ElementPtr answer = Element::createMap();
+        answer->set("result", Element::create(123));
+        std::string text = "test error message";
+        answer->set("text", Element::create(text));
+
+        return (answer);
+    }
+
+    /// @brief Test callback which stores callout name and passed arguments and
+    /// which handles the command.
+    ///
+    /// @param callout_handle Handle passed by the hooks framework.
+    /// @return Always 0.
+    static int
+    command_processed_callout(CalloutHandle& callout_handle) {
+        callout_name_ = "command_processed_handler";
+
+        std::string name;
+        callout_handle.getArgument("name", name);
+
+        ConstElementPtr arguments;
+        callout_handle.getArgument("arguments", arguments);
+
+        ConstElementPtr response;
+        callout_handle.getArgument("response", response);
+        std::ostringstream os;
+        os << name << ":" << arguments->str() << ":" << response->str();
+        processed_log_ = os.str();
+
+        ElementPtr answer = Element::createMap();
+        answer->set("result", Element::create(777));
+        std::string text = "replaced response text";
+        answer->set("text", Element::create(text));
+
+        // Can't use directly answer because it does not have the right type.
+        response = answer;
+        callout_handle.setArgument("response", response);
+
+        return (0);
+    }
+
     /// @brief a convenience reference to control agent command manager
     CtrlAgentCommandMgr& mgr_;
 
     /// @brief Pointer to the test server unix socket.
     test::TestServerUnixSocketPtr server_socket_;
+
+    /// @brief Holds invoked handler name.
+    static std::string handler_name_;
+
+    /// @brief Holds the arguments passed to the handler.
+    static std::string handler_log_;
+
+    /// @brief Holds invoked callout name.
+    static std::string callout_name_;
+
+    /// @brief Holds the generated command process log.
+    static std::string processed_log_;
 };
+
+/// @brief Holds invoked handler name.
+std::string CtrlAgentCommandMgrTest::handler_name_("");
+
+/// @brief Holds the arguments passed to the handler.
+std::string CtrlAgentCommandMgrTest::handler_log_("");
+
+/// Holds invoked callout name.
+std::string CtrlAgentCommandMgrTest::callout_name_("");
+
+/// @brief Holds the generated command process log.
+std::string CtrlAgentCommandMgrTest::processed_log_("");
 
 /// Just a basic test checking that non-existent command is handled
 /// properly.
@@ -411,6 +509,49 @@ TEST_F(CtrlAgentCommandMgrTest, forwardListCommands) {
     // command is forwarded. So having this value returned means that
     // the command was forwarded as expected.
     checkAnswer(answer, 3);
+}
+
+// This test verifies that a registered handler and a callout for the
+// command_processed hookpoint are invoked and can replace the command
+// response content.
+TEST_F(CtrlAgentCommandMgrTest, commandProcessedHook) {
+    // Register callout so as we can check that it is called.
+    HooksManager::preCalloutsLibraryHandle().registerCallout(
+        "command_processed", command_processed_callout);
+
+    // Install local handler.
+    EXPECT_NO_THROW(mgr_.registerCommand("my-command", my_handler));
+
+    // Now tell CtrlAgentCommandMgr to process a command.
+    ElementPtr command = Element::createMap();
+    command->set("command", Element::create(std::string("my-command")));
+    ElementPtr params = Element::fromJSON("[ \"just\", \"some\", \"data\" ]");
+    command->set("arguments", params);
+
+    ConstElementPtr answer;
+    ASSERT_NO_THROW(answer = mgr_.processCommand(command));
+
+    // There should be an answer.
+    ASSERT_TRUE(answer);
+
+    // Make sure invoked the my_handler command handler.
+    EXPECT_EQ("my-command", handler_name_);
+
+    // Verify the handler was called with expected arguments.
+    EXPECT_EQ("my-command:[ \"just\", \"some\", \"data\" ]",
+              handler_log_);
+
+    // Verify that we overrode response.
+    EXPECT_EQ("{ \"result\": 777, \"text\": \"replaced response text\" }",
+              answer->str());
+
+    // Make sure invoked the command_processed callout.
+    EXPECT_EQ("command_processed_handler", callout_name_);
+
+    // Verify the callout could extract all the context arguments.
+    std::string expected = "my-command:[ \"just\", \"some\", \"data\" ]:";
+    expected += "[ { \"result\": 123, \"text\": \"test error message\" } ]";
+    EXPECT_EQ(expected, processed_log_);
 }
 
 }
