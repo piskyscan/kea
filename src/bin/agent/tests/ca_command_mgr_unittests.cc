@@ -552,6 +552,29 @@ TEST_F(CtrlAgentCommandMgrTest, commandProcessedHook) {
     std::string expected = "my-command:[ \"just\", \"some\", \"data\" ]:";
     expected += "[ { \"result\": 123, \"text\": \"test error message\" } ]";
     EXPECT_EQ(expected, processed_log_);
+
+    // Reset names and the answer.
+    handler_name_ = "";
+    callout_name_ = "";
+    answer.reset();
+
+    // Call 'list-commands'.
+    // Note the fixture constructor deregistered all other commands.
+    EXPECT_NO_THROW(answer = mgr_.handleCommand("list-commands",
+                                                ConstElementPtr(),
+                                                ConstElementPtr()));
+
+    // There should be an answer.
+    ASSERT_TRUE(answer);
+
+    // The handler and the callout were not called.
+    EXPECT_TRUE(handler_name_.empty());
+    EXPECT_TRUE(callout_name_.empty());
+
+    // Verify the answer: it should be success with my-command in it.
+    expected = "[ { \"arguments\": [ \"list-commands\", \"my-command\" ],";
+    expected += " \"result\": 0 } ]";
+    EXPECT_EQ(answer->str(), expected);
 }
 
 }
