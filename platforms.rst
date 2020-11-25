@@ -18,11 +18,11 @@ offer support on a "best effort" basis for some.
 Regularly tested platforms
 --------------------------
 
-As of January, 2020, Kea is officially supported on CentOS, Fedora, Ubuntu, Debian, and
-FreeBSD systems. Kea-|release| builds have been tested on:
+As of January 2020, Kea is officially supported on CentOS, Fedora, Ubuntu and Debian
+systems. Kea-|release| builds have been tested on:
 
 * CentOS Linux — 7, 8
-* Fedora — 31, 32
+* Fedora — 31, 32, 33
 * Ubuntu — 16.04, 18.04, 20.04
 * Debian GNU/Linux — 9, 10
 
