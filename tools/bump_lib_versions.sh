@@ -50,11 +50,10 @@ if [ ${is_old_tag_stable_release} -eq 0 && ${is_new_tag_stable_release} -eq 1 ];
 	exit 1
 fi
 
-
-
 latest_stable_release_tag=$(find_latest_stable_release_tag $(echo ${old_release_tag} | cut -d '.' -f1))
 increment_extra=10
 increment=1
+
 for lib in $(git diff ${old_release_tag} --name-only src/lib/ | cut -d "/" -f 3 | uniq); do
 	old_version=$(cat src/lib/${lib}/Makefile.am | grep "\-version\-info" | tr -s ' ' | rev | cut -d " " -f 1 | rev | cut -d ":" -f 1)
 	new_version=$((old_version + ${increment}))
