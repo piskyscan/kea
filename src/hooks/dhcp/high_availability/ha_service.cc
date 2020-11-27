@@ -783,7 +783,7 @@ HAService::adjustNetworkState() {
         LOG_INFO(ha_logger, HA_LOCAL_DHCP_DISABLE)
             .arg(config_->getThisServerName())
             .arg(current_state_name);
-        network_state_->disableService();
+        network_state_->disableService(NetworkState::HA);
 
     } else if (should_enable && !network_state_->isServiceEnabled()) {
         std::string current_state_name = getStateLabel(getCurrState());
@@ -791,7 +791,7 @@ HAService::adjustNetworkState() {
         LOG_INFO(ha_logger, HA_LOCAL_DHCP_ENABLE)
             .arg(config_->getThisServerName())
             .arg(current_state_name);
-        network_state_->enableService();
+        network_state_->enableService(NetworkState::HA);
     }
 }
 
@@ -1547,12 +1547,12 @@ HAService::asyncEnableDHCPService(HttpClient& http_client,
 
 void
 HAService::localDisableDHCPService() {
-    network_state_->disableService();
+    network_state_->disableService(NetworkState::HA);
 }
 
 void
 HAService::localEnableDHCPService() {
-    network_state_->enableService();
+    network_state_->enableService(NetworkState::HA);
 }
 
 void
