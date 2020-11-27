@@ -1,5 +1,4 @@
 #!/bin/bash
-#set -x
 
 if [ ${#} -ne 2 ]; then
 	echo "${0} old-kea-version-tag new-kea-version-tag"
@@ -46,7 +45,7 @@ is_new_tag_stable_release=$(is_stable_release ${new_release_tag})
 #    illegal as there should only be stable to stable bump lib versions
 
 if [ ${is_old_tag_stable_release} -eq 0 ] && [ ${is_new_tag_stable_release} -eq 1 ]; then
-	echo "illegal bumb lib versions from development release to stable release"
+	echo "illegal bump lib versions from development release to stable release"
 	exit 1
 fi
 
