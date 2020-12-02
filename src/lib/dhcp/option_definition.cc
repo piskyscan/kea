@@ -444,7 +444,7 @@ OptionDefinition::haveClientFqdnFormat() const {
 
 bool
 OptionDefinition::haveVendor4Format() const {
-    return (true);
+    return (haveType(OPT_UINT32_TYPE) && !getArrayType());
 }
 
 bool
