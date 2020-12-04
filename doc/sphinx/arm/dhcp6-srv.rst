@@ -4432,7 +4432,7 @@ following example:
             },
             {
                 "name: "unreserved_class",
-                "test": "not member('reserved_class")
+                "test": "not member('reserved_class')"
             }
         ],
         "reservations": [{"
