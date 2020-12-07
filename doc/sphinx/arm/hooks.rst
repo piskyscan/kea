@@ -1366,6 +1366,12 @@ All commands use JSON syntax. They can be issued either using the
 control channel (see :ref:`ctrl-channel`) or via the Control Agent (see
 :ref:`kea-ctrl-agent`).
 
+For all commands either a subnet-id is specified in the command arguments
+or a subnet-id is added to all returned host entries. This also means
+when a host database is common to DHCPv4 and DHCPv6 commands work
+only in the corresponding universe part, i.e. the hook loaded by
+a DHCPv4 server works only with DHCPv4 host entries.
+
 The library can be loaded similarly to other hook libraries. It
 does not take any parameters, and it supports both DHCPv4 and DHCPv6
 servers.
