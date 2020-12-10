@@ -240,6 +240,12 @@ private:
             ++working_;
         }
 
+        /// @brief unregister thread so that it can be ignored
+        void unregisterThread() {
+            std::lock_guard<std::mutex> lock(mutex_);
+            --working_;
+        }
+
         /// @brief set maximum number of work items in the queue
         ///
         /// @return the maximum size (0 means unlimited)
@@ -330,10 +336,10 @@ private:
                 wait_cv_.notify_all();
             }
             cv_.wait(lock, [&]() {return (!enabled_ || !queue_.empty());});
+            ++working_;
             if (!enabled_) {
                 return (Item());
             }
-            ++working_;
             size_t length = queue_.size();
             stat10 = stat10 * CEXP10 + (1 - CEXP10) * length;
             stat100 = stat100 * CEXP100 + (1 - CEXP100) * length;
@@ -486,6 +492,9 @@ private:
                     // catch all exceptions
                 }
             }
+        }
+        if (!register_thread) {
+            queue_.unregisterThread();
         }
     }
 
