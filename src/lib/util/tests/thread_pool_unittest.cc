@@ -562,6 +562,44 @@ TEST_F(ThreadPoolTest, wait) {
 
     // check that the number of processed tasks matches the number of items
     checkRunHistory(items_count);
+
+    // calling stop should clear all threads and should keep queued items
+    EXPECT_NO_THROW(thread_pool.stop());
+    // the item count should be 0
+    ASSERT_EQ(thread_pool.count(), 0);
+    // the thread count should be 0
+    ASSERT_EQ(thread_pool.size(), 0);
+
+    items_count = 64;
+    thread_count = 16;
+    // prepare setup
+    reset(thread_count);
+
+    // add items to stopped thread pool
+    for (uint32_t i = 0; i < items_count; ++i) {
+        bool ret = true;
+        EXPECT_NO_THROW(ret = thread_pool.add(boost::make_shared<CallBack>(call_back)));
+        EXPECT_TRUE(ret);
+    }
+
+    // the item count should match
+    ASSERT_EQ(thread_pool.count(), items_count);
+    // the thread count should be 0
+    ASSERT_EQ(thread_pool.size(), 0);
+
+    // calling start should create the threads and should keep the queued items
+    EXPECT_NO_THROW(thread_pool.start(thread_count));
+
+    // calling stop should clear all threads and should keep queued items
+    EXPECT_NO_THROW(thread_pool.stop());
+    // the thread count should be 0
+    ASSERT_EQ(thread_pool.size(), 0);
+    // wait for all items to be processed
+    ASSERT_TRUE(thread_pool.wait(1));
+    // the item count should be 0
+    ASSERT_EQ(thread_pool.count(), 0);
+    // the thread count should match
+    ASSERT_EQ(thread_pool.size(), 0);
 }
 
 /// @brief test ThreadPool max queue size
