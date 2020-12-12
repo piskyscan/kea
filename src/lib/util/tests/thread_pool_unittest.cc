@@ -589,6 +589,8 @@ TEST_F(ThreadPoolTest, wait) {
 
     // calling start should create the threads and should keep the queued items
     EXPECT_NO_THROW(thread_pool.start(thread_count));
+    // the thread count should match
+    ASSERT_EQ(thread_pool.size(), thread_count);
 
     // calling stop should clear all threads and should keep queued items
     EXPECT_NO_THROW(thread_pool.stop());
