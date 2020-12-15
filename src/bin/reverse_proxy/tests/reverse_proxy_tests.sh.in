@@ -208,7 +208,7 @@ reverse_proxy_command_test() {
         run_secure_shell
 
     # Check the exit code
-    if [ ${EXIT_CODE} -ne 0 ]; then
+    if [ "${EXIT_CODE}" -ne 0 ]; then
         echo "ERROR:" \
         "kea-secure-shell returned ${EXIT_CODE} exit code, expected 0."
     else
