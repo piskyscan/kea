@@ -1,8 +1,8 @@
 PYTESTS = reverse_proxy_unittest.py
 SHTESTS = reverse_proxy_tests.sh
-noinst_SCRIPTS = $(SHTESTS)
+noinst_SCRIPTS = $(PYTESTS) $(SHTESTS)
 
-EXTRA_DIST = $(PYTESTS) extension_test_module.py
+EXTRA_DIST = extension_test_module.py
 EXTRA_DIST += api/hook.json
 EXTRA_DIST += api/no-access.json
 EXTRA_DIST += api/test.json
@@ -31,15 +31,15 @@ EXTRA_DIST += dir/dir.json
 DISTCLEANFILES = reverse_proxy_tests.sh
 
 # test using command-line arguments, so use check-local target instead of TESTS
-check-local:  pythontests shtests
+check-local:  check-python check-shell
 
-pythontests:
+check-python:
 	@for pytest in $(PYTESTS) ; do \
 	echo Running python test: $$pytest ; \
 	PYTHONPATH=$(PYTHONPATH):$(abs_top_srcdir)/src/bin/reverse_proxy @PYTHON@ $(abs_srcdir)/$$pytest || exit ; \
 	done
 
-shtests:
+check-shell:
 	@for shtest in $(SHTESTS) ; do \
 	echo Running shell test: $$shtest ; \
 	export KEA_LOCKFILE_DIR=$(abs_top_builddir); \
